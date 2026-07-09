@@ -19,10 +19,11 @@ Abra `index.html` diretamente no navegador (local) ou acesse a URL do Netlify de
 - **Despesas por categoria**: total, percentual e quebra pago/pendente por categoria, com lista detalhada expansível.
 - **Lembretes**: checklist mensal de pagamentos recorrentes (ex: salário, contabilidade, imposto), que reseta automaticamente a cada mês.
 - **Backup manual**: exporta todos os dados em `.json` e permite restaurar depois — importante como segurança extra além da nuvem.
+- **Menu lateral (mobile)**: em telas pequenas a navegação vira um menu "☰" que abre pela lateral.
 
 ## Onde ficam os dados
 
-Tudo é salvo na tabela `financeiro_dados` do Supabase, vinculado ao seu usuário de login (protegido por Row Level Security — só quem faz login com a senha certa vê os dados). Ao logar em qualquer computador com o mesmo email/senha, os dados aparecem sincronizados.
+Tudo é salvo na tabela `financeiro_dados` do Supabase, vinculado ao seu usuário de login (protegido por Row Level Security — só quem faz login com a senha certa vê os dados). Ao logar em qualquer computador com o mesmo email/senha, os dados aparecem sincronizados. Cada login tem seus próprios dados, isolados dos demais.
 
 ## Deploy no Netlify
 

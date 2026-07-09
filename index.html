@@ -56,6 +56,15 @@
   .side-nav button:hover{background:rgba(255,255,255,.08);color:#fff;}
   .side-nav button.active{background:rgba(255,255,255,.16);color:#fff;}
 
+  .sidebar-footer{margin-top:auto;}
+  .btn-logout-side{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;
+    padding:10px 12px;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;
+    font-family:'Plus Jakarta Sans',sans-serif;
+  }
+  .btn-logout-side:hover{background:rgba(255,255,255,.16);}
+
   .content-wrap{flex:1;min-width:0;display:flex;flex-direction:column;}
   .topbar{
     background:var(--surface);border-bottom:1px solid var(--border);
@@ -310,6 +319,9 @@
       <button data-page="categorias">🗂 Despesas por categoria</button>
       <button data-page="lembretes">✅ Lembretes</button>
     </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout-side" id="btnLogout">🚪 Sair</button>
+    </div>
   </aside>
 
   <div class="content-wrap">
@@ -324,7 +336,6 @@
         <button class="btn btn-outline btn-sm" id="btnImport">⬆ Restaurar</button>
         <input type="file" id="fileInput" class="file-input" accept="application/json">
         <button class="btn btn-primary" id="btnNovo">+ Nova conta</button>
-        <button class="btn btn-outline btn-sm" id="btnLogout">Sair</button>
       </div>
     </div>
 

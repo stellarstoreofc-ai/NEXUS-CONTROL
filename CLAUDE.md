@@ -26,7 +26,7 @@ Single file (`index.html`) containing markup, `<style>`, and `<script>`. No fram
 
 The app has two top-level `.screen` divs toggled by `showScreen(id)`: **`screen-login`** (email/senha form, doubles as signup via the "Criar conta" toggle) and **`screen-app`** (the sidebar SPA described below). On load, `initAuth()` checks `sb.auth.getSession()` — an existing session (persisted by supabase-js in its own `localStorage` entry) skips straight to the app; otherwise the login screen shows. `afterLogin(user)` sets `currentUserId`, calls `carregarDados(user.id)` to pull this user's row, then shows the app.
 
-The app is a sidebar SPA with four pages (`.page` sections, toggled by `showPage(name)`): **Contas**, **Relatório mensal**, **Despesas por categoria**, **Lembretes**. `showPage` swaps the visible `.page`, updates the sidebar active state and top bar title, and calls that page's own render function — there is no shared render loop across pages.
+The app is a sidebar SPA with four pages (`.page` sections, toggled by `showPage(name)`): **Contas**, **Relatório mensal**, **Despesas por categoria**, **Lembretes**. `showPage` swaps the visible `.page`, updates the sidebar active state and top bar title, and calls that page's own render function — there is no shared render loop across pages. On narrow viewports the sidebar becomes an off-canvas drawer (`.sidebar.open`, toggled by the `#btnMenu` hamburger button plus a `#sidebarBackdrop` click-to-close overlay) instead of a static column.
 
 ### Data layer (one Supabase row per user)
 
