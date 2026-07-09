@@ -36,7 +36,7 @@ All four in-memory state arrays/objects (`data`, `faturamento`, `lembretes`, `le
 |---|---|---|
 | `contas` | array of `{ id, descricao, valor, vencimento, categoria, status: 'pendente'\|'pago', tipo: 'despesa'\|'receita', pagoEm }` | Contas, Relatório, Categorias |
 | `faturamento` | object `{ 'YYYY-MM': number }` — manual monthly revenue entry | Relatório |
-| `lembretes` | array of `{ id, dia: 1-31, descricao }` — recurring reminder definitions, seeded via `lembretesPadrao()` (salário 5, contabilidade 10, imposto 20) the first time a user's row is created | Lembretes |
+| `lembretes` | array of `{ id, dia: 1-31, descricao }` — recurring reminder definitions, seeded via `lembretesPadrao()` (contabilidade 10, ERP 10, imposto 20, INSS 20) the first time a user's row is created | Lembretes |
 | `lembretes_status` | object `{ 'YYYY-MM': { [lembreteId]: boolean } }` — per-month checklist state | Lembretes |
 
 `carregarDados(userId)` fetches the row on login (`maybeSingle()`); if none exists yet it inserts a fresh default row. Every mutation calls one of `saveContas()`/`saveFaturamento()`/`saveLembretes()`/`saveLembretesStatus()` — all four are thin wrappers around a single **`persist()`** that `upsert`s the *entire* row (all four columns at once) rather than patching individual fields. This is simple but means concurrent edits from two open tabs/devices will clobber each other's most recent unsaved change — acceptable for a single-user internal tool, worth revisiting if multiple people start editing simultaneously.

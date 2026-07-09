@@ -17,7 +17,7 @@ Abra `index.html` diretamente no navegador (local) ou acesse a URL do Netlify de
 - **Contas**: cadastro de despesas/receitas com descrição, valor, vencimento, categoria e status. Painel com totais (a pagar, vencidas, pago no mês, saldo), filtros e busca.
 - **Relatório mensal**: faturamento do mês (lançado manualmente), quanto entrou, quanto saiu e saldo — com gráfico comparando o faturamento dos últimos 12 meses.
 - **Despesas por categoria**: total, percentual e quebra pago/pendente por categoria, com lista detalhada expansível.
-- **Lembretes**: checklist mensal de pagamentos recorrentes (ex: salário, contabilidade, imposto), que reseta automaticamente a cada mês.
+- **Lembretes**: checklist mensal de pagamentos recorrentes (vem pré-cadastrado com contabilidade, ERP, imposto e INSS — dá pra editar, excluir ou adicionar outros), que reseta automaticamente a cada mês.
 - **Backup manual**: exporta todos os dados em `.json` e permite restaurar depois — importante como segurança extra além da nuvem.
 - **Menu lateral (mobile)**: em telas pequenas a navegação vira um menu "☰" que abre pela lateral.
 
