@@ -1,4 +1,4 @@
-# Stellar — Controle Financeiro
+# Nexus Control
 
 Ferramenta para controlar contas a pagar, despesas, faturamento e lembretes de pagamento da empresa. Um único arquivo HTML, com login e dados sincronizados na nuvem via Supabase — acesse de qualquer computador com o mesmo login.
 
@@ -32,4 +32,4 @@ Tudo é salvo na tabela `financeiro_dados` do Supabase, vinculado ao seu usuári
 
 ## Deploy no Netlify
 
-Arraste a pasta inteira (`STELLAR CONTROLE FINANCEIRO`) para o Netlify (drag-and-drop em app.netlify.com). Não há build step — é só HTML estático. Depois do deploy, acesse a URL do Netlify de qualquer computador e faça login normalmente.
+Arraste a pasta inteira (`NEXUS CONTROL`) para o Netlify (drag-and-drop em app.netlify.com) — ou conecte o repositório do GitHub na Vercel, como já está sendo usado. Não há build step — é só HTML estático. Depois do deploy, acesse a URL de qualquer computador e faça login normalmente.

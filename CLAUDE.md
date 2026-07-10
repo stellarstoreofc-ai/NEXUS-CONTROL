@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Stellar Controle Financeiro** is a single-file financial tracker for the business's own accounts payable and expenses ("contas a pagar" / "contas que saíram"). It is a private internal tool (not a public SaaS) but is backed by Supabase for auth + storage so the same data is available from any device after logging in — no per-browser `localStorage` lock-in.
+**Nexus Control** is a single-file financial tracker for the business's own accounts payable and expenses ("contas a pagar" / "contas que saíram"). It is a private internal tool (not a public SaaS) but is backed by Supabase for auth + storage so the same data is available from any device after logging in — no per-browser `localStorage` lock-in.
 
 ## Running / Previewing
 
@@ -72,4 +72,4 @@ Reminders are definitions, not dated events: the same `lembretes` list is checke
 - Content is in Brazilian Portuguese.
 - Currency formatted via `Intl`/`toLocaleString('pt-BR', {style:'currency', currency:'BRL'})` — always use `fmt()`, don't hand-roll formatting.
 - Dates are stored as `YYYY-MM-DD` strings (native `<input type="date">` format) so they sort correctly with plain string comparison; `formatDate()` converts to `DD/MM/YYYY` only for display.
-- CSS custom properties in `:root` mirror the token names used in the sibling `nexus-finance-completo` project (`--navy`, `--accent`, `--green`, `--red`, `--bg`) for visual consistency across Stellar/Nexus finance tools — keep them in sync if retheming either.
+- CSS custom properties in `:root` mirror the token names used in the sibling `nexus-finance-completo` project (`--navy`, `--accent`, `--green`, `--red`, `--bg`) for visual consistency across the two finance tools — keep them in sync if retheming either.
