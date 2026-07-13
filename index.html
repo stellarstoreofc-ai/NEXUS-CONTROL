@@ -233,6 +233,8 @@
   .produto-nome{font-weight:800;font-size:15.5px;}
   .produto-meta{font-size:12px;color:var(--muted);margin-top:2px;}
   .produto-numeros{display:flex;gap:22px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);}
+  .produto-taxas-edit{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+  .produto-taxas-edit .field-row{margin-bottom:12px;}
   .produto-stat .label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
   .produto-stat .valor{font-size:16px;font-weight:800;margin-top:2px;}
   .produto-stat.destaque .valor{font-size:19px;color:var(--green);}
@@ -1479,6 +1481,9 @@ function resultadoProduto(p){
   return { lucro, margem };
 }
 
+// Id do produto cujo painel rápido "Ajustar taxas" está aberto no card (null = nenhum)
+let produtoTaxasAbertoId = null;
+
 function renderProdutos(){
   const list = document.getElementById('produtosList');
   if(produtos.length === 0){
@@ -1492,6 +1497,8 @@ function renderProdutos(){
     const margemNeg = margem < 0 ? ' valor-negativo' : '';
     const lucroNeg = lucro < 0 ? ' valor-negativo' : '';
     const precoNeg = preco === null ? ' valor-negativo' : '';
+    const pt = 'pt' + p.id;
+    const mktSelecionado = (p.marketplace || '').startsWith('tiktok') ? 'tiktok' : (p.marketplace || '');
     return `
       <div class="produto-item">
         <div class="produto-top">
@@ -1500,6 +1507,7 @@ function renderProdutos(){
             <div class="produto-meta">Custo fixo total: ${fmt(custoFixoTotalProduto(p))} · Comissões + imposto: ${percentualDescontosProduto(p)}%</div>
           </div>
           <div class="item-actions">
+            <button class="btn btn-outline btn-sm" data-action="ajustar-taxas" data-id="${p.id}">Ajustar taxas</button>
             <button class="btn btn-outline btn-sm" data-action="editar-produto" data-id="${p.id}">Editar</button>
             <button class="btn btn-danger-text btn-sm" data-action="excluir-produto" data-id="${p.id}">Excluir</button>
           </div>
@@ -1522,6 +1530,36 @@ function renderProdutos(){
             <div class="valor">${preco === null ? '—' : fmt(preco)}</div>
           </div>
         </div>
+        ${produtoTaxasAbertoId === p.id ? `
+        <div class="produto-taxas-edit">
+          <div class="field-row">
+            <div class="field">
+              <label>Marketplace</label>
+              <select id="${pt}Marketplace">
+                <option value="" ${!mktSelecionado ? 'selected' : ''}>Outro / personalizado</option>
+                <option value="shopee" ${mktSelecionado === 'shopee' ? 'selected' : ''} style="color:#ee4d2d;">Shopee</option>
+                <option value="ml" ${mktSelecionado === 'ml' ? 'selected' : ''} style="color:#7a6400;">Mercado Livre</option>
+                <option value="shein" ${mktSelecionado === 'shein' ? 'selected' : ''} style="color:#2563eb;">Shein</option>
+                <option value="tiktok" ${mktSelecionado === 'tiktok' ? 'selected' : ''} style="color:#000;">TikTok Shop</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Taxa fixa marketplace (R$)</label>
+              <input type="number" id="${pt}TaxaFixa" step="0.01" min="0" value="${p.taxaFixaMarketplace ?? ''}">
+            </div>
+            <div class="field">
+              <label>Comissão marketplace (%)</label>
+              <input type="number" id="${pt}ComissaoMarketplace" step="0.01" min="0" max="100" value="${p.comissaoMarketplace ?? ''}">
+            </div>
+          </div>
+          <div class="item-actions">
+            <button class="btn btn-primary btn-sm" data-action="salvar-taxas" data-id="${p.id}">Salvar</button>
+            <button class="btn btn-outline btn-sm" data-action="cancelar-taxas" data-id="${p.id}">Cancelar</button>
+          </div>
+        </div>
+        ` : ''}
       </div>
     `;
   }).join('');
@@ -1540,6 +1578,39 @@ document.getElementById('produtosList').addEventListener('click', e => {
       saveProdutos();
       renderProdutos();
     }
+  } else if(btn.dataset.action === 'ajustar-taxas'){
+    produtoTaxasAbertoId = produtoTaxasAbertoId === id ? null : id;
+    renderProdutos();
+  } else if(btn.dataset.action === 'cancelar-taxas'){
+    produtoTaxasAbertoId = null;
+    renderProdutos();
+  } else if(btn.dataset.action === 'salvar-taxas'){
+    const pt = 'pt' + id;
+    const marketplace = document.getElementById(pt + 'Marketplace').value;
+    produto.marketplace = marketplace;
+    produto.taxaFixaMarketplace = parseFloat(document.getElementById(pt + 'TaxaFixa').value) || 0;
+    produto.comissaoMarketplace = parseFloat(document.getElementById(pt + 'ComissaoMarketplace').value) || 0;
+    saveProdutos();
+    produtoTaxasAbertoId = null;
+    renderProdutos();
+  }
+});
+
+// Trocar o marketplace no painel rápido "Ajustar taxas" já reaplica a taxa fixa
+// e comissão padrão daquele marketplace, igual ao select do modal completo.
+document.getElementById('produtosList').addEventListener('change', e => {
+  const select = e.target.closest('select[id^="pt"][id$="Marketplace"]');
+  if(!select) return;
+  const id = select.id.slice(2, -'Marketplace'.length);
+  const prefix = 'pt' + id;
+  const valor = select.value;
+  if(!valor) return;
+  if(valor === 'tiktok'){
+    const produto = produtos.find(p => p.id === id);
+    const preco = produto ? (produto.precoVenda || 0) : 0;
+    aplicarPreset(prefix, faixaTiktokPeloPreco(preco));
+  } else {
+    aplicarPreset(prefix, valor);
   }
 });
 
@@ -1910,7 +1981,7 @@ function initQuickCalcDefaults(){
     document.getElementById(m.prefix + 'CustoFixoOperacao').value = custoFixoPorPedido().toFixed(2);
     aplicarPreset(m.prefix, m.preset);
     document.getElementById(m.prefix + 'ComissaoAfiliado').value = 0;
-    document.getElementById(m.prefix + 'Imposto').value = 6;
+    document.getElementById(m.prefix + 'Imposto').value = 4;
     document.getElementById(m.prefix + 'LucroDesejado').value = 10;
     atualizarPreview(lerCampos(m.prefix, m.prefix + 'OutrosCustosList'), m.prefix);
   });
