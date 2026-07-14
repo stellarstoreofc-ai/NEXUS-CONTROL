@@ -233,6 +233,12 @@
     padding:16px 18px;box-shadow:var(--shadow);margin-bottom:10px;
   }
   .produto-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px;}
+  .produto-top-left{display:flex;align-items:center;gap:12px;min-width:0;}
+  .produto-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--bg);border:1px solid var(--border);}
+  .produto-thumb-placeholder{
+    width:44px;height:44px;border-radius:10px;flex-shrink:0;background:var(--bg);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);font-size:17px;
+  }
   .produto-nome{font-weight:800;font-size:15.5px;}
   .produto-meta{font-size:12px;color:var(--muted);margin-top:2px;}
   .produto-numeros{display:flex;gap:22px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);}
@@ -258,6 +264,16 @@
   .produto-preview-aviso{color:var(--red);font-size:12.5px;font-weight:700;margin-top:10px;}
 
   .campo-valor-calc{font-size:12px;color:var(--muted);margin-top:6px;}
+
+  .foto-upload-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .foto-preview{
+    width:68px;height:68px;border-radius:12px;overflow:hidden;flex-shrink:0;
+    background:var(--bg);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .foto-preview img{width:100%;height:100%;object-fit:cover;}
+  .foto-preview-placeholder{font-size:10px;color:var(--muted);text-align:center;padding:4px;}
+  .foto-upload-actions{display:flex;flex-direction:column;gap:6px;}
 
   .config-taxas{margin-top:18px;padding-top:18px;border-top:1px solid var(--border);}
   .config-taxas summary{
@@ -720,6 +736,17 @@
       <div class="field">
         <label>Nome do produto</label>
         <input type="text" id="pNome" placeholder="Ex: Tênis modelo X" required>
+      </div>
+      <div class="field">
+        <label>Foto do produto</label>
+        <div class="foto-upload-row">
+          <div class="foto-preview" id="pFotoPreview"><span class="foto-preview-placeholder">Sem foto</span></div>
+          <div class="foto-upload-actions">
+            <input type="file" accept="image/*" id="pFotoInput" style="display:none;">
+            <button type="button" class="btn btn-outline btn-sm" id="btnEscolherFoto">Escolher foto</button>
+            <button type="button" class="btn btn-danger-text btn-sm" id="btnRemoverFoto" style="display:none;">Remover foto</button>
+          </div>
+        </div>
       </div>
       <div class="field">
         <label>Marketplace</label>
@@ -1537,9 +1564,14 @@ function renderProdutos(){
     return `
       <div class="produto-item">
         <div class="produto-top">
-          <div>
-            <div class="produto-nome">${escapeHtml(p.nome)} ${marketplaceLabel(p.marketplace) ? `<span class="badge ${marketplaceBadgeClass(p.marketplace)}">${marketplaceLabel(p.marketplace)}</span>` : ''}</div>
-            <div class="produto-meta">Custo fixo total: ${fmt(custoFixoTotalProduto(p))} · Descontos (%): ${percentualDescontosProduto(p)}%</div>
+          <div class="produto-top-left">
+            ${p.foto
+              ? `<img class="produto-thumb" src="${p.foto}" alt="${escapeHtml(p.nome)}">`
+              : `<div class="produto-thumb-placeholder">${escapeHtml((p.nome || '?').trim().charAt(0).toUpperCase() || '?')}</div>`}
+            <div>
+              <div class="produto-nome">${escapeHtml(p.nome)} ${marketplaceLabel(p.marketplace) ? `<span class="badge ${marketplaceBadgeClass(p.marketplace)}">${marketplaceLabel(p.marketplace)}</span>` : ''}</div>
+              <div class="produto-meta">Custo fixo total: ${fmt(custoFixoTotalProduto(p))} · Descontos (%): ${percentualDescontosProduto(p)}%</div>
+            </div>
           </div>
           <div class="item-actions">
             <button class="btn btn-outline btn-sm" data-action="ajustar-taxas" data-id="${p.id}">Ajustar taxas</button>
@@ -1670,6 +1702,75 @@ let editingProdutoId = null;
 const overlayProduto = document.getElementById('overlayProduto');
 const formProduto = document.getElementById('formProduto');
 
+// Foto do produto fica fora do lerCampos()/form.reset() porque não é um input
+// de valor simples — guardamos o data URL (já redimensionado) numa variável à
+// parte enquanto o modal está aberto.
+let fotoAtualProduto = null;
+
+// Lê o arquivo escolhido e devolve um data URL já redimensionado (lado maior
+// = 300px) e comprimido em JPEG — assim uma foto de celular de vários MB vira
+// poucos KB, o que importa porque persist() reenvia a linha inteira (incluindo
+// as fotos de todos os produtos) a cada salvamento, não só a do produto editado.
+function lerImagemComoDataUrlRedimensionada(file, maxLado = 300, qualidade = 0.7){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Não foi possível ler essa imagem.'));
+      img.onload = () => {
+        let { width, height } = img;
+        if(width >= height && width > maxLado){
+          height = Math.round(height * (maxLado / width));
+          width = maxLado;
+        } else if(height > maxLado){
+          width = Math.round(width * (maxLado / height));
+          height = maxLado;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', qualidade));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function atualizarPreviewFotoProduto(){
+  const preview = document.getElementById('pFotoPreview');
+  const btnRemover = document.getElementById('btnRemoverFoto');
+  if(fotoAtualProduto){
+    preview.innerHTML = `<img src="${fotoAtualProduto}" alt="Foto do produto">`;
+    btnRemover.style.display = '';
+  } else {
+    preview.innerHTML = `<span class="foto-preview-placeholder">Sem foto</span>`;
+    btnRemover.style.display = 'none';
+  }
+}
+
+document.getElementById('btnEscolherFoto').addEventListener('click', () => {
+  document.getElementById('pFotoInput').click();
+});
+document.getElementById('pFotoInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  try{
+    fotoAtualProduto = await lerImagemComoDataUrlRedimensionada(file);
+    atualizarPreviewFotoProduto();
+  } catch(err){
+    console.error(err);
+    alert('Não foi possível carregar essa imagem. Tente outro arquivo.');
+  }
+});
+document.getElementById('btnRemoverFoto').addEventListener('click', () => {
+  fotoAtualProduto = null;
+  atualizarPreviewFotoProduto();
+});
+
 function addOutroCustoRow(containerId, descricao = '', valor = ''){
   const row = document.createElement('div');
   row.className = 'outro-custo-row';
@@ -1717,6 +1818,7 @@ function lerCamposProduto(){
   return {
     nome: document.getElementById('pNome').value.trim(),
     marketplace: document.getElementById('pMarketplace').value,
+    foto: fotoAtualProduto,
     ...lerCampos('p', 'outrosCustosList')
   };
 }
@@ -1833,6 +1935,8 @@ function openModalProduto(produto = null){
   editingProdutoId = produto ? produto.id : null;
   document.getElementById('modalProdutoTitle').textContent = produto ? 'Editar produto' : 'Novo produto';
   document.getElementById('pNome').value = produto ? produto.nome : '';
+  fotoAtualProduto = produto ? (produto.foto || null) : null;
+  atualizarPreviewFotoProduto();
   const mktSalvo = produto ? (produto.marketplace || '') : '';
   document.getElementById('pMarketplace').value = mktSalvo.startsWith('tiktok') ? 'tiktok' : mktSalvo;
   atualizarVisibilidadeFreteModal();
@@ -1862,6 +1966,8 @@ function closeModalProduto(){
   overlayProduto.classList.remove('open');
   formProduto.reset();
   document.getElementById('outrosCustosList').innerHTML = '';
+  fotoAtualProduto = null;
+  atualizarPreviewFotoProduto();
 }
 
 // ---- Calculadora rápida por marketplace (mesmos cálculos, sem persistir como produto) ----
