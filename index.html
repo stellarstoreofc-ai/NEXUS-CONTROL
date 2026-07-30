@@ -29,6 +29,14 @@
     --mkt-ml:#ffe600;
     --mkt-shein:#2563eb;
     --mkt-tiktok:#000000;
+    /* Categorias fixas do detalhamento "para onde vai o preço" — ordem nunca muda. */
+    --bk-custo:#2a78d6;
+    --bk-outros:#eb6834;
+    --bk-comissao:#1baf7a;
+    --bk-imposto:#eda100;
+    --bk-afiliado:#e87ba4;
+    --bk-gerenciamento:#4a3aa7;
+    --bk-lucro:#008300;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
@@ -243,6 +251,20 @@
   .produto-preview .card-value{font-size:20px;font-weight:800;color:var(--green);}
   .produto-preview .card-value.valor-negativo{color:var(--red);}
   .produto-preview-aviso{color:var(--red);font-size:12.5px;font-weight:700;margin-top:10px;}
+
+  /* "Para onde vai o preço" — detalhamento visual dos componentes do preço de venda. */
+  .preco-breakdown{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+  .preco-breakdown-titulo{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;}
+  .preco-breakdown-bar{display:flex;height:20px;border-radius:10px;overflow:hidden;background:var(--bg);}
+  .preco-breakdown-seg{height:100%;border-right:2px solid var(--surface);}
+  .preco-breakdown-seg:last-child{border-right:none;}
+  .preco-breakdown-lista{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .preco-breakdown-item{display:grid;grid-template-columns:10px 1fr auto auto;align-items:center;gap:8px;font-size:12.5px;}
+  .preco-breakdown-swatch{width:10px;height:10px;border-radius:3px;}
+  .preco-breakdown-label{color:var(--text);}
+  .preco-breakdown-valor{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;text-align:right;}
+  .preco-breakdown-valor.valor-negativo{color:var(--red);}
+  .preco-breakdown-pct{color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;min-width:44px;}
 
   .foto-upload-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   .foto-preview{
@@ -686,7 +708,13 @@
             </div>
             <div class="field">
               <label>Comissão do afiliado (%)</label>
-              <input type="number" id="cfgComissaoAfiliado" step="0.01" min="0" max="100" placeholder="Ex: 10">
+              <input type="number" id="cfgComissaoAfiliado" step="0.01" min="0" max="100" placeholder="Ex: 0">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Gerenciamento (%)</label>
+              <input type="number" id="cfgGerenciamento" step="0.01" min="0" max="100" placeholder="Ex: 3">
             </div>
           </div>
         </div>
@@ -868,6 +896,8 @@
         </div>
       </div>
 
+      <div class="preco-breakdown" id="prodBreakdown"></div>
+
       <details class="config-taxas">
         <summary>Configurar taxas do marketplace</summary>
         <div class="config-taxas-body">
@@ -914,10 +944,12 @@ let lembretes = [];
 let lembretesStatus = {};
 let custoFixoConfig = { custoFixo: 0, pedidos: 0 };
 let produtos = [];
-// Custos que a empresa já sabe de antemão (imposto, embalagem, custo fixo e
-// comissão de afiliado) — preenchidos uma vez e usados direto por toda
-// calculadora/produto, sem campo próprio duplicado em cada marketplace.
-let configPrecificacao = { imposto: 4, custoEmbalagem: 0, custoFixo: 0, comissaoAfiliado: 10 };
+// Custos que a empresa já sabe de antemão (imposto, embalagem, custo fixo,
+// comissão de afiliado e % de gerenciamento cobrado do cliente) — preenchidos
+// uma vez e usados direto por toda calculadora/produto, sem campo próprio
+// duplicado em cada marketplace.
+const CONFIG_PRECIFICACAO_PADRAO = { imposto: 4, custoEmbalagem: 0, custoFixo: 0, comissaoAfiliado: 0, gerenciamento: 3 };
+let configPrecificacao = { ...CONFIG_PRECIFICACAO_PADRAO };
 
 function uid(){ return crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()); }
 
@@ -976,7 +1008,7 @@ async function carregarDados(userId){
     lembretesStatus = {};
     custoFixoConfig = { custoFixo: 0, pedidos: 0 };
     produtos = [];
-    configPrecificacao = { imposto: 4, custoEmbalagem: 0, custoFixo: 0, comissaoAfiliado: 10 };
+    configPrecificacao = { ...CONFIG_PRECIFICACAO_PADRAO };
     await sb.from('financeiro_dados').insert({
       user_id: userId, contas: data, faturamento: faturamento, lembretes: lembretes, lembretes_status: lembretesStatus, custo_fixo: custoFixoConfig, produtos: produtos, config_precificacao: configPrecificacao
     });
@@ -987,9 +1019,12 @@ async function carregarDados(userId){
     lembretesStatus = row.lembretes_status || {};
     custoFixoConfig = row.custo_fixo && typeof row.custo_fixo === 'object' ? row.custo_fixo : { custoFixo: 0, pedidos: 0 };
     produtos = row.produtos || [];
-    configPrecificacao = row.config_precificacao && typeof row.config_precificacao === 'object'
-      ? row.config_precificacao
-      : { imposto: 4, custoEmbalagem: 0, custoFixo: 0, comissaoAfiliado: 10 };
+    // Mescla com os padrões pra preencher campos novos (ex: gerenciamento) que
+    // ainda não existem em linhas salvas antes desses campos serem adicionados.
+    configPrecificacao = {
+      ...CONFIG_PRECIFICACAO_PADRAO,
+      ...(row.config_precificacao && typeof row.config_precificacao === 'object' ? row.config_precificacao : {})
+    };
   }
 }
 
@@ -1574,7 +1609,7 @@ function custoFixoTotalProduto(p){
 }
 
 function percentualDescontosProduto(p){
-  return (p.comissaoMarketplace||0) + (configPrecificacao.comissaoAfiliado||0) + (configPrecificacao.imposto||0) + (p.freteMarketplace||0);
+  return (p.comissaoMarketplace||0) + (configPrecificacao.comissaoAfiliado||0) + (configPrecificacao.gerenciamento||0) + (configPrecificacao.imposto||0) + (p.freteMarketplace||0);
 }
 
 // Fórmula de markup reverso: comissões, imposto e meta de lucro são % sobre o
@@ -1594,6 +1629,62 @@ function resultadoProduto(p){
   const lucro = preco - custoFixo - descontosValor;
   const margem = preco > 0 ? (lucro / preco) * 100 : 0;
   return { lucro, margem };
+}
+
+// Detalhamento visual "para onde vai o preço" — decompõe o mesmo cálculo de
+// custoFixoTotalProduto/percentualDescontosProduto em 7 categorias fixas
+// (sempre na mesma ordem/cor, pra virar hábito de leitura em qualquer produto).
+// A soma das 7 fatias bate exatamente com resultadoProduto(p).lucro quando
+// preco === p.precoVenda — é a mesma conta, só que granular.
+function breakdownPrecoProduto(p, preco){
+  const custoProduto = p.custoProduto || 0;
+  const outrosCustosFixos = custoFixoTotalProduto(p) - custoProduto;
+  const comissaoMarketplace = preco * ((p.comissaoMarketplace||0) + (p.freteMarketplace||0)) / 100;
+  const imposto = preco * (configPrecificacao.imposto||0) / 100;
+  const afiliado = preco * (configPrecificacao.comissaoAfiliado||0) / 100;
+  const gerenciamento = preco * (configPrecificacao.gerenciamento||0) / 100;
+  const lucro = preco - custoProduto - outrosCustosFixos - comissaoMarketplace - imposto - afiliado - gerenciamento;
+  return [
+    { label: 'Custo do produto',     valor: custoProduto,        cor: 'var(--bk-custo)' },
+    { label: 'Outros custos fixos',  valor: outrosCustosFixos,   cor: 'var(--bk-outros)' },
+    { label: 'Comissão marketplace', valor: comissaoMarketplace, cor: 'var(--bk-comissao)' },
+    { label: 'Imposto',              valor: imposto,             cor: 'var(--bk-imposto)' },
+    { label: 'Comissão afiliado',    valor: afiliado,            cor: 'var(--bk-afiliado)' },
+    { label: 'Gerenciamento',        valor: gerenciamento,       cor: 'var(--bk-gerenciamento)' },
+    { label: 'Lucro',                valor: lucro,               cor: 'var(--bk-lucro)' }
+  ];
+}
+
+// Usa o preço de venda informado; se ainda estiver vazio, cai pro preço
+// recomendado só pra dar uma prévia — sem preço nenhum, não desenha nada.
+function renderBreakdownPreco(campos, prefixoSaida){
+  const el = document.getElementById(prefixoSaida + 'Breakdown');
+  if(!el) return;
+  const preco = campos.precoVenda > 0 ? campos.precoVenda : (precoRecomendadoProduto(campos) || 0);
+  if(preco <= 0){
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  el.style.display = '';
+  const itens = breakdownPrecoProduto(campos, preco);
+  const base = Math.max(preco, itens.reduce((s,i) => s + Math.max(i.valor,0), 0));
+  el.innerHTML = `
+    <div class="preco-breakdown-titulo">Para onde vai o preço</div>
+    <div class="preco-breakdown-bar">
+      ${itens.map(i => `<div class="preco-breakdown-seg" style="width:${(Math.max(i.valor,0)/base*100).toFixed(2)}%;background:${i.cor}" title="${i.label}: ${fmt(i.valor)}"></div>`).join('')}
+    </div>
+    <div class="preco-breakdown-lista">
+      ${itens.map(i => `
+        <div class="preco-breakdown-item">
+          <span class="preco-breakdown-swatch" style="background:${i.cor}"></span>
+          <span class="preco-breakdown-label">${i.label}</span>
+          <span class="preco-breakdown-valor${i.valor < 0 ? ' valor-negativo' : ''}">${fmt(i.valor)}</span>
+          <span class="preco-breakdown-pct">${((i.valor/preco)*100).toFixed(1)}%</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 // Id do produto cujo painel rápido "Ajustar taxas" está aberto no card (null = nenhum)
@@ -1746,6 +1837,10 @@ document.getElementById('produtosList').addEventListener('change', e => {
     const produto = produtos.find(p => p.id === id);
     const preco = produto ? (produto.precoVenda || 0) : 0;
     aplicarPreset(prefix, faixaTiktokPeloPreco(preco));
+  } else if(valor === 'shopee'){
+    const produto = produtos.find(p => p.id === id);
+    const preco = produto ? (produto.precoVenda || 0) : 0;
+    aplicarPreset(prefix, faixaShopeePeloPreco(preco));
   } else {
     aplicarPreset(prefix, valor);
   }
@@ -1882,6 +1977,13 @@ function ajustarFaixaTiktokModal(){
   aplicarPreset('p', faixaTiktokPeloPreco(preco));
 }
 
+// Mesma lógica de faixa automática do TikTok, só que pras 4 faixas da Shopee.
+function ajustarFaixaShopeeModal(){
+  if(document.getElementById('pMarketplace').value !== 'shopee') return;
+  const preco = parseFloat(document.getElementById('pPrecoVenda').value) || 0;
+  aplicarPreset('p', faixaShopeePeloPreco(preco));
+}
+
 // O frete (%) só se aplica ao TikTok (cliente específico que paga frete à parte
 // da comissão) — o campo fica escondido pros outros marketplaces.
 function atualizarVisibilidadeFreteModal(){
@@ -1898,6 +2000,8 @@ document.getElementById('pMarketplace').addEventListener('change', e => {
   if(e.target.value){
     if(e.target.value === 'tiktok'){
       ajustarFaixaTiktokModal();
+    } else if(e.target.value === 'shopee'){
+      ajustarFaixaShopeeModal();
     } else {
       aplicarPreset('p', e.target.value);
     }
@@ -1938,6 +2042,8 @@ function atualizarPreview(campos, prefixoSaida){
   } else {
     aviso.style.display = 'none';
   }
+
+  renderBreakdownPreco(campos, prefixoSaida);
 }
 
 function atualizarPreviewProduto(){
@@ -1958,6 +2064,7 @@ document.getElementById('btnAddOutroCusto').addEventListener('click', () => addO
 
 document.getElementById('pPrecoVenda').addEventListener('input', () => {
   ajustarFaixaTiktokModal();
+  ajustarFaixaShopeeModal();
   atualizarPreviewProduto();
 });
 
@@ -1967,6 +2074,7 @@ document.getElementById('btnUsarRecomendado').addEventListener('click', () => {
   if(preco === null) return;
   document.getElementById('pPrecoVenda').value = preco.toFixed(2);
   ajustarFaixaTiktokModal();
+  ajustarFaixaShopeeModal();
   p = lerCamposProduto();
   const precoAjustado = precoRecomendadoProduto(p);
   if(precoAjustado !== null) document.getElementById('pPrecoVenda').value = precoAjustado.toFixed(2);
@@ -2013,12 +2121,18 @@ function closeModalProduto(){
 // não são garantia de taxa exata (variam por categoria/plano e mudam com frequência).
 // Fonte única das taxas por marketplace — usada tanto pela calculadora rápida
 // quanto pelo seletor de marketplace no cadastro de produto salvo, pra nunca
-// divergir entre as duas. TikTok tem duas faixas porque a comissão muda conforme
-// o preço do produto (abaixo/acima de R$50).
+// divergir entre as duas. Shopee e TikTok têm várias faixas internas porque a
+// comissão/taxa fixa muda conforme o preço de venda (Shopee: até R$79,99 / R$80 a
+// R$99,99 / R$100 a R$199,99 / R$200 ou mais; TikTok: abaixo/acima de R$50) — o
+// produto guarda só o valor genérico ('shopee'/'tiktok') e os números concretos
+// já resolvidos, não a faixa em si.
 // TikTok também cobra frete (%) separado da comissão — cliente específico, então
 // vem como campo à parte em vez de já embutido na comissão marketplace.
 const MARKETPLACE_PRESETS = [
-  { id: 'shopee',          label: 'Shopee',                              taxaFixa: 4,     comissaoMarketplace: 18 },
+  { id: 'shopee_ate80',     label: 'Shopee',                              taxaFixa: 4,     comissaoMarketplace: 20 },
+  { id: 'shopee_80a99',     label: 'Shopee',                              taxaFixa: 16,    comissaoMarketplace: 14 },
+  { id: 'shopee_100a199',   label: 'Shopee',                              taxaFixa: 20,    comissaoMarketplace: 14 },
+  { id: 'shopee_200mais',   label: 'Shopee',                              taxaFixa: 26,    comissaoMarketplace: 14 },
   { id: 'ml',               label: 'Mercado Livre',                       taxaFixa: 13.85, comissaoMarketplace: 14 },
   { id: 'shein',            label: 'Shein',                               taxaFixa: 5,     comissaoMarketplace: 18 },
   { id: 'tiktok_ate50',     label: 'TikTok Shop',                        taxaFixa: 4,     comissaoMarketplace: 10, freteMarketplace: 6 },
@@ -2101,17 +2215,28 @@ function faixaTiktokPeloPreco(preco){
   return preco > 50 ? 'tiktok_acima50' : 'tiktok_ate50';
 }
 
+// Faixas de comissão/taxa fixa da Shopee conforme o preço de venda do produto
+// (até R$79,99 / R$80–99,99 / R$100–199,99 / R$200 ou mais — a mesma faixa de
+// R$200–499,99 também é usada para R$500+ por falta de uma tabela oficial além disso).
+function faixaShopeePeloPreco(preco){
+  if(preco < 80) return 'shopee_ate80';
+  if(preco < 100) return 'shopee_80a99';
+  if(preco < 200) return 'shopee_100a199';
+  return 'shopee_200mais';
+}
+
 const MARKETPLACES_QUICK = [
-  { id: 'shopee', prefix: 'qShopee', preset: 'shopee' },
+  { id: 'shopee', prefix: 'qShopee', preset: 'shopee_ate80', ehShopee: true },
   { id: 'ml',     prefix: 'qMl',     preset: 'ml', ehMl: true },
   { id: 'shein',  prefix: 'qShein',  preset: 'shein' },
   { id: 'tiktok', prefix: 'qTiktok', preset: 'tiktok_ate50', ehTiktok: true }
 ];
 
-function gerarPainelQuickCalc(prefix, ehTiktok, ehMl){
+function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee){
   const avisoTiktok = ehTiktok ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A faixa de comissão (até R$50 / acima de R$50) muda automaticamente conforme o preço de venda informado.</p>` : '';
+  const avisoShopee = ehShopee ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A faixa de comissão/taxa fixa (até R$79,99 / R$80–99,99 / R$100–199,99 / R$200 ou mais) muda automaticamente conforme o preço de venda informado.</p>` : '';
   return `
-    ${avisoTiktok}
+    ${avisoTiktok}${avisoShopee}
     <div class="field">
       <label>Custo do produto (R$)</label>
       <input type="number" id="${prefix}CustoProduto" step="0.01" min="0" placeholder="0,00">
@@ -2152,6 +2277,8 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl){
       </div>
     </div>
 
+    <div class="preco-breakdown" id="${prefix}Breakdown"></div>
+
     <details class="config-taxas">
       <summary>Configurar taxas do marketplace</summary>
       <div class="config-taxas-body">
@@ -2184,8 +2311,8 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl){
 function initQuickCalcPanels(){
   const container = document.getElementById('quickCalcPanels');
   container.innerHTML = MARKETPLACES_QUICK.map((m, idx) => `
-    <div class="quick-panel ${idx === 0 ? 'active' : ''}" id="panel-quick-${m.id}" data-prefix="${m.prefix}" ${m.ehTiktok ? 'data-tiktok="true"' : ''}>
-      ${gerarPainelQuickCalc(m.prefix, m.ehTiktok, m.ehMl)}
+    <div class="quick-panel ${idx === 0 ? 'active' : ''}" id="panel-quick-${m.id}" data-prefix="${m.prefix}" ${m.ehTiktok ? 'data-tiktok="true"' : ''} ${m.ehShopee ? 'data-shopee="true"' : ''}>
+      ${gerarPainelQuickCalc(m.prefix, m.ehTiktok, m.ehMl, m.ehShopee)}
     </div>
   `).join('');
 
@@ -2194,8 +2321,9 @@ function initQuickCalcPanels(){
     if(!panel) return;
     const prefix = panel.dataset.prefix;
 
-    if(panel.dataset.tiktok === 'true' && e.target.id === prefix + 'PrecoVenda'){
-      aplicarPreset(prefix, faixaTiktokPeloPreco(parseFloat(e.target.value) || 0));
+    if(e.target.id === prefix + 'PrecoVenda'){
+      if(panel.dataset.tiktok === 'true') aplicarPreset(prefix, faixaTiktokPeloPreco(parseFloat(e.target.value) || 0));
+      if(panel.dataset.shopee === 'true') aplicarPreset(prefix, faixaShopeePeloPreco(parseFloat(e.target.value) || 0));
     }
 
     atualizarPreview(lerCampos(prefix, prefix + 'OutrosCustosList'), prefix);
@@ -2231,8 +2359,9 @@ function initQuickCalcPanels(){
       const preco = precoRecomendadoProduto(campos);
       if(preco !== null){
         document.getElementById(prefix + 'PrecoVenda').value = preco.toFixed(2);
-        if(panel.dataset.tiktok === 'true'){
-          aplicarPreset(prefix, faixaTiktokPeloPreco(preco));
+        const faixaFn = panel.dataset.tiktok === 'true' ? faixaTiktokPeloPreco : (panel.dataset.shopee === 'true' ? faixaShopeePeloPreco : null);
+        if(faixaFn){
+          aplicarPreset(prefix, faixaFn(preco));
           campos = lerCampos(prefix, outrosContainerId);
           const precoAjustado = precoRecomendadoProduto(campos);
           if(precoAjustado !== null) document.getElementById(prefix + 'PrecoVenda').value = precoAjustado.toFixed(2);
@@ -2266,6 +2395,7 @@ function renderConfigPrecificacao(){
   document.getElementById('cfgCustoEmbalagem').value = configPrecificacao.custoEmbalagem;
   document.getElementById('cfgCustoFixo').value = configPrecificacao.custoFixo;
   document.getElementById('cfgComissaoAfiliado').value = configPrecificacao.comissaoAfiliado;
+  document.getElementById('cfgGerenciamento').value = configPrecificacao.gerenciamento;
 }
 
 // Imposto/custo de embalagem/custo fixo/comissão do afiliado não têm campo
@@ -2283,13 +2413,14 @@ function salvarConfigPrecificacaoDoForm(){
     imposto: parseFloat(document.getElementById('cfgImposto').value) || 0,
     custoEmbalagem: parseFloat(document.getElementById('cfgCustoEmbalagem').value) || 0,
     custoFixo: parseFloat(document.getElementById('cfgCustoFixo').value) || 0,
-    comissaoAfiliado: parseFloat(document.getElementById('cfgComissaoAfiliado').value) || 0
+    comissaoAfiliado: parseFloat(document.getElementById('cfgComissaoAfiliado').value) || 0,
+    gerenciamento: parseFloat(document.getElementById('cfgGerenciamento').value) || 0
   };
   saveConfigPrecificacao();
   aplicarConfigPrecificacaoQuickCalc();
 }
 
-['cfgImposto','cfgCustoEmbalagem','cfgCustoFixo','cfgComissaoAfiliado']
+['cfgImposto','cfgCustoEmbalagem','cfgCustoFixo','cfgComissaoAfiliado','cfgGerenciamento']
   .forEach(id => document.getElementById(id).addEventListener('change', salvarConfigPrecificacaoDoForm));
 
 document.getElementById('btnPuxarCustoFixoConfig').addEventListener('click', () => {
