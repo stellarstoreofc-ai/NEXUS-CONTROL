@@ -251,6 +251,8 @@
   .produto-preview .card-value{font-size:20px;font-weight:800;color:var(--green);}
   .produto-preview .card-value.valor-negativo{color:var(--red);}
   .produto-preview-aviso{color:var(--red);font-size:12.5px;font-weight:700;margin-top:10px;}
+  .produto-preview-faixa{color:var(--muted);font-size:12px;line-height:1.45;margin-top:10px;}
+  .produto-stat-faixa{color:var(--muted);font-size:11px;font-weight:600;margin-top:4px;}
 
   /* "Para onde vai o preço" — detalhamento visual dos componentes do preço de venda. */
   .preco-breakdown{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
@@ -879,6 +881,7 @@
           </div>
         </div>
         <div class="produto-preview-aviso" id="prodAviso" style="display:none;"></div>
+        <div class="produto-preview-faixa" id="prodFaixa" style="display:none;"></div>
         <button type="button" class="btn btn-outline btn-sm" id="btnUsarRecomendado" style="margin-top:14px;">Usar preço recomendado</button>
       </div>
 
@@ -1025,6 +1028,17 @@ async function carregarDados(userId){
       ...CONFIG_PRECIFICACAO_PADRAO,
       ...(row.config_precificacao && typeof row.config_precificacao === 'object' ? row.config_precificacao : {})
     };
+    // Tabela Shopee de 01/10: a faixa até R$79,99 passou de 20%+R$4 pra
+    // 20%+R$4,50. Produtos Shopee ainda com a taxa antiga intocada são
+    // atualizados; quem editou a taxa na mão fica como está.
+    let migrou = false;
+    produtos.forEach(p => {
+      if(p.marketplace === 'shopee' && p.taxaFixaMarketplace === 4 && p.comissaoMarketplace === 20){
+        p.taxaFixaMarketplace = 4.5;
+        migrou = true;
+      }
+    });
+    if(migrou) persist();
   }
 }
 
@@ -1657,10 +1671,12 @@ function breakdownPrecoProduto(p, preco){
 
 // Usa o preço de venda informado; se ainda estiver vazio, cai pro preço
 // recomendado só pra dar uma prévia — sem preço nenhum, não desenha nada.
-function renderBreakdownPreco(campos, prefixoSaida){
+function renderBreakdownPreco(campos, prefixoSaida, rec){
   const el = document.getElementById(prefixoSaida + 'Breakdown');
   if(!el) return;
-  const preco = campos.precoVenda > 0 ? campos.precoVenda : (precoRecomendadoProduto(campos) || 0);
+  // Sem preço digitado, a prévia usa o recomendado com as taxas da faixa dele.
+  if(!(campos.precoVenda > 0) && rec) campos = rec.campos;
+  const preco = campos.precoVenda > 0 ? campos.precoVenda : (rec ? rec.preco : 0);
   if(preco <= 0){
     el.style.display = 'none';
     el.innerHTML = '';
@@ -1698,7 +1714,8 @@ function renderProdutos(){
   }
 
   list.innerHTML = produtos.map(p => {
-    const preco = precoRecomendadoProduto(p);
+    const rec = recomendacaoPreco(p, p.marketplace);
+    const preco = rec ? rec.preco : null;
     const { lucro, margem } = resultadoProduto(p);
     const margemNeg = margem < 0 ? ' valor-negativo' : '';
     const lucroNeg = lucro < 0 ? ' valor-negativo' : '';
@@ -1739,6 +1756,7 @@ function renderProdutos(){
           <div class="produto-stat destaque${precoNeg}">
             <div class="label">Preço recomendado</div>
             <div class="valor">${preco === null ? '—' : fmt(preco)}</div>
+            ${rec && rec.faixas ? `<div class="produto-stat-faixa">${descricaoFaixa(rec.faixas[rec.idx])}</div>` : ''}
           </div>
         </div>
         ${produtoTaxasAbertoId === p.id ? `
@@ -2015,9 +2033,25 @@ function marcarValorNegativo(el, negativo){
   if(card) card.classList.toggle('card-negativo', negativo);
 }
 
+// Marketplace de onde vieram os campos: o modal traz em campos.marketplace; os
+// painéis da calculadora rápida são identificados pelo prefixo.
+function marketplaceDoPreview(campos, prefixoSaida){
+  if(campos.marketplace !== undefined) return campos.marketplace;
+  const m = MARKETPLACES_QUICK.find(q => q.prefix === prefixoSaida);
+  return m ? m.id : '';
+}
+
 function atualizarPreview(campos, prefixoSaida){
-  const preco = precoRecomendadoProduto(campos);
+  const rec = recomendacaoPreco(campos, marketplaceDoPreview(campos, prefixoSaida));
+  const preco = rec ? rec.preco : null;
   const { lucro, margem } = resultadoProduto(campos);
+
+  const elFaixa = document.getElementById(prefixoSaida + 'Faixa');
+  if(elFaixa){
+    const txt = textoFaixaRecomendada(rec, campos);
+    elFaixa.textContent = txt;
+    elFaixa.style.display = txt ? 'block' : 'none';
+  }
 
   const elPreco = document.getElementById(prefixoSaida + 'PrecoRecomendado');
   // Margem de contribuição fica escondida da visão simplificada — só existe
@@ -2043,7 +2077,7 @@ function atualizarPreview(campos, prefixoSaida){
     aviso.style.display = 'none';
   }
 
-  renderBreakdownPreco(campos, prefixoSaida);
+  renderBreakdownPreco(campos, prefixoSaida, rec);
 }
 
 function atualizarPreviewProduto(){
@@ -2069,15 +2103,14 @@ document.getElementById('pPrecoVenda').addEventListener('input', () => {
 });
 
 document.getElementById('btnUsarRecomendado').addEventListener('click', () => {
-  let p = lerCamposProduto();
-  const preco = precoRecomendadoProduto(p);
-  if(preco === null) return;
-  document.getElementById('pPrecoVenda').value = preco.toFixed(2);
+  // recomendacaoPreco já escolhe a faixa certa (Shopee/TikTok); depois de
+  // gravar o preço, os ajustarFaixa* aplicam as taxas dessa mesma faixa.
+  const p = lerCamposProduto();
+  const rec = recomendacaoPreco(p, p.marketplace);
+  if(!rec) return;
+  document.getElementById('pPrecoVenda').value = rec.preco.toFixed(2);
   ajustarFaixaTiktokModal();
   ajustarFaixaShopeeModal();
-  p = lerCamposProduto();
-  const precoAjustado = precoRecomendadoProduto(p);
-  if(precoAjustado !== null) document.getElementById('pPrecoVenda').value = precoAjustado.toFixed(2);
   atualizarPreviewProduto();
 });
 
@@ -2129,7 +2162,7 @@ function closeModalProduto(){
 // TikTok também cobra frete (%) separado da comissão — cliente específico, então
 // vem como campo à parte em vez de já embutido na comissão marketplace.
 const MARKETPLACE_PRESETS = [
-  { id: 'shopee_ate80',     label: 'Shopee',                              taxaFixa: 4,     comissaoMarketplace: 20 },
+  { id: 'shopee_ate80',     label: 'Shopee',                              taxaFixa: 4.5,   comissaoMarketplace: 20 },
   { id: 'shopee_80a99',     label: 'Shopee',                              taxaFixa: 16,    comissaoMarketplace: 14 },
   { id: 'shopee_100a199',   label: 'Shopee',                              taxaFixa: 20,    comissaoMarketplace: 14 },
   { id: 'shopee_200mais',   label: 'Shopee',                              taxaFixa: 26,    comissaoMarketplace: 14 },
@@ -2216,13 +2249,85 @@ function faixaTiktokPeloPreco(preco){
 }
 
 // Faixas de comissão/taxa fixa da Shopee conforme o preço de venda do produto
-// (até R$79,99 / R$80–99,99 / R$100–199,99 / R$200 ou mais — a mesma faixa de
-// R$200–499,99 também é usada para R$500+ por falta de uma tabela oficial além disso).
+// (tabela vigente a partir de 01/10: até R$79,99 20%+R$4,50 / R$80–99,99 14%+R$16 /
+// R$100–199,99 14%+R$20 / R$200 ou mais 14%+R$26 — R$200–499,99 e R$500+ têm a
+// mesma comissão, então ficam numa faixa só). O "subsídio Pix" da tabela é
+// desconto bancado pela Shopee pro comprador, não custo do vendedor.
 function faixaShopeePeloPreco(preco){
   if(preco < 80) return 'shopee_ate80';
   if(preco < 100) return 'shopee_80a99';
   if(preco < 200) return 'shopee_100a199';
   return 'shopee_200mais';
+}
+
+// Mesmas faixas em forma de intervalo (preço mínimo/máximo em centavos inteiros),
+// usadas pelo preço recomendado pra testar faixa por faixa.
+const FAIXAS_SHOPEE = [
+  { preset: 'shopee_ate80',   min: 0,     max: 79.99 },
+  { preset: 'shopee_80a99',   min: 80,    max: 99.99 },
+  { preset: 'shopee_100a199', min: 100,   max: 199.99 },
+  { preset: 'shopee_200mais', min: 200,   max: Infinity }
+];
+const FAIXAS_TIKTOK = [
+  { preset: 'tiktok_ate50',   min: 0,     max: 50 },
+  { preset: 'tiktok_acima50', min: 50.01, max: Infinity }
+];
+
+function faixasDoMarketplace(mkt){
+  if(mkt === 'shopee') return FAIXAS_SHOPEE;
+  if((mkt || '').startsWith('tiktok')) return FAIXAS_TIKTOK;
+  return null;
+}
+
+function camposComPreset(campos, presetId){
+  const preset = MARKETPLACE_PRESETS.find(m => m.id === presetId);
+  return { ...campos, taxaFixaMarketplace: preset.taxaFixa, comissaoMarketplace: preset.comissaoMarketplace, freteMarketplace: preset.freteMarketplace || 0 };
+}
+
+// Preço recomendado que respeita as faixas de taxa: como a taxa depende do
+// próprio preço, testa cada faixa da mais barata pra mais cara e devolve o
+// MENOR preço que bate a meta de lucro dentro de alguma faixa. Assim, se
+// R$79,99 já bate a meta com 20%+R$4,50, nunca recomenda R$80+ (onde a taxa
+// fixa pula pra R$16); e se a conta de uma faixa "cai" abaixo do início dela,
+// recomenda o início da faixa (ex.: R$80,00), que já passa da meta.
+// Marketplaces sem faixa usam direto os campos atuais (taxas editáveis).
+// Retorna { preco, campos (com as taxas da faixa escolhida), idx, faixas } ou null.
+function recomendacaoPreco(campos, mkt){
+  const faixas = faixasDoMarketplace(mkt);
+  if(!faixas){
+    const preco = precoRecomendadoProduto(campos);
+    return preco === null ? null : { preco, campos, idx: -1, faixas: null };
+  }
+  for(let idx = 0; idx < faixas.length; idx++){
+    const faixa = faixas[idx];
+    const c = camposComPreset(campos, faixa.preset);
+    const bruto = precoRecomendadoProduto(c);
+    if(bruto === null) continue;
+    const preco = Math.max(Math.ceil(bruto * 100 - 1e-6) / 100, faixa.min);
+    if(preco <= faixa.max) return { preco, campos: c, idx, faixas };
+  }
+  return null;
+}
+
+function descricaoFaixa(faixa){
+  const preset = MARKETPLACE_PRESETS.find(m => m.id === faixa.preset);
+  const intervalo = faixa.max === Infinity ? `a partir de ${fmt(faixa.min)}` : (faixa.min === 0 ? `até ${fmt(faixa.max)}` : `${fmt(faixa.min)} a ${fmt(faixa.max)}`);
+  return `${intervalo} (${preset.comissaoMarketplace}% + ${fmt(preset.taxaFixa)})`;
+}
+
+// Texto explicando em que faixa caiu o preço recomendado e, se ele subiu de
+// faixa, quanto sobraria vendendo no teto da faixa anterior — pra decidir se
+// vale mais ficar logo abaixo do limite mesmo lucrando um pouco menos.
+function textoFaixaRecomendada(rec, campos){
+  if(!rec || !rec.faixas) return '';
+  const faixa = rec.faixas[rec.idx];
+  let txt = `Faixa de taxa: ${descricaoFaixa(faixa)}.`;
+  if(rec.idx > 0){
+    const anterior = rec.faixas[rec.idx - 1];
+    const { lucro, margem } = resultadoProduto({ ...camposComPreset(campos, anterior.preset), precoVenda: anterior.max });
+    txt += ` Na faixa anterior não dá pra bater a meta: vendendo a ${fmt(anterior.max)} o lucro seria ${fmt(lucro)} (${margem.toFixed(1)}%).`;
+  }
+  return txt;
 }
 
 const MARKETPLACES_QUICK = [
@@ -2234,7 +2339,7 @@ const MARKETPLACES_QUICK = [
 
 function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee){
   const avisoTiktok = ehTiktok ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A faixa de comissão (até R$50 / acima de R$50) muda automaticamente conforme o preço de venda informado.</p>` : '';
-  const avisoShopee = ehShopee ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A faixa de comissão/taxa fixa (até R$79,99 / R$80–99,99 / R$100–199,99 / R$200 ou mais) muda automaticamente conforme o preço de venda informado.</p>` : '';
+  const avisoShopee = ehShopee ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A comissão/taxa fixa muda automaticamente conforme o preço de venda (até R$79,99: 20% + R$4,50 · R$80–99,99: 14% + R$16 · R$100–199,99: 14% + R$20 · R$200 ou mais: 14% + R$26). O preço recomendado testa cada faixa e sugere o menor preço que bate sua meta de lucro.</p>` : '';
   return `
     ${avisoTiktok}${avisoShopee}
     <div class="field">
@@ -2260,6 +2365,7 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee){
         </div>
       </div>
       <div class="produto-preview-aviso" id="${prefix}Aviso" style="display:none;"></div>
+      <div class="produto-preview-faixa" id="${prefix}Faixa" style="display:none;"></div>
       <button type="button" class="btn btn-outline btn-sm" data-action="usar-recomendado" style="margin-top:14px;">Usar preço recomendado</button>
     </div>
 
@@ -2355,17 +2461,11 @@ function initQuickCalcPanels(){
     if(btn.dataset.action === 'add-outro-custo'){
       addOutroCustoRow(outrosContainerId);
     } else if(btn.dataset.action === 'usar-recomendado'){
-      let campos = lerCampos(prefix, outrosContainerId);
-      const preco = precoRecomendadoProduto(campos);
-      if(preco !== null){
-        document.getElementById(prefix + 'PrecoVenda').value = preco.toFixed(2);
-        const faixaFn = panel.dataset.tiktok === 'true' ? faixaTiktokPeloPreco : (panel.dataset.shopee === 'true' ? faixaShopeePeloPreco : null);
-        if(faixaFn){
-          aplicarPreset(prefix, faixaFn(preco));
-          campos = lerCampos(prefix, outrosContainerId);
-          const precoAjustado = precoRecomendadoProduto(campos);
-          if(precoAjustado !== null) document.getElementById(prefix + 'PrecoVenda').value = precoAjustado.toFixed(2);
-        }
+      const campos = lerCampos(prefix, outrosContainerId);
+      const rec = recomendacaoPreco(campos, marketplaceDoPreview(campos, prefix));
+      if(rec){
+        document.getElementById(prefix + 'PrecoVenda').value = rec.preco.toFixed(2);
+        if(rec.faixas) aplicarPreset(prefix, rec.faixas[rec.idx].preset);
         atualizarPreview(lerCampos(prefix, outrosContainerId), prefix);
       }
     }
