@@ -251,7 +251,23 @@
   .produto-preview .card-value{font-size:20px;font-weight:800;color:var(--green);}
   .produto-preview .card-value.valor-negativo{color:var(--red);}
   .produto-preview-aviso{color:var(--red);font-size:12.5px;font-weight:700;margin-top:10px;}
+  .badge-tarifa-zerada{background:rgba(5,150,105,.12);color:var(--green);}
+  .toggle-tarifa{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;margin-bottom:14px;border:1px solid var(--border);border-radius:10px;font-size:12.5px;line-height:1.45;color:var(--muted);cursor:pointer;}
+  .toggle-tarifa input{width:18px;height:18px;margin:1px 0 0;flex-shrink:0;accent-color:var(--green);cursor:pointer;}
+  .toggle-tarifa strong{color:var(--text,inherit);}
+  .toggle-tarifa:has(input:checked){border-color:var(--green);background:rgba(5,150,105,.07);}
   .produto-preview-faixa{color:var(--muted);font-size:12px;line-height:1.45;margin-top:10px;}
+  .mkt-comparativo{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px;}
+  .mkt-cell{border:1px solid var(--border);border-radius:10px;padding:12px;}
+  .mkt-cell.melhor{border-color:var(--green);background:rgba(5,150,105,.06);}
+  .mkt-cell-top{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .mkt-tag{font-size:10.5px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.3px;}
+  .mkt-cell-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+  .mkt-cell-lucro{font-size:19px;font-weight:800;color:var(--green);margin-top:2px;}
+  .mkt-cell-lucro.valor-negativo,.mkt-cell-sub.valor-negativo{color:var(--red);}
+  .mkt-cell-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .mkt-cell-rec{font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);}
+  .mkt-cell-rec strong{color:var(--text);}
   .produto-stat-faixa{color:var(--muted);font-size:11px;font-weight:600;margin-top:4px;}
 
   /* "Para onde vai o preço" — detalhamento visual dos componentes do preço de venda. */
@@ -872,6 +888,8 @@
         <label>Meta de lucro (%)</label>
         <input type="number" id="pLucroDesejado" step="0.01" min="0" max="99" placeholder="10">
       </div>
+
+      <div id="pTarifaZeradaWrap"></div>
 
       <div class="produto-preview">
         <div class="summary-grid">
@@ -1622,8 +1640,19 @@ function custoFixoTotalProduto(p){
   return (p.custoProduto||0) + (configPrecificacao.custoFixo||0) + (p.taxaFixaMarketplace||0) + (configPrecificacao.custoEmbalagem||0) + (p.custoAds||0) + outros;
 }
 
+// Contas novas do TikTok podem ativar 60 dias de tarifa zerada: só a comissão
+// do marketplace vai a 0 — frete (%) e taxa fixa continuam sendo cobrados. O
+// campo de comissão mantém o valor normal; quem zera é o cálculo. Um produto
+// de outro marketplace pode ter a flag ligada (vale pra coluna TikTok do
+// comparativo), então ela só zera quando os campos são de TikTok — campos sem
+// marketplace são do painel TikTok da calculadora rápida (único com o checkbox).
+function comissaoEfetivaProduto(p){
+  const ehTiktok = p.marketplace === undefined || String(p.marketplace).startsWith('tiktok');
+  return p.tarifaZerada && ehTiktok ? 0 : (p.comissaoMarketplace||0);
+}
+
 function percentualDescontosProduto(p){
-  return (p.comissaoMarketplace||0) + (configPrecificacao.comissaoAfiliado||0) + (configPrecificacao.gerenciamento||0) + (configPrecificacao.imposto||0) + (p.freteMarketplace||0);
+  return comissaoEfetivaProduto(p) + (configPrecificacao.comissaoAfiliado||0) + (configPrecificacao.gerenciamento||0) + (configPrecificacao.imposto||0) + (p.freteMarketplace||0);
 }
 
 // Fórmula de markup reverso: comissões, imposto e meta de lucro são % sobre o
@@ -1653,7 +1682,7 @@ function resultadoProduto(p){
 function breakdownPrecoProduto(p, preco){
   const custoProduto = p.custoProduto || 0;
   const outrosCustosFixos = custoFixoTotalProduto(p) - custoProduto;
-  const comissaoMarketplace = preco * ((p.comissaoMarketplace||0) + (p.freteMarketplace||0)) / 100;
+  const comissaoMarketplace = preco * (comissaoEfetivaProduto(p) + (p.freteMarketplace||0)) / 100;
   const imposto = preco * (configPrecificacao.imposto||0) / 100;
   const afiliado = preco * (configPrecificacao.comissaoAfiliado||0) / 100;
   const gerenciamento = preco * (configPrecificacao.gerenciamento||0) / 100;
@@ -1706,6 +1735,68 @@ function renderBreakdownPreco(campos, prefixoSaida, rec){
 // Id do produto cujo painel rápido "Ajustar taxas" está aberto no card (null = nenhum)
 let produtoTaxasAbertoId = null;
 
+// Plataformas comparadas lado a lado em cada produto salvo.
+const MARKETPLACES_COMPARATIVO = [
+  { id: 'shopee', label: 'Shopee' },
+  { id: 'ml',     label: 'Mercado Livre' },
+  { id: 'shein',  label: 'Shein' },
+  { id: 'tiktok', label: 'TikTok Shop' }
+];
+
+function ehMarketplaceDoProduto(p, mktId){
+  return mktId === 'tiktok' ? (p.marketplace || '').startsWith('tiktok') : p.marketplace === mktId;
+}
+
+// Campos do produto com as taxas de outra plataforma. No marketplace do próprio
+// produto valem as taxas salvas (que o usuário pode ter ajustado); nos demais,
+// o preset padrão (Shopee/TikTok pela faixa do preço de venda; ML = clássico
+// + frete grátis). Tarifa zerada só existe no TikTok.
+function camposParaMarketplace(p, mktId){
+  const tarifaZerada = mktId === 'tiktok' && !!p.tarifaZerada;
+  if(ehMarketplaceDoProduto(p, mktId)) return { ...p, marketplace: mktId, tarifaZerada };
+  const preco = p.precoVenda || 0;
+  const presetId = mktId === 'shopee' ? faixaShopeePeloPreco(preco) : (mktId === 'tiktok' ? faixaTiktokPeloPreco(preco) : mktId);
+  return { ...camposComPreset(p, presetId), marketplace: mktId, tarifaZerada };
+}
+
+// Grade "lucro em cada plataforma" do card: lucro/margem no preço de venda
+// atual + preço recomendado pra bater a meta, com destaque no maior lucro.
+function htmlComparativoMarketplaces(p){
+  const linhas = MARKETPLACES_COMPARATIVO.map(m => ({ ...m, campos: camposParaMarketplace(p, m.id) }));
+  // Produto sem marketplace definido ("Outro / personalizado") ganha uma coluna
+  // própria com as taxas que foram digitadas nele.
+  if(!p.marketplace) linhas.push({ id: '', label: 'Personalizado', campos: { ...p, tarifaZerada: false } });
+
+  const temPreco = (p.precoVenda || 0) > 0;
+  const resultados = linhas.map(l => {
+    const rec = recomendacaoPreco(l.campos, l.id);
+    return { ...l, rec, ...resultadoProduto(l.campos) };
+  });
+  const melhorLucro = temPreco ? Math.max(...resultados.map(r => r.lucro)) : null;
+
+  return `
+    <div class="mkt-comparativo">
+      ${resultados.map(r => {
+        const melhor = temPreco && r.lucro === melhorLucro && r.lucro > 0;
+        const neg = r.lucro < 0 ? ' valor-negativo' : '';
+        const badge = r.id ? `<span class="badge ${marketplaceBadgeClass(r.id)}">${r.label}</span>` : `<span class="badge">${r.label}</span>`;
+        return `
+          <div class="mkt-cell${melhor ? ' melhor' : ''}">
+            <div class="mkt-cell-top">
+              ${badge}
+              ${melhor ? `<span class="mkt-tag">Maior lucro</span>` : ''}
+            </div>
+            <div class="mkt-cell-label">Lucro</div>
+            <div class="mkt-cell-lucro${neg}">${temPreco ? fmt(r.lucro) : '—'}</div>
+            <div class="mkt-cell-sub${neg}">${temPreco ? `${r.margem.toFixed(1)}% de margem` : 'sem preço de venda'}</div>
+            <div class="mkt-cell-rec">Recomendado: <strong>${r.rec ? fmt(r.rec.preco) : '—'}</strong></div>
+            ${r.campos.tarifaZerada ? `<div class="mkt-cell-sub">com tarifa zerada</div>` : ''}
+            ${ehMarketplaceDoProduto(p, r.id) ? `<div class="mkt-cell-sub">taxas deste produto</div>` : ''}
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
 function renderProdutos(){
   const list = document.getElementById('produtosList');
   if(produtos.length === 0){
@@ -1714,12 +1805,6 @@ function renderProdutos(){
   }
 
   list.innerHTML = produtos.map(p => {
-    const rec = recomendacaoPreco(p, p.marketplace);
-    const preco = rec ? rec.preco : null;
-    const { lucro, margem } = resultadoProduto(p);
-    const margemNeg = margem < 0 ? ' valor-negativo' : '';
-    const lucroNeg = lucro < 0 ? ' valor-negativo' : '';
-    const precoNeg = preco === null ? ' valor-negativo' : '';
     const pt = 'pt' + p.id;
     const mktSelecionado = (p.marketplace || '').startsWith('tiktok') ? 'tiktok' : (p.marketplace || '');
     return `
@@ -1730,7 +1815,7 @@ function renderProdutos(){
               ? `<img class="produto-thumb" src="${p.foto}" alt="${escapeHtml(p.nome)}">`
               : `<div class="produto-thumb-placeholder">${escapeHtml((p.nome || '?').trim().charAt(0).toUpperCase() || '?')}</div>`}
             <div>
-              <div class="produto-nome">${escapeHtml(p.nome)} ${marketplaceLabel(p.marketplace) ? `<span class="badge ${marketplaceBadgeClass(p.marketplace)}">${marketplaceLabel(p.marketplace)}</span>` : ''}</div>
+              <div class="produto-nome">${escapeHtml(p.nome)} ${marketplaceLabel(p.marketplace) ? `<span class="badge ${marketplaceBadgeClass(p.marketplace)}">${marketplaceLabel(p.marketplace)}</span>` : ''} ${p.tarifaZerada ? `<span class="badge badge-tarifa-zerada">Tarifa zerada</span>` : ''}</div>
               <div class="produto-meta">Custo fixo total: ${fmt(custoFixoTotalProduto(p))} · Descontos (%): ${percentualDescontosProduto(p)}%</div>
             </div>
           </div>
@@ -1745,20 +1830,8 @@ function renderProdutos(){
             <div class="label">Preço de venda</div>
             <div class="valor">${fmt(p.precoVenda || 0)}</div>
           </div>
-          <div class="produto-stat destaque${margemNeg}">
-            <div class="label">Margem de contribuição</div>
-            <div class="valor">${margem.toFixed(1)}%</div>
-          </div>
-          <div class="produto-stat destaque${lucroNeg}">
-            <div class="label">Lucro</div>
-            <div class="valor">${fmt(lucro)}</div>
-          </div>
-          <div class="produto-stat destaque${precoNeg}">
-            <div class="label">Preço recomendado</div>
-            <div class="valor">${preco === null ? '—' : fmt(preco)}</div>
-            ${rec && rec.faixas ? `<div class="produto-stat-faixa">${descricaoFaixa(rec.faixas[rec.idx])}</div>` : ''}
-          </div>
         </div>
+        ${htmlComparativoMarketplaces(p)}
         ${produtoTaxasAbertoId === p.id ? `
         <div class="produto-taxas-edit">
           <div class="field-row">
@@ -1788,6 +1861,7 @@ function renderProdutos(){
             <label>Frete (%)</label>
             <input type="number" id="${pt}FreteMarketplace" step="0.01" min="0" max="100" value="${p.freteMarketplace ?? 0}">
           </div>
+          ${htmlToggleTarifaZerada(pt + 'TarifaZerada', p.tarifaZerada)}
           <div class="item-actions">
             <button class="btn btn-primary btn-sm" data-action="salvar-taxas" data-id="${p.id}">Salvar</button>
             <button class="btn btn-outline btn-sm" data-action="cancelar-taxas" data-id="${p.id}">Cancelar</button>
@@ -1834,6 +1908,7 @@ document.getElementById('produtosList').addEventListener('click', e => {
     produto.taxaFixaMarketplace = parseFloat(document.getElementById(pt + 'TaxaFixa').value) || 0;
     produto.comissaoMarketplace = parseFloat(document.getElementById(pt + 'ComissaoMarketplace').value) || 0;
     produto.freteMarketplace = parseFloat(document.getElementById(pt + 'FreteMarketplace').value) || 0;
+    produto.tarifaZerada = document.getElementById(pt + 'TarifaZerada').checked;
     saveProdutos();
     produtoTaxasAbertoId = null;
     renderProdutos();
@@ -1974,7 +2049,8 @@ function lerCampos(prefix, outrosContainerId){
     custoAds: num('CustoAds'),
     outrosCustos: lerOutrosCustosDoForm(outrosContainerId),
     lucroDesejado: num('LucroDesejado'),
-    precoVenda: num('PrecoVenda')
+    precoVenda: num('PrecoVenda'),
+    tarifaZerada: !!(document.getElementById(prefix + 'TarifaZerada') || {}).checked
   };
 }
 
@@ -1985,6 +2061,14 @@ function lerCamposProduto(){
     foto: fotoAtualProduto,
     ...lerCampos('p', 'outrosCustosList')
   };
+}
+
+function htmlToggleTarifaZerada(id, marcado){
+  return `
+    <label class="toggle-tarifa">
+      <input type="checkbox" id="${id}" ${marcado ? 'checked' : ''}>
+      <span><strong>Tarifa zerada no TikTok</strong> (conta nova, primeiros 60 dias) — zera só a comissão do TikTok; frete e taxa fixa continuam.</span>
+    </label>`;
 }
 
 // O select só tem UMA opção "TikTok Shop" — a faixa (até/acima de R$50) é
@@ -2005,8 +2089,12 @@ function ajustarFaixaShopeeModal(){
 // O frete (%) só se aplica ao TikTok (cliente específico que paga frete à parte
 // da comissão) — o campo fica escondido pros outros marketplaces.
 function atualizarVisibilidadeFreteModal(){
-  document.getElementById('pFreteWrap').style.display = document.getElementById('pMarketplace').value === 'tiktok' ? '' : 'none';
+  const ehTiktok = document.getElementById('pMarketplace').value === 'tiktok';
+  document.getElementById('pFreteWrap').style.display = ehTiktok ? '' : 'none';
 }
+
+document.getElementById('pTarifaZeradaWrap').innerHTML = htmlToggleTarifaZerada('pTarifaZerada', false);
+document.getElementById('pTarifaZerada').addEventListener('change', atualizarPreviewProduto);
 
 function atualizarVisibilidadeMlModal(){
   document.getElementById('pMlConfigWrap').style.display = document.getElementById('pMarketplace').value === 'ml' ? '' : 'none';
@@ -2128,6 +2216,7 @@ function openModalProduto(produto = null){
   document.getElementById('pTaxaFixa').value = produto ? produto.taxaFixaMarketplace : '';
   document.getElementById('pComissaoMarketplace').value = produto ? produto.comissaoMarketplace : '';
   document.getElementById('pFreteMarketplace').value = produto ? (produto.freteMarketplace || 0) : 0;
+  document.getElementById('pTarifaZerada').checked = !!(produto && produto.tarifaZerada);
   marcarSubtabsAtivas('p');
   document.getElementById('pCustoAds').value = produto ? produto.custoAds : '';
   document.getElementById('pLucroDesejado').value = produto ? produto.lucroDesejado : 10;
@@ -2356,6 +2445,8 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee){
       <label>Meta de lucro (%)</label>
       <input type="number" id="${prefix}LucroDesejado" step="0.01" min="0" max="99" placeholder="10">
     </div>
+
+    ${ehTiktok ? htmlToggleTarifaZerada(prefix + 'TarifaZerada', false) : ''}
 
     <div class="produto-preview">
       <div class="summary-grid">
