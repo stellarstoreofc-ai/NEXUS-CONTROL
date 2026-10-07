@@ -1773,11 +1773,24 @@ function precoNoMarketplace(p, chave){
 // Grava o preço de uma plataforma no produto (só em memória — quem chama
 // decide quando persistir). No marketplace do próprio produto com faixas
 // (Shopee/TikTok), reaplica a taxa da faixa do novo preço, igual ao modal.
+// Plataformas sem preço próprio herdam p.precoVenda. Antes de mudar o preço
+// principal (ou o marketplace do produto), grava nelas o valor que estão
+// mostrando agora — senão mexer no preço de uma plataforma mudaria o lucro
+// das outras sem o campo delas mudar.
+function congelarPrecosHerdados(p){
+  const precos = { ...(p.precosPorMarketplace || {}) };
+  MARKETPLACES_COMPARATIVO.forEach(m => {
+    if(!ehMarketplaceDoProduto(p, m.id) && !(precos[m.id] > 0) && (p.precoVenda || 0) > 0) precos[m.id] = p.precoVenda;
+  });
+  p.precosPorMarketplace = precos;
+}
+
 function definirPrecoMarketplace(p, chave, valor){
   if(!chaveEhPrecoPrincipal(p, chave)){
     p.precosPorMarketplace = { ...(p.precosPorMarketplace || {}), [chave]: valor };
     return;
   }
+  congelarPrecosHerdados(p);
   p.precoVenda = valor;
   const faixaFn = chave === 'shopee' ? faixaShopeePeloPreco : (chave === 'tiktok' ? faixaTiktokPeloPreco : null);
   if(faixaFn){
@@ -2055,6 +2068,7 @@ document.getElementById('produtosList').addEventListener('click', e => {
   } else if(btn.dataset.action === 'salvar-taxas'){
     const pt = 'pt' + id;
     const marketplace = document.getElementById(pt + 'Marketplace').value;
+    congelarPrecosHerdados(produto);
     produto.marketplace = marketplace;
     produto.taxaFixaMarketplace = parseFloat(document.getElementById(pt + 'TaxaFixa').value) || 0;
     produto.comissaoMarketplace = parseFloat(document.getElementById(pt + 'ComissaoMarketplace').value) || 0;
@@ -2781,6 +2795,7 @@ formProduto.addEventListener('submit', e => {
 
   if(editingProdutoId){
     const produto = produtos.find(p => p.id === editingProdutoId);
+    congelarPrecosHerdados(produto);
     Object.assign(produto, campos);
   } else {
     produtos.push({ id: uid(), ...campos });
