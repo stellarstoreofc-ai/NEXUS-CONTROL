@@ -266,7 +266,11 @@
   .mkt-cell-lucro{font-size:19px;font-weight:800;color:var(--green);margin-top:2px;}
   .mkt-cell-lucro.valor-negativo,.mkt-cell-sub.valor-negativo{color:var(--red);}
   .mkt-cell-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
-  .mkt-cell-rec{font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);}
+  .mkt-cell-rec{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);}
+  .mkt-preco-input{width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:15px;font-weight:700;color:var(--text);background:#fff;}
+  .mkt-preco-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(5,150,105,.12);}
+  .mkt-usar-rec{border:1px solid var(--border);background:transparent;border-radius:6px;padding:2px 8px;font:inherit;font-size:11.5px;font-weight:700;color:var(--text);cursor:pointer;}
+  .mkt-usar-rec:hover{border-color:var(--green);color:var(--green);}
   .mkt-cell-rec strong{color:var(--text);}
   .produto-stat-faixa{color:var(--muted);font-size:11px;font-weight:600;margin-top:4px;}
 
@@ -1747,54 +1751,120 @@ function ehMarketplaceDoProduto(p, mktId){
   return mktId === 'tiktok' ? (p.marketplace || '').startsWith('tiktok') : p.marketplace === mktId;
 }
 
-// Campos do produto com as taxas de outra plataforma. No marketplace do próprio
-// produto valem as taxas salvas (que o usuário pode ter ajustado); nos demais,
-// o preset padrão (Shopee/TikTok pela faixa do preço de venda; ML = clássico
-// + frete grátis). Tarifa zerada só existe no TikTok.
-function camposParaMarketplace(p, mktId){
-  const tarifaZerada = mktId === 'tiktok' && !!p.tarifaZerada;
-  if(ehMarketplaceDoProduto(p, mktId)) return { ...p, marketplace: mktId, tarifaZerada };
-  const preco = p.precoVenda || 0;
-  const presetId = mktId === 'shopee' ? faixaShopeePeloPreco(preco) : (mktId === 'tiktok' ? faixaTiktokPeloPreco(preco) : mktId);
-  return { ...camposComPreset(p, presetId), marketplace: mktId, tarifaZerada };
+// Cada plataforma tem o próprio preço de venda. O do marketplace do produto
+// (ou da coluna "Personalizado") é o próprio p.precoVenda — o mesmo do modal;
+// os demais ficam em p.precosPorMarketplace[mktId] e, enquanto não forem
+// definidos, herdam p.precoVenda.
+function chaveEhPrecoPrincipal(p, chave){
+  return chave === 'custom' || ehMarketplaceDoProduto(p, chave);
 }
 
-// Grade "lucro em cada plataforma" do card: lucro/margem no preço de venda
-// atual + preço recomendado pra bater a meta, com destaque no maior lucro.
-function htmlComparativoMarketplaces(p){
-  const linhas = MARKETPLACES_COMPARATIVO.map(m => ({ ...m, campos: camposParaMarketplace(p, m.id) }));
+function precoNoMarketplace(p, chave){
+  if(chaveEhPrecoPrincipal(p, chave)) return p.precoVenda || 0;
+  const v = (p.precosPorMarketplace || {})[chave];
+  return v > 0 ? v : (p.precoVenda || 0);
+}
+
+// Grava o preço de uma plataforma no produto (só em memória — quem chama
+// decide quando persistir). No marketplace do próprio produto com faixas
+// (Shopee/TikTok), reaplica a taxa da faixa do novo preço, igual ao modal.
+function definirPrecoMarketplace(p, chave, valor){
+  if(!chaveEhPrecoPrincipal(p, chave)){
+    p.precosPorMarketplace = { ...(p.precosPorMarketplace || {}), [chave]: valor };
+    return;
+  }
+  p.precoVenda = valor;
+  const faixaFn = chave === 'shopee' ? faixaShopeePeloPreco : (chave === 'tiktok' ? faixaTiktokPeloPreco : null);
+  if(faixaFn){
+    const c = camposComPreset(p, faixaFn(valor));
+    p.taxaFixaMarketplace = c.taxaFixaMarketplace;
+    p.comissaoMarketplace = c.comissaoMarketplace;
+    p.freteMarketplace = c.freteMarketplace;
+  }
+}
+
+// Campos do produto com as taxas e o preço de cada plataforma. No marketplace
+// do próprio produto valem as taxas salvas (que o usuário pode ter ajustado);
+// nos demais, o preset padrão (Shopee/TikTok pela faixa do preço daquela
+// plataforma; ML = clássico + frete grátis). Tarifa zerada só existe no TikTok.
+function camposParaMarketplace(p, chave){
+  if(chave === 'custom') return { ...p, tarifaZerada: false };
+  const tarifaZerada = chave === 'tiktok' && !!p.tarifaZerada;
+  const precoVenda = precoNoMarketplace(p, chave);
+  if(ehMarketplaceDoProduto(p, chave)) return { ...p, marketplace: chave, tarifaZerada, precoVenda };
+  const presetId = chave === 'shopee' ? faixaShopeePeloPreco(precoVenda) : (chave === 'tiktok' ? faixaTiktokPeloPreco(precoVenda) : chave);
+  return { ...camposComPreset(p, presetId), marketplace: chave, tarifaZerada, precoVenda };
+}
+
+function calcularComparativo(p){
+  const linhas = MARKETPLACES_COMPARATIVO.map(m => ({ chave: m.id, label: m.label }));
   // Produto sem marketplace definido ("Outro / personalizado") ganha uma coluna
   // própria com as taxas que foram digitadas nele.
-  if(!p.marketplace) linhas.push({ id: '', label: 'Personalizado', campos: { ...p, tarifaZerada: false } });
-
-  const temPreco = (p.precoVenda || 0) > 0;
+  if(!p.marketplace) linhas.push({ chave: 'custom', label: 'Personalizado' });
   const resultados = linhas.map(l => {
-    const rec = recomendacaoPreco(l.campos, l.id);
-    return { ...l, rec, ...resultadoProduto(l.campos) };
+    const campos = camposParaMarketplace(p, l.chave);
+    return { ...l, campos, preco: campos.precoVenda || 0, rec: recomendacaoPreco(campos, l.chave === 'custom' ? '' : l.chave), ...resultadoProduto(campos) };
   });
-  const melhorLucro = temPreco ? Math.max(...resultados.map(r => r.lucro)) : null;
+  const comPreco = resultados.filter(r => r.preco > 0);
+  const melhorLucro = comPreco.length ? Math.max(...comPreco.map(r => r.lucro)) : null;
+  resultados.forEach(r => { r.melhor = r.preco > 0 && r.lucro === melhorLucro && r.lucro > 0; });
+  return resultados;
+}
 
+// Grade "lucro em cada plataforma" do card: preço de venda editável direto
+// na célula, lucro/margem nesse preço e o recomendado pra bater a meta.
+function htmlComparativoMarketplaces(p){
   return `
-    <div class="mkt-comparativo">
-      ${resultados.map(r => {
-        const melhor = temPreco && r.lucro === melhorLucro && r.lucro > 0;
-        const neg = r.lucro < 0 ? ' valor-negativo' : '';
-        const badge = r.id ? `<span class="badge ${marketplaceBadgeClass(r.id)}">${r.label}</span>` : `<span class="badge">${r.label}</span>`;
+    <div class="mkt-comparativo" data-produto-id="${p.id}">
+      ${calcularComparativo(p).map(r => {
+        const badge = r.chave !== 'custom' ? `<span class="badge ${marketplaceBadgeClass(r.chave)}">${r.label}</span>` : `<span class="badge">${r.label}</span>`;
         return `
-          <div class="mkt-cell${melhor ? ' melhor' : ''}">
+          <div class="mkt-cell" data-mkt="${r.chave}">
             <div class="mkt-cell-top">
               ${badge}
-              ${melhor ? `<span class="mkt-tag">Maior lucro</span>` : ''}
+              <span class="mkt-tag" hidden>Maior lucro</span>
             </div>
-            <div class="mkt-cell-label">Lucro</div>
-            <div class="mkt-cell-lucro${neg}">${temPreco ? fmt(r.lucro) : '—'}</div>
-            <div class="mkt-cell-sub${neg}">${temPreco ? `${r.margem.toFixed(1)}% de margem` : 'sem preço de venda'}</div>
-            <div class="mkt-cell-rec">Recomendado: <strong>${r.rec ? fmt(r.rec.preco) : '—'}</strong></div>
+            <label class="mkt-cell-label" for="mktPreco-${p.id}-${r.chave}">Preço de venda (R$)</label>
+            <input type="number" class="mkt-preco-input" id="mktPreco-${p.id}-${r.chave}" data-mkt="${r.chave}" step="0.01" min="0" placeholder="0,00" value="${r.preco > 0 ? r.preco.toFixed(2) : ''}">
+            <div class="mkt-cell-label" style="margin-top:10px;">Lucro</div>
+            <div class="mkt-cell-lucro"></div>
+            <div class="mkt-cell-sub mkt-margem"></div>
+            <div class="mkt-cell-rec">
+              <span>Recomendado: <strong class="mkt-rec"></strong></span>
+              <button type="button" class="mkt-usar-rec" data-mkt="${r.chave}">usar</button>
+            </div>
             ${r.campos.tarifaZerada ? `<div class="mkt-cell-sub">com tarifa zerada</div>` : ''}
-            ${ehMarketplaceDoProduto(p, r.id) ? `<div class="mkt-cell-sub">taxas deste produto</div>` : ''}
+            ${chaveEhPrecoPrincipal(p, r.chave) && r.chave !== 'custom' ? `<div class="mkt-cell-sub">taxas deste produto</div>` : ''}
           </div>`;
       }).join('')}
     </div>`;
+}
+
+// Preenche/atualiza só os números da grade, sem recriar os inputs — assim
+// dá pra digitar o preço e ver o lucro mudar sem perder o foco do campo.
+function atualizarComparativoNoDom(grade, p){
+  calcularComparativo(p).forEach(r => {
+    const cell = grade.querySelector(`.mkt-cell[data-mkt="${r.chave}"]`);
+    if(!cell) return;
+    const neg = r.preco > 0 && r.lucro < 0;
+    cell.classList.toggle('melhor', r.melhor);
+    cell.querySelector('.mkt-tag').hidden = !r.melhor;
+    const elLucro = cell.querySelector('.mkt-cell-lucro');
+    const elMargem = cell.querySelector('.mkt-margem');
+    elLucro.textContent = r.preco > 0 ? fmt(r.lucro) : '—';
+    elMargem.textContent = r.preco > 0 ? `${r.margem.toFixed(1)}% de margem` : 'sem preço de venda';
+    elLucro.classList.toggle('valor-negativo', neg);
+    elMargem.classList.toggle('valor-negativo', neg);
+    cell.querySelector('.mkt-rec').textContent = r.rec ? fmt(r.rec.preco) : '—';
+    cell.querySelector('.mkt-usar-rec').hidden = !r.rec;
+  });
+}
+
+function produtoDaGrade(el){
+  const grade = el.closest('.mkt-comparativo');
+  if(!grade) return null;
+  const produto = produtos.find(p => p.id === grade.dataset.produtoId);
+  return produto ? { grade, produto } : null;
 }
 
 function renderProdutos(){
@@ -1823,12 +1893,6 @@ function renderProdutos(){
             <button class="btn btn-outline btn-sm" data-action="ajustar-taxas" data-id="${p.id}">Ajustar taxas</button>
             <button class="btn btn-outline btn-sm" data-action="editar-produto" data-id="${p.id}">Editar</button>
             <button class="btn btn-danger-text btn-sm" data-action="excluir-produto" data-id="${p.id}">Excluir</button>
-          </div>
-        </div>
-        <div class="produto-numeros">
-          <div class="produto-stat">
-            <div class="label">Preço de venda</div>
-            <div class="valor">${fmt(p.precoVenda || 0)}</div>
           </div>
         </div>
         ${htmlComparativoMarketplaces(p)}
@@ -1873,7 +1937,36 @@ function renderProdutos(){
   }).join('');
 
   if(produtoTaxasAbertoId) marcarSubtabsAtivas('pt' + produtoTaxasAbertoId);
+  list.querySelectorAll('.mkt-comparativo').forEach(grade => {
+    const produto = produtos.find(p => p.id === grade.dataset.produtoId);
+    if(produto) atualizarComparativoNoDom(grade, produto);
+  });
 }
+
+// Preço de venda por plataforma direto no card: recalcula enquanto digita e
+// só salva no "change" (sair do campo/Enter), pra não fazer um upsert por tecla.
+document.getElementById('produtosList').addEventListener('input', e => {
+  if(!e.target.classList.contains('mkt-preco-input')) return;
+  const alvo = produtoDaGrade(e.target);
+  if(!alvo) return;
+  definirPrecoMarketplace(alvo.produto, e.target.dataset.mkt, parseFloat(e.target.value) || 0);
+  atualizarComparativoNoDom(alvo.grade, alvo.produto);
+});
+document.getElementById('produtosList').addEventListener('change', e => {
+  if(e.target.classList.contains('mkt-preco-input')) saveProdutos();
+});
+document.getElementById('produtosList').addEventListener('click', e => {
+  const btn = e.target.closest('.mkt-usar-rec');
+  if(!btn) return;
+  const alvo = produtoDaGrade(btn);
+  if(!alvo) return;
+  const r = calcularComparativo(alvo.produto).find(x => x.chave === btn.dataset.mkt);
+  if(!r || !r.rec) return;
+  definirPrecoMarketplace(alvo.produto, btn.dataset.mkt, r.rec.preco);
+  alvo.grade.querySelector(`.mkt-preco-input[data-mkt="${btn.dataset.mkt}"]`).value = r.rec.preco.toFixed(2);
+  atualizarComparativoNoDom(alvo.grade, alvo.produto);
+  saveProdutos();
+});
 
 document.getElementById('produtosList').addEventListener('click', e => {
   const subtab = e.target.closest('.subtab');
