@@ -269,6 +269,11 @@
   .mkt-cell-rec{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);}
   .mkt-preco-input{width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:15px;font-weight:700;color:var(--text);background:#fff;}
   .mkt-preco-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(5,150,105,.12);}
+  .mkt-ml-opcoes{display:flex;flex-direction:column;gap:4px;margin:-4px 0 10px;}
+  .mkt-ml-grupo{display:flex;gap:3px;flex-wrap:wrap;}
+  .mkt-ml-op{border:1px solid var(--border);background:transparent;border-radius:999px;padding:1px 8px;font:inherit;font-size:10.5px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .mkt-ml-op:hover{border-color:#c9a800;color:#7a6400;}
+  .mkt-ml-op.active{background:rgba(255,230,0,.3);border-color:#c9a800;color:#7a6400;font-weight:800;}
   .mkt-usar-rec{border:1px solid var(--border);background:transparent;border-radius:6px;padding:2px 8px;font:inherit;font-size:11.5px;font-weight:700;color:var(--text);cursor:pointer;}
   .mkt-usar-rec:hover{border-color:var(--green);color:var(--green);}
   .mkt-cell-rec strong{color:var(--text);}
@@ -1793,7 +1798,46 @@ function camposParaMarketplace(p, chave){
   const precoVenda = precoNoMarketplace(p, chave);
   if(ehMarketplaceDoProduto(p, chave)) return { ...p, marketplace: chave, tarifaZerada, precoVenda };
   const presetId = chave === 'shopee' ? faixaShopeePeloPreco(precoVenda) : (chave === 'tiktok' ? faixaTiktokPeloPreco(precoVenda) : chave);
-  return { ...camposComPreset(p, presetId), marketplace: chave, tarifaZerada, precoVenda };
+  const campos = { ...camposComPreset(p, presetId), marketplace: chave, tarifaZerada, precoVenda };
+  if(chave === 'ml'){
+    const sel = selecaoMl(p);
+    campos.comissaoMarketplace = ML_ANUNCIO_PRESETS.find(o => o.id === sel.anuncio).comissaoMarketplace;
+    campos.taxaFixaMarketplace = ML_FRETE_PRESETS.find(o => o.id === sel.frete).taxaFixa;
+  }
+  return campos;
+}
+
+// Tipo de anúncio/frete do Mercado Livre no comparativo. Se o ML é o
+// marketplace do próprio produto, a seleção é derivada das taxas salvas
+// (null = valor digitado à mão que não bate com nenhum botão); senão fica em
+// p.mlConfig, com padrão clássico + frete grátis.
+function selecaoMl(p){
+  if(ehMarketplaceDoProduto(p, 'ml')){
+    const a = ML_ANUNCIO_PRESETS.find(o => o.comissaoMarketplace === p.comissaoMarketplace);
+    const f = ML_FRETE_PRESETS.find(o => o.taxaFixa === p.taxaFixaMarketplace);
+    return { anuncio: a ? a.id : null, frete: f ? f.id : null };
+  }
+  return { anuncio: 'classico', frete: 'gratis', ...(p.mlConfig || {}) };
+}
+
+function definirOpcaoMl(p, grupo, id){
+  if(ehMarketplaceDoProduto(p, 'ml')){
+    if(grupo === 'anuncio') p.comissaoMarketplace = ML_ANUNCIO_PRESETS.find(o => o.id === id).comissaoMarketplace;
+    else p.taxaFixaMarketplace = ML_FRETE_PRESETS.find(o => o.id === id).taxaFixa;
+    return;
+  }
+  p.mlConfig = { ...selecaoMl(p), [grupo]: id };
+}
+
+function htmlOpcoesMl(){
+  const grupo = (nome, opcoes) => `
+    <div class="mkt-ml-grupo">
+      ${opcoes.map(o => `<button type="button" class="mkt-ml-op" data-grupo="${nome}" data-op="${o.id}">${o.label}</button>`).join('')}
+    </div>`;
+  return `<div class="mkt-ml-opcoes">
+    ${grupo('anuncio', ML_ANUNCIO_PRESETS.map(o => ({ id: o.id, label: o.label })))}
+    ${grupo('frete', [{ id: 'gratis', label: 'Frete grátis' }, { id: 'comprador', label: 'Frete comprador' }])}
+  </div>`;
 }
 
 function calcularComparativo(p){
@@ -1824,6 +1868,7 @@ function htmlComparativoMarketplaces(p){
               ${badge}
               <span class="mkt-tag" hidden>Maior lucro</span>
             </div>
+            ${r.chave === 'ml' ? htmlOpcoesMl() : ''}
             <label class="mkt-cell-label" for="mktPreco-${p.id}-${r.chave}">Preço de venda (R$)</label>
             <input type="number" class="mkt-preco-input" id="mktPreco-${p.id}-${r.chave}" data-mkt="${r.chave}" step="0.01" min="0" placeholder="0,00" value="${r.preco > 0 ? r.preco.toFixed(2) : ''}">
             <div class="mkt-cell-label" style="margin-top:10px;">Lucro</div>
@@ -1857,6 +1902,10 @@ function atualizarComparativoNoDom(grade, p){
     elMargem.classList.toggle('valor-negativo', neg);
     cell.querySelector('.mkt-rec').textContent = r.rec ? fmt(r.rec.preco) : '—';
     cell.querySelector('.mkt-usar-rec').hidden = !r.rec;
+    if(r.chave === 'ml'){
+      const sel = selecaoMl(p);
+      cell.querySelectorAll('.mkt-ml-op').forEach(b => b.classList.toggle('active', sel[b.dataset.grupo] === b.dataset.op));
+    }
   });
 }
 
@@ -1954,6 +2003,15 @@ document.getElementById('produtosList').addEventListener('input', e => {
 });
 document.getElementById('produtosList').addEventListener('change', e => {
   if(e.target.classList.contains('mkt-preco-input')) saveProdutos();
+});
+document.getElementById('produtosList').addEventListener('click', e => {
+  const op = e.target.closest('.mkt-ml-op');
+  if(!op) return;
+  const alvo = produtoDaGrade(op);
+  if(!alvo) return;
+  definirOpcaoMl(alvo.produto, op.dataset.grupo, op.dataset.op);
+  atualizarComparativoNoDom(alvo.grade, alvo.produto);
+  saveProdutos();
 });
 document.getElementById('produtosList').addEventListener('click', e => {
   const btn = e.target.closest('.mkt-usar-rec');
