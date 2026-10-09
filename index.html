@@ -37,6 +37,7 @@
     --bk-afiliado:#e87ba4;
     --bk-gerenciamento:#4a3aa7;
     --bk-lucro:#008300;
+    --bk-desconto:#94a3b8;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
@@ -269,6 +270,11 @@
   .mkt-cell-rec{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);}
   .mkt-preco-input{width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:15px;font-weight:700;color:var(--text);background:#fff;}
   .mkt-preco-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(5,150,105,.12);}
+  .mkt-shein-opcoes{display:flex;flex-direction:column;gap:5px;margin:-4px 0 10px;font-size:11px;color:var(--muted);font-weight:600;}
+  .mkt-shein-desc-wrap{display:flex;align-items:center;gap:5px;}
+  .mkt-shein-desc{width:52px;padding:2px 6px;border:1px solid var(--border);border-radius:6px;font:inherit;font-size:11.5px;font-weight:700;color:var(--text);}
+  .mkt-shein-isencao-wrap{display:flex;align-items:center;gap:5px;cursor:pointer;}
+  .mkt-shein-isencao{accent-color:var(--mkt-shein);margin:0;}
   .mkt-ml-opcoes{display:flex;flex-direction:column;gap:4px;margin:-4px 0 10px;}
   .mkt-ml-grupo{display:flex;gap:3px;flex-wrap:wrap;}
   .mkt-ml-op{border:1px solid var(--border);background:transparent;border-radius:999px;padding:1px 8px;font:inherit;font-size:10.5px;font-weight:600;color:var(--muted);cursor:pointer;}
@@ -363,6 +369,12 @@
   .modal-close-x:hover{background:var(--bg);color:var(--text);}
   .field{margin-bottom:14px;}
   .field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--muted);}
+  .field-hint{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4;}
+  .passo-shein{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+  .passo-shein-linha{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);padding:3px 0;}
+  .passo-shein-linha strong{color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .passo-shein-linha.destaque{color:var(--text);font-weight:700;border-top:1px dashed var(--border);margin-top:3px;padding-top:6px;}
+  .passo-shein-linha.destaque.valor-negativo strong{color:var(--red);}
   .field input, .field select{
     width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:#fbfcff;
   }
@@ -899,6 +911,7 @@
       </div>
 
       <div id="pTarifaZeradaWrap"></div>
+      <div id="pSheinWrap" style="display:none;"></div>
 
       <div class="produto-preview">
         <div class="summary-grid">
@@ -927,6 +940,7 @@
       </div>
 
       <div class="preco-breakdown" id="prodBreakdown"></div>
+      <div class="passo-shein" id="prodPassoShein" style="display:none;"></div>
 
       <details class="config-taxas">
         <summary>Configurar taxas do marketplace</summary>
@@ -1062,6 +1076,13 @@ async function carregarDados(userId){
     produtos.forEach(p => {
       if(p.marketplace === 'shopee' && p.taxaFixaMarketplace === 4 && p.comissaoMarketplace === 20){
         p.taxaFixaMarketplace = 4.5;
+        migrou = true;
+      }
+      // Shein: padrão antigo 18% + R$5 virou 16% sem taxa fixa (a comissão
+      // agora incide sobre o preço já com cupom/campanha).
+      if(p.marketplace === 'shein' && p.taxaFixaMarketplace === 5 && p.comissaoMarketplace === 18){
+        p.taxaFixaMarketplace = 0;
+        p.comissaoMarketplace = 16;
         migrou = true;
       }
     });
@@ -1655,9 +1676,30 @@ function custoFixoTotalProduto(p){
 // de outro marketplace pode ter a flag ligada (vale pra coluna TikTok do
 // comparativo), então ela só zera quando os campos são de TikTok — campos sem
 // marketplace são do painel TikTok da calculadora rápida (único com o checkbox).
+// Campos sem marketplace vêm da calculadora rápida, onde só o painel do
+// próprio marketplace tem os campos específicos dele (tarifa zerada no TikTok,
+// desconto/isenção na Shein) — então "undefined" conta como "é deste".
+function camposSaoDe(p, mkt){
+  return p.marketplace === undefined || String(p.marketplace).startsWith(mkt);
+}
+
 function comissaoEfetivaProduto(p){
-  const ehTiktok = p.marketplace === undefined || String(p.marketplace).startsWith('tiktok');
-  return p.tarifaZerada && ehTiktok ? 0 : (p.comissaoMarketplace||0);
+  if(p.tarifaZerada && camposSaoDe(p, 'tiktok')) return 0;
+  // Shein: isenção de comissão pra vendedores novos nos primeiros 90 dias.
+  if(p.isencaoComissaoShein && camposSaoDe(p, 'shein')) return 0;
+  return p.comissaoMarketplace||0;
+}
+
+// Shein abate cupons + campanhas do preço cheio ANTES de calcular a comissão.
+// Só vale pra Shein; nos outros marketplaces o desconto é sempre 0, e com
+// desconto 0 todas as fórmulas abaixo ficam idênticas às de antes.
+function descontoSheinProduto(p){
+  return camposSaoDe(p, 'shein') ? (p.descontoShein || 0) : 0;
+}
+
+function descontoValido(p){
+  const d = descontoSheinProduto(p);
+  return d >= 0 && d <= 99;
 }
 
 function percentualDescontosProduto(p){
@@ -1665,22 +1707,46 @@ function percentualDescontosProduto(p){
 }
 
 // Fórmula de markup reverso: comissões, imposto e meta de lucro são % sobre o
-// preço de venda (não sobre o custo), então o preço precisa ser isolado algebricamente:
-// P = CustoFixo + P*(%descontos + %lucro)  =>  P = CustoFixo / (1 - %descontos - %lucro)
+// preço que o cliente paga (não sobre o custo), então o preço precisa ser isolado
+// algebricamente: P = CustoFixo + P*(%descontos + %lucro)  =>  P = CustoFixo / (1 - %descontos - %lucro).
+// Na Shein esse P é o preço final do cliente; o preço cheio a cadastrar é
+// P / (1 - desconto), ou seja: custo / [(1 - desconto) × (1 - %descontos - %lucro)].
 function precoRecomendadoProduto(p){
+  if(!descontoValido(p)) return null;
   const custoFixo = custoFixoTotalProduto(p);
   const pctTotal = (percentualDescontosProduto(p) + (p.lucroDesejado||0)) / 100;
   if(pctTotal >= 1) return null;
-  return custoFixo / (1 - pctTotal);
+  const precoFinal = custoFixo / (1 - pctTotal);
+  return precoFinal / (1 - descontoSheinProduto(p) / 100);
 }
 
+// p.precoVenda é o preço cheio (o que se cadastra no marketplace). Comissão,
+// imposto etc. incidem sobre o preço final do cliente (= cheio, fora da Shein),
+// e a margem também é sobre ele.
 function resultadoProduto(p){
   const custoFixo = custoFixoTotalProduto(p);
-  const preco = p.precoVenda || 0;
-  const descontosValor = preco * (percentualDescontosProduto(p) / 100);
-  const lucro = preco - custoFixo - descontosValor;
-  const margem = preco > 0 ? (lucro / preco) * 100 : 0;
-  return { lucro, margem };
+  const precoCheio = p.precoVenda || 0;
+  const d = descontoValido(p) ? descontoSheinProduto(p) / 100 : 0;
+  const precoFinal = precoCheio * (1 - d);
+  const descontosValor = precoFinal * (percentualDescontosProduto(p) / 100);
+  const lucro = precoFinal - custoFixo - descontosValor;
+  const margem = precoFinal > 0 ? (lucro / precoFinal) * 100 : 0;
+  return { lucro, margem, precoFinal };
+}
+
+// Passo a passo da Shein (preço cheio → desconto → preço final → comissão →
+// imposto → custos → lucro), com cada valor em R$ arredondado a 2 casas.
+function passoAPassoShein(p, precoCheio){
+  const r2 = v => Math.round(v * 100) / 100;
+  const d = descontoSheinProduto(p) / 100;
+  const cheio = r2(precoCheio);
+  const precoFinal = r2(cheio * (1 - d));
+  const comissao = r2(precoFinal * comissaoEfetivaProduto(p) / 100);
+  const imposto = r2(precoFinal * (configPrecificacao.imposto || 0) / 100);
+  const outrosPct = r2(precoFinal * ((configPrecificacao.comissaoAfiliado || 0) + (configPrecificacao.gerenciamento || 0) + (p.freteMarketplace || 0)) / 100);
+  const custos = r2(custoFixoTotalProduto(p));
+  const lucro = r2(precoFinal - comissao - imposto - outrosPct - custos);
+  return { cheio, desconto: r2(cheio - precoFinal), precoFinal, comissao, imposto, outrosPct, custos, lucro, margem: precoFinal > 0 ? lucro / precoFinal * 100 : 0 };
 }
 
 // Detalhamento visual "para onde vai o preço" — decompõe o mesmo cálculo de
@@ -1688,7 +1754,11 @@ function resultadoProduto(p){
 // (sempre na mesma ordem/cor, pra virar hábito de leitura em qualquer produto).
 // A soma das 7 fatias bate exatamente com resultadoProduto(p).lucro quando
 // preco === p.precoVenda — é a mesma conta, só que granular.
-function breakdownPrecoProduto(p, preco){
+function breakdownPrecoProduto(p, precoCheio){
+  // Na Shein o desconto sai primeiro e o resto incide sobre o preço final.
+  const d = descontoValido(p) ? descontoSheinProduto(p) / 100 : 0;
+  const descontoValor = precoCheio * d;
+  const preco = precoCheio - descontoValor;
   const custoProduto = p.custoProduto || 0;
   const outrosCustosFixos = custoFixoTotalProduto(p) - custoProduto;
   const comissaoMarketplace = preco * (comissaoEfetivaProduto(p) + (p.freteMarketplace||0)) / 100;
@@ -1697,6 +1767,7 @@ function breakdownPrecoProduto(p, preco){
   const gerenciamento = preco * (configPrecificacao.gerenciamento||0) / 100;
   const lucro = preco - custoProduto - outrosCustosFixos - comissaoMarketplace - imposto - afiliado - gerenciamento;
   return [
+    ...(descontoValor > 0 ? [{ label: 'Cupom + campanha', valor: descontoValor, cor: 'var(--bk-desconto)' }] : []),
     { label: 'Custo do produto',     valor: custoProduto,        cor: 'var(--bk-custo)' },
     { label: 'Outros custos fixos',  valor: outrosCustosFixos,   cor: 'var(--bk-outros)' },
     { label: 'Comissão marketplace', valor: comissaoMarketplace, cor: 'var(--bk-comissao)' },
@@ -1715,7 +1786,7 @@ function renderBreakdownPreco(campos, prefixoSaida, rec){
   // Sem preço digitado, a prévia usa o recomendado com as taxas da faixa dele.
   if(!(campos.precoVenda > 0) && rec) campos = rec.campos;
   const preco = campos.precoVenda > 0 ? campos.precoVenda : (rec ? rec.preco : 0);
-  if(preco <= 0){
+  if(preco <= 0 || !descontoValido(campos)){
     el.style.display = 'none';
     el.innerHTML = '';
     return;
@@ -1853,6 +1924,19 @@ function htmlOpcoesMl(){
   </div>`;
 }
 
+// Desconto (cupom + campanha) e isenção de 90 dias da coluna Shein, editáveis
+// direto no card — ficam no produto (descontoShein/isencaoComissaoShein) e só
+// entram na conta da Shein.
+function htmlOpcoesShein(p){
+  return `<div class="mkt-shein-opcoes">
+    <label class="mkt-shein-desc-wrap" title="A Shein abate cupons e campanhas ANTES de calcular a comissão.">
+      Cupom + campanha
+      <input type="number" class="mkt-shein-desc" step="0.01" min="0" max="99" placeholder="0" value="${p.descontoShein || ''}"> %
+    </label>
+    <label class="mkt-shein-isencao-wrap"><input type="checkbox" class="mkt-shein-isencao" ${p.isencaoComissaoShein ? 'checked' : ''}> Isenção 90 dias</label>
+  </div>`;
+}
+
 function calcularComparativo(p){
   const linhas = MARKETPLACES_COMPARATIVO.map(m => ({ chave: m.id, label: m.label }));
   // Produto sem marketplace definido ("Outro / personalizado") ganha uma coluna
@@ -1860,11 +1944,11 @@ function calcularComparativo(p){
   if(!p.marketplace) linhas.push({ chave: 'custom', label: 'Personalizado' });
   const resultados = linhas.map(l => {
     const campos = camposParaMarketplace(p, l.chave);
-    return { ...l, campos, preco: campos.precoVenda || 0, rec: recomendacaoPreco(campos, l.chave === 'custom' ? '' : l.chave), ...resultadoProduto(campos) };
+    return { ...l, campos, preco: campos.precoVenda || 0, valido: descontoValido(campos), rec: recomendacaoPreco(campos, l.chave === 'custom' ? '' : l.chave), ...resultadoProduto(campos) };
   });
-  const comPreco = resultados.filter(r => r.preco > 0);
+  const comPreco = resultados.filter(r => r.preco > 0 && r.valido);
   const melhorLucro = comPreco.length ? Math.max(...comPreco.map(r => r.lucro)) : null;
-  resultados.forEach(r => { r.melhor = r.preco > 0 && r.lucro === melhorLucro && r.lucro > 0; });
+  resultados.forEach(r => { r.melhor = r.preco > 0 && r.valido && r.lucro === melhorLucro && r.lucro > 0; });
   return resultados;
 }
 
@@ -1882,11 +1966,13 @@ function htmlComparativoMarketplaces(p){
               <span class="mkt-tag" hidden>Maior lucro</span>
             </div>
             ${r.chave === 'ml' ? htmlOpcoesMl() : ''}
-            <label class="mkt-cell-label" for="mktPreco-${p.id}-${r.chave}">Preço de venda (R$)</label>
+            ${r.chave === 'shein' ? htmlOpcoesShein(p) : ''}
+            <label class="mkt-cell-label" for="mktPreco-${p.id}-${r.chave}">${r.chave === 'shein' ? 'Preço cheio (R$)' : 'Preço de venda (R$)'}</label>
             <input type="number" class="mkt-preco-input" id="mktPreco-${p.id}-${r.chave}" data-mkt="${r.chave}" step="0.01" min="0" placeholder="0,00" value="${r.preco > 0 ? r.preco.toFixed(2) : ''}">
             <div class="mkt-cell-label" style="margin-top:10px;">Lucro</div>
             <div class="mkt-cell-lucro"></div>
             <div class="mkt-cell-sub mkt-margem"></div>
+            ${r.chave === 'shein' ? `<div class="mkt-cell-sub mkt-shein-final"></div>` : ''}
             <div class="mkt-cell-rec">
               <span>Recomendado: <strong class="mkt-rec"></strong></span>
               <button type="button" class="mkt-usar-rec" data-mkt="${r.chave}">usar</button>
@@ -1904,13 +1990,15 @@ function atualizarComparativoNoDom(grade, p){
   calcularComparativo(p).forEach(r => {
     const cell = grade.querySelector(`.mkt-cell[data-mkt="${r.chave}"]`);
     if(!cell) return;
-    const neg = r.preco > 0 && r.lucro < 0;
+    const neg = r.preco > 0 && r.valido && r.lucro < 0;
     cell.classList.toggle('melhor', r.melhor);
     cell.querySelector('.mkt-tag').hidden = !r.melhor;
     const elLucro = cell.querySelector('.mkt-cell-lucro');
     const elMargem = cell.querySelector('.mkt-margem');
-    elLucro.textContent = r.preco > 0 ? fmt(r.lucro) : '—';
-    elMargem.textContent = r.preco > 0 ? `${r.margem.toFixed(1)}% de margem` : 'sem preço de venda';
+    elLucro.textContent = r.preco > 0 && r.valido ? fmt(r.lucro) : '—';
+    elMargem.textContent = !r.valido ? 'desconto deve ficar entre 0% e 99%' : (r.preco > 0 ? `${r.margem.toFixed(1)}% de margem` : 'sem preço de venda');
+    const elFinal = cell.querySelector('.mkt-shein-final');
+    if(elFinal) elFinal.textContent = r.valido && r.preco > 0 && descontoSheinProduto(r.campos) > 0 ? `cliente paga ${fmt(r.precoFinal)}` : '';
     elLucro.classList.toggle('valor-negativo', neg);
     elMargem.classList.toggle('valor-negativo', neg);
     cell.querySelector('.mkt-rec').textContent = r.rec ? fmt(r.rec.preco) : '—';
@@ -2015,7 +2103,24 @@ document.getElementById('produtosList').addEventListener('input', e => {
   atualizarComparativoNoDom(alvo.grade, alvo.produto);
 });
 document.getElementById('produtosList').addEventListener('change', e => {
-  if(e.target.classList.contains('mkt-preco-input')) saveProdutos();
+  if(e.target.classList.contains('mkt-preco-input') || e.target.classList.contains('mkt-shein-desc')) saveProdutos();
+});
+// Desconto/isenção da coluna Shein: mesmo esquema do preço (recalcula ao
+// digitar, salva no change; o checkbox salva na hora).
+document.getElementById('produtosList').addEventListener('input', e => {
+  if(!e.target.classList.contains('mkt-shein-desc')) return;
+  const alvo = produtoDaGrade(e.target);
+  if(!alvo) return;
+  alvo.produto.descontoShein = parseFloat(e.target.value) || 0;
+  atualizarComparativoNoDom(alvo.grade, alvo.produto);
+});
+document.getElementById('produtosList').addEventListener('change', e => {
+  if(!e.target.classList.contains('mkt-shein-isencao')) return;
+  const alvo = produtoDaGrade(e.target);
+  if(!alvo) return;
+  alvo.produto.isencaoComissaoShein = e.target.checked;
+  atualizarComparativoNoDom(alvo.grade, alvo.produto);
+  saveProdutos();
 });
 document.getElementById('produtosList').addEventListener('click', e => {
   const op = e.target.closest('.mkt-ml-op');
@@ -2215,8 +2320,54 @@ function lerCampos(prefix, outrosContainerId){
     outrosCustos: lerOutrosCustosDoForm(outrosContainerId),
     lucroDesejado: num('LucroDesejado'),
     precoVenda: num('PrecoVenda'),
-    tarifaZerada: !!(document.getElementById(prefix + 'TarifaZerada') || {}).checked
+    tarifaZerada: !!(document.getElementById(prefix + 'TarifaZerada') || {}).checked,
+    // Só existem no painel Shein da calculadora rápida e no modal.
+    descontoShein: num('DescontoShein'),
+    isencaoComissaoShein: !!(document.getElementById(prefix + 'IsencaoShein') || {}).checked
   };
+}
+
+// Campos exclusivos da Shein: desconto total (cupom + campanha), que sai do
+// preço cheio antes da comissão, e a isenção de comissão de 90 dias.
+function htmlCamposShein(prefix){
+  return `
+    <div class="field">
+      <label>Desconto total (cupom + campanha) %</label>
+      <input type="number" id="${prefix}DescontoShein" step="0.01" min="0" max="99" placeholder="0">
+      <div class="field-hint">A Shein abate cupons e campanhas ANTES de calcular a comissão.</div>
+    </div>
+    <label class="toggle-tarifa">
+      <input type="checkbox" id="${prefix}IsencaoShein">
+      <span><strong>Isenção de comissão na Shein</strong> (vendedor novo, primeiros 90 dias) — comissão 0%; imposto e custos continuam.</span>
+    </label>`;
+}
+
+// Passo a passo da Shein no modal/calculadora rápida: usa o preço cheio
+// digitado ou, se vazio, o recomendado.
+function renderPassoShein(campos, prefixoSaida, rec){
+  const el = document.getElementById(prefixoSaida + 'PassoShein');
+  if(!el) return;
+  const precoCheio = campos.precoVenda > 0 ? campos.precoVenda : (rec ? rec.preco : 0);
+  if(!camposSaoDe(campos, 'shein') || precoCheio <= 0 || !descontoValido(campos)){
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  const s = passoAPassoShein(campos, precoCheio);
+  const d = descontoSheinProduto(campos);
+  const linha = (rotulo, valor, cls = '') => `<div class="passo-shein-linha ${cls}"><span>${rotulo}</span><strong>${valor}</strong></div>`;
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="preco-breakdown-titulo">Passo a passo Shein${campos.precoVenda > 0 ? '' : ' (no preço recomendado)'}</div>
+    ${linha('Preço cheio (cadastrado)', fmt(s.cheio))}
+    ${linha(`− Cupom + campanha (${d}%)`, '− ' + fmt(s.desconto))}
+    ${linha('= Preço final do cliente', fmt(s.precoFinal), 'destaque')}
+    ${linha(`− Comissão (${comissaoEfetivaProduto(campos)}% do preço final)`, '− ' + fmt(s.comissao))}
+    ${linha(`− Imposto (${configPrecificacao.imposto || 0}% do preço final)`, '− ' + fmt(s.imposto))}
+    ${s.outrosPct ? linha('− Afiliado / gerenciamento', '− ' + fmt(s.outrosPct)) : ''}
+    ${linha('− Custos (produto, embalagem, fixo, ads, outros)', '− ' + fmt(s.custos))}
+    ${linha(`= Lucro (${s.margem.toFixed(1)}% do preço final)`, fmt(s.lucro), 'destaque' + (s.lucro < 0 ? ' valor-negativo' : ''))}
+  `;
 }
 
 function lerCamposProduto(){
@@ -2254,9 +2405,15 @@ function ajustarFaixaShopeeModal(){
 // O frete (%) só se aplica ao TikTok (cliente específico que paga frete à parte
 // da comissão) — o campo fica escondido pros outros marketplaces.
 function atualizarVisibilidadeFreteModal(){
-  const ehTiktok = document.getElementById('pMarketplace').value === 'tiktok';
-  document.getElementById('pFreteWrap').style.display = ehTiktok ? '' : 'none';
+  const mkt = document.getElementById('pMarketplace').value;
+  document.getElementById('pFreteWrap').style.display = mkt === 'tiktok' ? '' : 'none';
+  // Desconto/isenção da Shein só aparecem (e só entram na conta) com Shein selecionada.
+  document.getElementById('pSheinWrap').style.display = mkt === 'shein' ? '' : 'none';
 }
+
+document.getElementById('pSheinWrap').innerHTML = htmlCamposShein('p');
+document.getElementById('pDescontoShein').addEventListener('input', atualizarPreviewProduto);
+document.getElementById('pIsencaoShein').addEventListener('change', atualizarPreviewProduto);
 
 document.getElementById('pTarifaZeradaWrap').innerHTML = htmlToggleTarifaZerada('pTarifaZerada', false);
 document.getElementById('pTarifaZerada').addEventListener('change', atualizarPreviewProduto);
@@ -2317,20 +2474,24 @@ function atualizarPreview(campos, prefixoSaida){
     elMargem.textContent = `${margem.toFixed(1)}%`;
     marcarValorNegativo(elMargem, margem < 0);
   }
-  elLucro.textContent = fmt(lucro);
+  // Desconto fora de 0–99% não tem resultado que faça sentido: mostra só o aviso.
+  elLucro.textContent = descontoValido(campos) ? fmt(lucro) : '—';
 
   marcarValorNegativo(elPreco, preco === null);
-  marcarValorNegativo(elLucro, lucro < 0);
+  marcarValorNegativo(elLucro, descontoValido(campos) && lucro < 0);
 
   const aviso = document.getElementById(prefixoSaida + 'Aviso');
   if(preco === null){
     aviso.style.display = 'block';
-    aviso.textContent = 'As comissões + imposto + meta de lucro somam 100% ou mais do preço — ajuste os percentuais.';
+    aviso.textContent = !descontoValido(campos)
+      ? 'O desconto total (cupom + campanha) precisa ficar entre 0% e 99%.'
+      : 'As comissões + imposto + meta de lucro somam 100% ou mais do preço — ajuste os percentuais.';
   } else {
     aviso.style.display = 'none';
   }
 
   renderBreakdownPreco(campos, prefixoSaida, rec);
+  renderPassoShein(campos, prefixoSaida, rec);
 }
 
 function atualizarPreviewProduto(){
@@ -2382,6 +2543,8 @@ function openModalProduto(produto = null){
   document.getElementById('pComissaoMarketplace').value = produto ? produto.comissaoMarketplace : '';
   document.getElementById('pFreteMarketplace').value = produto ? (produto.freteMarketplace || 0) : 0;
   document.getElementById('pTarifaZerada').checked = !!(produto && produto.tarifaZerada);
+  document.getElementById('pDescontoShein').value = produto && produto.descontoShein ? produto.descontoShein : '';
+  document.getElementById('pIsencaoShein').checked = !!(produto && produto.isencaoComissaoShein);
   marcarSubtabsAtivas('p');
   document.getElementById('pCustoAds').value = produto ? produto.custoAds : '';
   document.getElementById('pLucroDesejado').value = produto ? produto.lucroDesejado : 10;
@@ -2421,7 +2584,7 @@ const MARKETPLACE_PRESETS = [
   { id: 'shopee_100a199',   label: 'Shopee',                              taxaFixa: 20,    comissaoMarketplace: 14 },
   { id: 'shopee_200mais',   label: 'Shopee',                              taxaFixa: 26,    comissaoMarketplace: 14 },
   { id: 'ml',               label: 'Mercado Livre',                       taxaFixa: 13.85, comissaoMarketplace: 14 },
-  { id: 'shein',            label: 'Shein',                               taxaFixa: 5,     comissaoMarketplace: 18 },
+  { id: 'shein',            label: 'Shein',                               taxaFixa: 0,     comissaoMarketplace: 16 },
   { id: 'tiktok_ate50',     label: 'TikTok Shop',                        taxaFixa: 4,     comissaoMarketplace: 10, freteMarketplace: 6 },
   { id: 'tiktok_acima50',   label: 'TikTok Shop',                        taxaFixa: 6,     comissaoMarketplace: 6,  freteMarketplace: 6 }
 ];
@@ -2587,11 +2750,11 @@ function textoFaixaRecomendada(rec, campos){
 const MARKETPLACES_QUICK = [
   { id: 'shopee', prefix: 'qShopee', preset: 'shopee_ate80', ehShopee: true },
   { id: 'ml',     prefix: 'qMl',     preset: 'ml', ehMl: true },
-  { id: 'shein',  prefix: 'qShein',  preset: 'shein' },
+  { id: 'shein',  prefix: 'qShein',  preset: 'shein', ehShein: true },
   { id: 'tiktok', prefix: 'qTiktok', preset: 'tiktok_ate50', ehTiktok: true }
 ];
 
-function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee){
+function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
   const avisoTiktok = ehTiktok ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A faixa de comissão (até R$50 / acima de R$50) muda automaticamente conforme o preço de venda informado.</p>` : '';
   const avisoShopee = ehShopee ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A comissão/taxa fixa muda automaticamente conforme o preço de venda (até R$79,99: 20% + R$4,50 · R$80–99,99: 14% + R$16 · R$100–199,99: 14% + R$20 · R$200 ou mais: 14% + R$26). O preço recomendado testa cada faixa e sugere o menor preço que bate sua meta de lucro.</p>` : '';
   return `
@@ -2612,6 +2775,7 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee){
     </div>
 
     ${ehTiktok ? htmlToggleTarifaZerada(prefix + 'TarifaZerada', false) : ''}
+    ${ehShein ? htmlCamposShein(prefix) : ''}
 
     <div class="produto-preview">
       <div class="summary-grid">
@@ -2626,7 +2790,7 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee){
     </div>
 
     <div class="field">
-      <label>Preço de venda (R$)</label>
+      <label>${ehShein ? 'Preço cheio — o que você cadastra na Shein (R$)' : 'Preço de venda (R$)'}</label>
       <input type="number" id="${prefix}PrecoVenda" step="0.01" min="0" placeholder="0,00">
     </div>
 
@@ -2640,6 +2804,7 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee){
     </div>
 
     <div class="preco-breakdown" id="${prefix}Breakdown"></div>
+    ${ehShein ? `<div class="passo-shein" id="${prefix}PassoShein" style="display:none;"></div>` : ''}
 
     <details class="config-taxas">
       <summary>Configurar taxas do marketplace</summary>
@@ -2674,7 +2839,7 @@ function initQuickCalcPanels(){
   const container = document.getElementById('quickCalcPanels');
   container.innerHTML = MARKETPLACES_QUICK.map((m, idx) => `
     <div class="quick-panel ${idx === 0 ? 'active' : ''}" id="panel-quick-${m.id}" data-prefix="${m.prefix}" ${m.ehTiktok ? 'data-tiktok="true"' : ''} ${m.ehShopee ? 'data-shopee="true"' : ''}>
-      ${gerarPainelQuickCalc(m.prefix, m.ehTiktok, m.ehMl, m.ehShopee)}
+      ${gerarPainelQuickCalc(m.prefix, m.ehTiktok, m.ehMl, m.ehShopee, m.ehShein)}
     </div>
   `).join('');
 
