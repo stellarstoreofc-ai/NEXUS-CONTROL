@@ -275,6 +275,7 @@
   .mkt-shein-desc{width:52px;padding:2px 6px;border:1px solid var(--border);border-radius:6px;font:inherit;font-size:11.5px;font-weight:700;color:var(--text);}
   .mkt-shein-isencao-wrap{display:flex;align-items:center;gap:5px;cursor:pointer;}
   .mkt-shein-isencao{accent-color:var(--mkt-shein);margin:0;}
+  .mkt-tiktok-zerada{accent-color:var(--mkt-tiktok);margin:0;}
   .mkt-ml-opcoes{display:flex;flex-direction:column;gap:4px;margin:-4px 0 10px;}
   .mkt-ml-grupo{display:flex;gap:3px;flex-wrap:wrap;}
   .mkt-ml-op{border:1px solid var(--border);background:transparent;border-radius:999px;padding:1px 8px;font:inherit;font-size:10.5px;font-weight:600;color:var(--muted);cursor:pointer;}
@@ -346,6 +347,16 @@
   .badge-mkt-ml{background:rgba(255,230,0,.25);color:#7a6400;}
   .badge-mkt-shein{background:rgba(37,99,235,.12);color:var(--mkt-shein);}
   .badge-mkt-tiktok{background:rgba(0,0,0,.08);color:var(--mkt-tiktok);}
+  .badge-mkt-todos{background:rgba(15,27,61,.08);color:var(--text);}
+  .todos-mkt{margin:4px 0 14px;padding:14px;border:1px solid var(--border);border-radius:12px;}
+  .todos-mkt-tabela{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+  .todos-mkt-linha{display:grid;grid-template-columns:minmax(110px,auto) 1fr auto;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;}
+  .todos-mkt-linha.melhor{border-color:var(--green);background:rgba(5,150,105,.06);}
+  .todos-mkt-rec{color:var(--muted);}
+  .todos-mkt-rec strong{color:var(--text);}
+  .todos-mkt-lucro{font-weight:800;color:var(--green);white-space:nowrap;}
+  .todos-mkt-lucro.valor-negativo{color:var(--red);}
+  @media (max-width:480px){ .todos-mkt-linha{grid-template-columns:1fr auto;} .todos-mkt-rec{grid-column:1 / -1;order:3;} }
 
   /* Modal */
   .overlay{
@@ -889,6 +900,7 @@
         <label>Marketplace</label>
         <select id="pMarketplace">
           <option value="">Outro / personalizado</option>
+          <option value="todos" style="font-weight:700;">Todos os marketplaces</option>
           <option value="shopee" style="color:#ee4d2d;">Shopee</option>
           <option value="ml" style="color:#7a6400;">Mercado Livre</option>
           <option value="shein" style="color:#2563eb;">Shein</option>
@@ -913,7 +925,7 @@
       <div id="pTarifaZeradaWrap"></div>
       <div id="pSheinWrap" style="display:none;"></div>
 
-      <div class="produto-preview">
+      <div class="produto-preview so-um-mkt">
         <div class="summary-grid">
           <div class="summary-card">
             <div class="label">Preço recomendado</div>
@@ -926,11 +938,11 @@
       </div>
 
       <div class="field">
-        <label>Preço de venda (R$)</label>
+        <label id="pPrecoVendaLabel">Preço de venda (R$)</label>
         <input type="number" id="pPrecoVenda" step="0.01" min="0" placeholder="0,00">
       </div>
 
-      <div class="produto-preview">
+      <div class="produto-preview so-um-mkt">
         <div class="summary-grid">
           <div class="summary-card">
             <div class="label">Lucro</div>
@@ -939,7 +951,9 @@
         </div>
       </div>
 
-      <div class="preco-breakdown" id="prodBreakdown"></div>
+      <div class="todos-mkt" id="prodTodos" style="display:none;"></div>
+
+      <div class="preco-breakdown so-um-mkt" id="prodBreakdown"></div>
       <div class="passo-shein" id="prodPassoShein" style="display:none;"></div>
 
       <details class="config-taxas">
@@ -1851,6 +1865,9 @@ function precoNoMarketplace(p, chave){
 // mostrando agora — senão mexer no preço de uma plataforma mudaria o lucro
 // das outras sem o campo delas mudar.
 function congelarPrecosHerdados(p){
+  // Em "Todos" o preço de venda é a base de todas as plataformas: mudar ele
+  // deve continuar valendo pras que ainda não têm preço próprio.
+  if(p.marketplace === 'todos') return;
   const precos = { ...(p.precosPorMarketplace || {}) };
   MARKETPLACES_COMPARATIVO.forEach(m => {
     if(!ehMarketplaceDoProduto(p, m.id) && !(precos[m.id] > 0) && (p.precoVenda || 0) > 0) precos[m.id] = p.precoVenda;
@@ -1939,6 +1956,14 @@ function htmlOpcoesShein(p){
   </div>`;
 }
 
+// Tarifa zerada do TikTok (conta nova, 60 dias) direto no card — mesmo campo
+// p.tarifaZerada do cadastro/"Ajustar taxas"; só zera a comissão da coluna TikTok.
+function htmlOpcoesTiktok(p){
+  return `<div class="mkt-shein-opcoes">
+    <label class="mkt-shein-isencao-wrap" title="Zera só a comissão do TikTok; frete e taxa fixa continuam."><input type="checkbox" class="mkt-tiktok-zerada" ${p.tarifaZerada ? 'checked' : ''}> Tarifa zerada 60 dias</label>
+  </div>`;
+}
+
 function calcularComparativo(p){
   const linhas = MARKETPLACES_COMPARATIVO.map(m => ({ chave: m.id, label: m.label }));
   // Produto sem marketplace definido ("Outro / personalizado") ganha uma coluna
@@ -1969,6 +1994,7 @@ function htmlComparativoMarketplaces(p){
             </div>
             ${r.chave === 'ml' ? htmlOpcoesMl() : ''}
             ${r.chave === 'shein' ? htmlOpcoesShein(p) : ''}
+            ${r.chave === 'tiktok' ? htmlOpcoesTiktok(p) : ''}
             <label class="mkt-cell-label" for="mktPreco-${p.id}-${r.chave}">${r.chave === 'shein' ? 'Preço cheio (R$)' : 'Preço de venda (R$)'}</label>
             <input type="number" class="mkt-preco-input" id="mktPreco-${p.id}-${r.chave}" data-mkt="${r.chave}" step="0.01" min="0" placeholder="0,00" value="${r.preco > 0 ? r.preco.toFixed(2) : ''}">
             <div class="mkt-cell-label" style="margin-top:10px;">Lucro</div>
@@ -1979,7 +2005,6 @@ function htmlComparativoMarketplaces(p){
               <span>Recomendado: <strong class="mkt-rec"></strong></span>
               <button type="button" class="mkt-usar-rec" data-mkt="${r.chave}">usar</button>
             </div>
-            ${r.campos.tarifaZerada ? `<div class="mkt-cell-sub">com tarifa zerada</div>` : ''}
             ${chaveEhPrecoPrincipal(p, r.chave) && r.chave !== 'custom' ? `<div class="mkt-cell-sub">taxas deste produto</div>` : ''}
           </div>`;
       }).join('')}
@@ -2055,6 +2080,7 @@ function renderProdutos(){
               <label>Marketplace</label>
               <select id="${pt}Marketplace">
                 <option value="" ${!mktSelecionado ? 'selected' : ''}>Outro / personalizado</option>
+                <option value="todos" ${mktSelecionado === 'todos' ? 'selected' : ''} style="font-weight:700;">Todos os marketplaces</option>
                 <option value="shopee" ${mktSelecionado === 'shopee' ? 'selected' : ''} style="color:#ee4d2d;">Shopee</option>
                 <option value="ml" ${mktSelecionado === 'ml' ? 'selected' : ''} style="color:#7a6400;">Mercado Livre</option>
                 <option value="shein" ${mktSelecionado === 'shein' ? 'selected' : ''} style="color:#2563eb;">Shein</option>
@@ -2063,7 +2089,7 @@ function renderProdutos(){
             </div>
           </div>
           <div id="${pt}MlConfigWrap" style="${mktSelecionado === 'ml' ? '' : 'display:none;'}">${gerarSubtabsMl(pt)}</div>
-          <div class="field-row">
+          <div class="field-row" id="${pt}TaxasRow" style="${mktSelecionado === 'todos' ? 'display:none;' : ''}">
             <div class="field">
               <label>Taxa fixa marketplace (R$)</label>
               <input type="number" id="${pt}TaxaFixa" step="0.01" min="0" value="${p.taxaFixaMarketplace ?? ''}">
@@ -2115,6 +2141,14 @@ document.getElementById('produtosList').addEventListener('input', e => {
   if(!alvo) return;
   alvo.produto.descontoShein = parseFloat(e.target.value) || 0;
   atualizarComparativoNoDom(alvo.grade, alvo.produto);
+});
+document.getElementById('produtosList').addEventListener('change', e => {
+  if(!e.target.classList.contains('mkt-tiktok-zerada')) return;
+  const alvo = produtoDaGrade(e.target);
+  if(!alvo) return;
+  alvo.produto.tarifaZerada = e.target.checked;
+  atualizarComparativoNoDom(alvo.grade, alvo.produto);
+  saveProdutos();
 });
 document.getElementById('produtosList').addEventListener('change', e => {
   if(!e.target.classList.contains('mkt-shein-isencao')) return;
@@ -2181,6 +2215,7 @@ document.getElementById('produtosList').addEventListener('click', e => {
     produto.comissaoMarketplace = parseFloat(document.getElementById(pt + 'ComissaoMarketplace').value) || 0;
     produto.freteMarketplace = parseFloat(document.getElementById(pt + 'FreteMarketplace').value) || 0;
     produto.tarifaZerada = document.getElementById(pt + 'TarifaZerada').checked;
+    if(marketplace === 'todos') zerarTaxasProprias(produto);
     saveProdutos();
     produtoTaxasAbertoId = null;
     renderProdutos();
@@ -2197,7 +2232,10 @@ document.getElementById('produtosList').addEventListener('change', e => {
   const valor = select.value;
   document.getElementById(prefix + 'FreteWrap').style.display = valor === 'tiktok' ? '' : 'none';
   document.getElementById(prefix + 'MlConfigWrap').style.display = valor === 'ml' ? '' : 'none';
-  if(!valor) return;
+  // "Todos": cada coluna do comparativo usa as taxas padrão da plataforma, então
+  // não há taxa própria do produto pra editar aqui.
+  document.getElementById(prefix + 'TaxasRow').style.display = valor === 'todos' ? 'none' : '';
+  if(!valor || valor === 'todos') return;
   if(valor === 'tiktok'){
     const produto = produtos.find(p => p.id === id);
     const preco = produto ? (produto.precoVenda || 0) : 0;
@@ -2373,12 +2411,47 @@ function renderPassoShein(campos, prefixoSaida, rec){
 }
 
 function lerCamposProduto(){
-  return {
+  const campos = {
     nome: document.getElementById('pNome').value.trim(),
     marketplace: document.getElementById('pMarketplace').value,
     foto: fotoAtualProduto,
     ...lerCampos('p', 'outrosCustosList')
   };
+  if(campos.marketplace === 'todos') zerarTaxasProprias(campos);
+  return campos;
+}
+
+// Produto "Todos os marketplaces" não tem taxa própria: cada plataforma do
+// comparativo usa a taxa padrão dela (MARKETPLACE_PRESETS / opções do ML).
+// Zera os campos pra não sobrar taxa de outro marketplace no custo do produto.
+function zerarTaxasProprias(p){
+  p.taxaFixaMarketplace = 0;
+  p.comissaoMarketplace = 0;
+  p.freteMarketplace = 0;
+}
+
+// Prévia do modal no modo "Todos": lucro no preço base + recomendado de cada
+// plataforma, com a mesma conta do comparativo dos cards salvos.
+function renderTodosModal(campos){
+  const el = document.getElementById('prodTodos');
+  const p = { ...campos, precosPorMarketplace: {} };
+  if(editingProdutoId){
+    const salvo = produtos.find(x => x.id === editingProdutoId);
+    if(salvo) p.mlConfig = salvo.mlConfig;
+  }
+  const temPreco = (campos.precoVenda || 0) > 0;
+  const linhas = calcularComparativo(p);
+  el.innerHTML = `
+    <div class="preco-breakdown-titulo">Lucro em cada marketplace${temPreco ? ' no preço base' : ''}</div>
+    <div class="todos-mkt-tabela">
+      ${linhas.map(r => `
+        <div class="todos-mkt-linha${r.melhor ? ' melhor' : ''}">
+          <span class="badge ${marketplaceBadgeClass(r.chave)}">${r.label}</span>
+          <span class="todos-mkt-rec">Recomendado <strong>${r.rec ? fmt(r.rec.preco) : '—'}</strong></span>
+          <span class="todos-mkt-lucro${temPreco && r.valido && r.lucro < 0 ? ' valor-negativo' : ''}">${temPreco && r.valido ? fmt(r.lucro) + ' · ' + r.margem.toFixed(1) + '%' : '—'}</span>
+        </div>`).join('')}
+    </div>
+    <div class="field-hint">Cada plataforma usa a taxa padrão dela. Depois de salvar, dá pra ajustar o preço de cada uma direto no card.</div>`;
 }
 
 function htmlToggleTarifaZerada(id, marcado){
@@ -2409,8 +2482,12 @@ function ajustarFaixaShopeeModal(){
 function atualizarVisibilidadeFreteModal(){
   const mkt = document.getElementById('pMarketplace').value;
   document.getElementById('pFreteWrap').style.display = mkt === 'tiktok' ? '' : 'none';
-  // Desconto/isenção da Shein só aparecem (e só entram na conta) com Shein selecionada.
-  document.getElementById('pSheinWrap').style.display = mkt === 'shein' ? '' : 'none';
+  // Desconto/isenção da Shein aparecem com Shein (ou "Todos", onde valem pra coluna Shein).
+  document.getElementById('pSheinWrap').style.display = mkt === 'shein' || mkt === 'todos' ? '' : 'none';
+  // Em "Todos" não há taxa fixa/comissão própria — cada plataforma usa a padrão.
+  ['pTaxaFixa', 'pComissaoMarketplace'].forEach(id => {
+    document.getElementById(id).closest('.field').style.display = mkt === 'todos' ? 'none' : '';
+  });
 }
 
 document.getElementById('pSheinWrap').innerHTML = htmlCamposShein('p');
@@ -2497,7 +2574,17 @@ function atualizarPreview(campos, prefixoSaida){
 }
 
 function atualizarPreviewProduto(){
-  atualizarPreview(lerCamposProduto(), 'prod');
+  const campos = lerCamposProduto();
+  const todos = campos.marketplace === 'todos';
+  document.querySelectorAll('#formProduto .so-um-mkt').forEach(el => { el.style.display = todos ? 'none' : ''; });
+  document.getElementById('prodTodos').style.display = todos ? '' : 'none';
+  document.getElementById('pPrecoVendaLabel').textContent = todos ? 'Preço de venda base (R$) — vale pra todos os marketplaces' : 'Preço de venda (R$)';
+  if(todos){
+    renderTodosModal(campos);
+    document.getElementById('prodPassoShein').style.display = 'none';
+    return;
+  }
+  atualizarPreview(campos, 'prod');
 }
 
 document.getElementById('outrosCustosList').addEventListener('click', e => {
@@ -2652,6 +2739,7 @@ document.getElementById('pMlConfigWrap').addEventListener('click', e => {
 
 function marketplaceLabel(presetId){
   if(!presetId) return null;
+  if(presetId === 'todos') return 'Todos os marketplaces';
   if(presetId.startsWith('tiktok')) return 'TikTok Shop';
   const preset = MARKETPLACE_PRESETS.find(m => m.id === presetId);
   return preset ? preset.label : null;
