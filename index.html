@@ -1078,10 +1078,12 @@ async function carregarDados(userId){
         p.taxaFixaMarketplace = 4.5;
         migrou = true;
       }
-      // Shein: padrão antigo 18% + R$5 virou 16% sem taxa fixa (a comissão
-      // agora incide sobre o preço já com cupom/campanha).
-      if(p.marketplace === 'shein' && p.taxaFixaMarketplace === 5 && p.comissaoMarketplace === 18){
-        p.taxaFixaMarketplace = 0;
+      // Shein: padrão atual é 16% + R$5 por venda (a comissão incide sobre o
+      // preço já com cupom/campanha; a taxa fixa entra no custo). Corrige o
+      // padrão antigo intocado (18% + R$5) e o 16% + R$0 que uma versão anterior
+      // gravou por engano — valores digitados à mão ficam como estão.
+      if(p.marketplace === 'shein' && ((p.taxaFixaMarketplace === 5 && p.comissaoMarketplace === 18) || (p.taxaFixaMarketplace === 0 && p.comissaoMarketplace === 16))){
+        p.taxaFixaMarketplace = 5;
         p.comissaoMarketplace = 16;
         migrou = true;
       }
@@ -2584,7 +2586,7 @@ const MARKETPLACE_PRESETS = [
   { id: 'shopee_100a199',   label: 'Shopee',                              taxaFixa: 20,    comissaoMarketplace: 14 },
   { id: 'shopee_200mais',   label: 'Shopee',                              taxaFixa: 26,    comissaoMarketplace: 14 },
   { id: 'ml',               label: 'Mercado Livre',                       taxaFixa: 13.85, comissaoMarketplace: 14 },
-  { id: 'shein',            label: 'Shein',                               taxaFixa: 0,     comissaoMarketplace: 16 },
+  { id: 'shein',            label: 'Shein',                               taxaFixa: 5,     comissaoMarketplace: 16 },
   { id: 'tiktok_ate50',     label: 'TikTok Shop',                        taxaFixa: 4,     comissaoMarketplace: 10, freteMarketplace: 6 },
   { id: 'tiktok_acima50',   label: 'TikTok Shop',                        taxaFixa: 6,     comissaoMarketplace: 6,  freteMarketplace: 6 }
 ];

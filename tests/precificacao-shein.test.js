@@ -29,7 +29,7 @@ const codigo = [
   ...['custoFixoTotalProduto', 'camposSaoDe', 'comissaoEfetivaProduto', 'descontoSheinProduto', 'descontoValido',
       'percentualDescontosProduto', 'precoRecomendadoProduto', 'resultadoProduto', 'passoAPassoShein',
       'faixasDoMarketplace', 'camposComPreset', 'recomendacaoPreco'].map(extrairFuncao),
-  'return { precoRecomendadoProduto, resultadoProduto, passoAPassoShein, recomendacaoPreco, setConfig: c => { configPrecificacao = c; } };'
+  'return { MARKETPLACE_PRESETS, camposComPreset, precoRecomendadoProduto, resultadoProduto, passoAPassoShein, recomendacaoPreco, setConfig: c => { configPrecificacao = c; } };'
 ].join('\n');
 const calc = new Function('var configPrecificacao = {};\n' + codigo)();
 
@@ -74,6 +74,26 @@ teste('Isenção de comissão (90 dias) zera a comissão', () => {
   assert.strictEqual(s.lucro, r2(61.54 - 2.46 - 40));
   // Preço cheio recomendado = 40 / (0,7 × (1 − 0,04 − 0,15)) = 70,55
   assert.strictEqual(r2(calc.precoRecomendadoProduto(p)), 70.55);
+});
+
+console.log('Shein — taxa fixa de R$5 por venda:');
+teste('Preset da Shein é 16% + R$5', () => {
+  const preset = calc.MARKETPLACE_PRESETS.find(m => m.id === 'shein');
+  assert.strictEqual(preset.comissaoMarketplace, 16);
+  assert.strictEqual(preset.taxaFixa, 5);
+});
+teste('Com R$5 de taxa fixa: preço cheio R$98,90 e lucro de 15% do preço final', () => {
+  const p = calc.camposComPreset({ ...sheinBase }, 'shein');
+  assert.strictEqual(p.taxaFixaMarketplace, 5);
+  // 45 / [(1 − 0,30) × (1 − 0,16 − 0,04 − 0,15)] = 45 / 0,455
+  const cheio = r2(calc.precoRecomendadoProduto(p));
+  assert.strictEqual(cheio, 98.90);
+  const s = calc.passoAPassoShein(p, cheio);
+  console.log(`    preço cheio ${s.cheio} | preço final ${s.precoFinal} | comissão ${s.comissao} | imposto ${s.imposto} | custos ${s.custos} | lucro ${s.lucro} (${s.margem.toFixed(2)}%)`);
+  assert.strictEqual(s.precoFinal, 69.23);
+  assert.strictEqual(s.custos, 45);   // R$40 + R$5: a taxa fixa não é descontada pelo cupom
+  assert.strictEqual(s.lucro, 10.38);
+  assert.ok(Math.abs(s.margem - 15) < 0.05, 'margem ' + s.margem);
 });
 
 console.log('Shein — validação:');
