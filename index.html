@@ -276,6 +276,11 @@
   .mkt-shein-isencao-wrap{display:flex;align-items:center;gap:5px;cursor:pointer;}
   .mkt-shein-isencao{accent-color:var(--mkt-shein);margin:0;}
   .mkt-tiktok-zerada{accent-color:var(--mkt-tiktok);margin:0;}
+  .ml-quick{margin-bottom:6px;}
+  .ml-frete-valores{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end;padding:10px 12px;margin:-4px 0 16px;border:1px dashed var(--border);border-radius:10px;}
+  .ml-frete-valores-titulo{flex-basis:100%;font-size:11.5px;font-weight:700;color:var(--muted);}
+  .ml-frete-valores label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--muted);}
+  .ml-frete-valor{width:110px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:13px;font-weight:700;color:var(--text);}
   .mkt-ml-opcoes{display:flex;flex-direction:column;gap:4px;margin:-4px 0 10px;}
   .mkt-ml-grupo{display:flex;gap:3px;flex-wrap:wrap;}
   .mkt-ml-op{border:1px solid var(--border);background:transparent;border-radius:999px;padding:1px 8px;font:inherit;font-size:10.5px;font-weight:600;color:var(--muted);cursor:pointer;}
@@ -1006,7 +1011,9 @@ let produtos = [];
 // comissão de afiliado e % de gerenciamento cobrado do cliente) — preenchidos
 // uma vez e usados direto por toda calculadora/produto, sem campo próprio
 // duplicado em cada marketplace.
-const CONFIG_PRECIFICACAO_PADRAO = { imposto: 4, custoEmbalagem: 0, custoFixo: 0, comissaoAfiliado: 0, gerenciamento: 3 };
+// mlFreteGratis/mlFreteComprador: valores (R$) dos botões de frete do Mercado
+// Livre — editáveis na aba ML da calculadora rápida e salvos aqui.
+const CONFIG_PRECIFICACAO_PADRAO = { imposto: 4, custoEmbalagem: 0, custoFixo: 0, comissaoAfiliado: 0, gerenciamento: 3, mlFreteGratis: 13.85, mlFreteComprador: 7.95 };
 let configPrecificacao = { ...CONFIG_PRECIFICACAO_PADRAO };
 
 function uid(){ return crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()); }
@@ -1905,7 +1912,7 @@ function camposParaMarketplace(p, chave){
   if(chave === 'ml'){
     const sel = selecaoMl(p);
     campos.comissaoMarketplace = ML_ANUNCIO_PRESETS.find(o => o.id === sel.anuncio).comissaoMarketplace;
-    campos.taxaFixaMarketplace = ML_FRETE_PRESETS.find(o => o.id === sel.frete).taxaFixa;
+    campos.taxaFixaMarketplace = mlFretePresets().find(o => o.id === sel.frete).taxaFixa;
   }
   return campos;
 }
@@ -1917,7 +1924,7 @@ function camposParaMarketplace(p, chave){
 function selecaoMl(p){
   if(ehMarketplaceDoProduto(p, 'ml')){
     const a = ML_ANUNCIO_PRESETS.find(o => o.comissaoMarketplace === p.comissaoMarketplace);
-    const f = ML_FRETE_PRESETS.find(o => o.taxaFixa === p.taxaFixaMarketplace);
+    const f = mlFretePresets().find(o => o.taxaFixa === p.taxaFixaMarketplace);
     return { anuncio: a ? a.id : null, frete: f ? f.id : null };
   }
   return { anuncio: 'classico', frete: 'gratis', ...(p.mlConfig || {}) };
@@ -1926,7 +1933,7 @@ function selecaoMl(p){
 function definirOpcaoMl(p, grupo, id){
   if(ehMarketplaceDoProduto(p, 'ml')){
     if(grupo === 'anuncio') p.comissaoMarketplace = ML_ANUNCIO_PRESETS.find(o => o.id === id).comissaoMarketplace;
-    else p.taxaFixaMarketplace = ML_FRETE_PRESETS.find(o => o.id === id).taxaFixa;
+    else p.taxaFixaMarketplace = mlFretePresets().find(o => o.id === id).taxaFixa;
     return;
   }
   p.mlConfig = { ...selecaoMl(p), [grupo]: id };
@@ -1939,7 +1946,7 @@ function htmlOpcoesMl(){
     </div>`;
   return `<div class="mkt-ml-opcoes">
     ${grupo('anuncio', ML_ANUNCIO_PRESETS.map(o => ({ id: o.id, label: o.label })))}
-    ${grupo('frete', [{ id: 'gratis', label: 'Frete grátis' }, { id: 'comprador', label: 'Frete comprador' }])}
+    ${grupo('frete', [{ id: 'gratis', label: 'Frete grátis' }, { id: 'comprador', label: 'Sem frete grátis' }])}
   </div>`;
 }
 
@@ -2678,8 +2685,17 @@ const MARKETPLACE_PRESETS = [
   { id: 'tiktok_acima50',   label: 'TikTok Shop',                        taxaFixa: 6,     comissaoMarketplace: 6,  freteMarketplace: 6 }
 ];
 
-function aplicarPreset(prefix, presetId){
+// Preset com os valores vigentes: a taxa fixa do Mercado Livre vem do valor
+// de "frete grátis" salvo em configPrecificacao (editável pelo usuário).
+function presetPorId(presetId){
   const preset = MARKETPLACE_PRESETS.find(m => m.id === presetId);
+  if(!preset) return null;
+  if(preset.id === 'ml') return { ...preset, taxaFixa: valorFreteMl('gratis') };
+  return preset;
+}
+
+function aplicarPreset(prefix, presetId){
+  const preset = presetPorId(presetId);
   if(!preset) return;
   document.getElementById(prefix + 'TaxaFixa').value = preset.taxaFixa;
   document.getElementById(prefix + 'ComissaoMarketplace').value = preset.comissaoMarketplace;
@@ -2695,10 +2711,19 @@ const ML_ANUNCIO_PRESETS = [
   { id: 'classico', label: 'Clássico', comissaoMarketplace: 14 },
   { id: 'premium',  label: 'Premium',  comissaoMarketplace: 19 }
 ];
-const ML_FRETE_PRESETS = [
-  { id: 'gratis',     label: 'Frete grátis',                 taxaFixa: 13.85 },
-  { id: 'comprador',  label: 'Frete por conta do comprador', taxaFixa: 7.95 }
-];
+// Os valores em R$ do frete não são fixos no código: vêm de configPrecificacao
+// (mlFreteGratis/mlFreteComprador), editáveis na aba ML da calculadora rápida.
+function valorFreteMl(id){
+  const padrao = id === 'gratis' ? CONFIG_PRECIFICACAO_PADRAO.mlFreteGratis : CONFIG_PRECIFICACAO_PADRAO.mlFreteComprador;
+  const v = id === 'gratis' ? configPrecificacao.mlFreteGratis : configPrecificacao.mlFreteComprador;
+  return typeof v === 'number' && v >= 0 ? v : padrao;
+}
+function mlFretePresets(){
+  return [
+    { id: 'gratis',    label: 'Frete grátis',     taxaFixa: valorFreteMl('gratis') },
+    { id: 'comprador', label: 'Sem frete grátis', taxaFixa: valorFreteMl('comprador') }
+  ];
+}
 
 function gerarSubtabsMl(prefix){
   return `
@@ -2711,7 +2736,7 @@ function gerarSubtabsMl(prefix){
     <div class="field">
       <label>Frete (Mercado Livre)</label>
       <div class="tabs tabs-sm">
-        ${ML_FRETE_PRESETS.map(o => `<button type="button" class="tab subtab" data-prefix="${prefix}" data-campo="TaxaFixa" data-valor="${o.taxaFixa}">${o.label} (${fmt(o.taxaFixa)})</button>`).join('')}
+        ${mlFretePresets().map(o => `<button type="button" class="tab subtab" data-prefix="${prefix}" data-campo="TaxaFixa" data-frete="${o.id}" data-valor="${o.taxaFixa}">${o.label} (${fmt(o.taxaFixa)})</button>`).join('')}
       </div>
     </div>
   `;
@@ -2787,7 +2812,7 @@ function faixasDoMarketplace(mkt){
 }
 
 function camposComPreset(campos, presetId){
-  const preset = MARKETPLACE_PRESETS.find(m => m.id === presetId);
+  const preset = presetPorId(presetId);
   return { ...campos, taxaFixaMarketplace: preset.taxaFixa, comissaoMarketplace: preset.comissaoMarketplace, freteMarketplace: preset.freteMarketplace || 0 };
 }
 
@@ -2866,6 +2891,7 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
 
     ${ehTiktok ? htmlToggleTarifaZerada(prefix + 'TarifaZerada', false) : ''}
     ${ehShein ? htmlCamposShein(prefix) : ''}
+    ${ehMl ? htmlOpcoesMlQuick(prefix) : ''}
 
     <div class="produto-preview">
       <div class="summary-grid">
@@ -2904,7 +2930,6 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
           <input type="number" id="${prefix}TaxaFixa" step="0.01" min="0" placeholder="0,00">
         </div>
 
-        ${ehMl ? gerarSubtabsMl(prefix) : ''}
         <div class="field">
           <label>Comissão marketplace (%)</label>
           <input type="number" id="${prefix}ComissaoMarketplace" step="0.01" min="0" max="100" placeholder="0">
@@ -2925,6 +2950,57 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
   `;
 }
 
+// Aba ML: tipo de anúncio e frete ficam na vista principal (não escondidos em
+// "Configurar taxas"), com os valores em R$ de cada frete editáveis ali mesmo.
+function htmlOpcoesMlQuick(prefix){
+  return `
+    <div class="ml-quick">
+      ${gerarSubtabsMl(prefix)}
+      <div class="ml-frete-valores">
+        <div class="ml-frete-valores-titulo">Valores do frete (ficam salvos pra próxima vez)</div>
+        <label>Frete grátis (R$)
+          <input type="number" class="ml-frete-valor" data-frete="gratis" step="0.01" min="0">
+        </label>
+        <label>Sem frete grátis (R$)
+          <input type="number" class="ml-frete-valor" data-frete="comprador" step="0.01" min="0">
+        </label>
+      </div>
+    </div>`;
+}
+
+// Os botões de frete são montados no carregamento da página (antes do login);
+// depois que configPrecificacao chega, reescreve valor e rótulo com o salvo.
+function atualizarBotoesFreteMl(){
+  document.querySelectorAll('.subtab[data-frete]').forEach(btn => {
+    const v = valorFreteMl(btn.dataset.frete);
+    btn.dataset.valor = v;
+    btn.textContent = `${btn.dataset.frete === 'gratis' ? 'Frete grátis' : 'Sem frete grátis'} (${fmt(v)})`;
+  });
+}
+
+function preencherValoresFreteMl(){
+  document.querySelectorAll('.ml-frete-valor').forEach(el => { el.value = valorFreteMl(el.dataset.frete); });
+}
+
+// Muda o valor de um frete do ML: atualiza os botões em todo lugar, troca a
+// taxa fixa dos formulários/produtos que estavam usando o valor antigo (ou
+// seja, com aquele frete selecionado) e deixa o salvamento pro "change".
+function alterarValorFreteMl(id, novo){
+  const antigo = valorFreteMl(id);
+  if(!(novo >= 0) || novo === antigo) return;
+  configPrecificacao[id === 'gratis' ? 'mlFreteGratis' : 'mlFreteComprador'] = novo;
+  document.querySelectorAll(`.subtab[data-frete="${id}"]`).forEach(btn => {
+    const campo = document.getElementById(btn.dataset.prefix + 'TaxaFixa');
+    if(campo && parseFloat(campo.value) === antigo) campo.value = novo;
+    btn.dataset.valor = novo;
+    btn.textContent = `${id === 'gratis' ? 'Frete grátis' : 'Sem frete grátis'} (${fmt(novo)})`;
+    marcarSubtabsAtivas(btn.dataset.prefix);
+  });
+  produtos.forEach(p => {
+    if(p.marketplace === 'ml' && p.taxaFixaMarketplace === antigo) p.taxaFixaMarketplace = novo;
+  });
+}
+
 function initQuickCalcPanels(){
   const container = document.getElementById('quickCalcPanels');
   container.innerHTML = MARKETPLACES_QUICK.map((m, idx) => `
@@ -2938,12 +3014,25 @@ function initQuickCalcPanels(){
     if(!panel) return;
     const prefix = panel.dataset.prefix;
 
+    if(e.target.classList.contains('ml-frete-valor')){
+      alterarValorFreteMl(e.target.dataset.frete, parseFloat(e.target.value));
+    }
+
     if(e.target.id === prefix + 'PrecoVenda'){
       if(panel.dataset.tiktok === 'true') aplicarPreset(prefix, faixaTiktokPeloPreco(parseFloat(e.target.value) || 0));
       if(panel.dataset.shopee === 'true') aplicarPreset(prefix, faixaShopeePeloPreco(parseFloat(e.target.value) || 0));
     }
 
     atualizarPreview(lerCampos(prefix, prefix + 'OutrosCustosList'), prefix);
+  });
+
+  // Valor do frete do ML: salva na config e redesenha os cards (que usam esse
+  // valor nas colunas ML) só quando sai do campo.
+  container.addEventListener('change', e => {
+    if(!e.target.classList.contains('ml-frete-valor')) return;
+    if(!(parseFloat(e.target.value) >= 0)) e.target.value = valorFreteMl(e.target.dataset.frete);
+    saveConfigPrecificacao();
+    renderProdutos();
   });
 
   container.addEventListener('click', e => {
@@ -2994,6 +3083,8 @@ document.getElementById('quickMarketplaceTabs').addEventListener('click', e => {
 });
 
 function initQuickCalcDefaults(){
+  atualizarBotoesFreteMl();
+  preencherValoresFreteMl();
   MARKETPLACES_QUICK.forEach(m => {
     aplicarPreset(m.prefix, m.preset);
     document.getElementById(m.prefix + 'LucroDesejado').value = 10;

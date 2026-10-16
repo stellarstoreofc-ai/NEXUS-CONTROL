@@ -24,12 +24,20 @@ function extrairConst(nome){
   return src.slice(i, src.indexOf('];', i) + 2).replace(/^const /, 'var ');
 }
 
+function extrairObjeto(nome){
+  const i = src.indexOf('const ' + nome);
+  if(i < 0) throw new Error('Constante não encontrada no index.html: ' + nome);
+  return src.slice(i, src.indexOf('};', i) + 2).replace(/^const /, 'var ');
+}
+
 const codigo = [
+  extrairObjeto('CONFIG_PRECIFICACAO_PADRAO'),
   ...['MARKETPLACE_PRESETS', 'FAIXAS_SHOPEE', 'FAIXAS_TIKTOK'].map(extrairConst),
+  ...['valorFreteMl', 'mlFretePresets', 'presetPorId'].map(extrairFuncao),
   ...['custoFixoTotalProduto', 'camposSaoDe', 'comissaoEfetivaProduto', 'descontoSheinProduto', 'descontoValido',
       'percentualDescontosProduto', 'precoRecomendadoProduto', 'resultadoProduto', 'passoAPassoShein',
       'faixasDoMarketplace', 'camposComPreset', 'recomendacaoPreco'].map(extrairFuncao),
-  'return { MARKETPLACE_PRESETS, camposComPreset, precoRecomendadoProduto, resultadoProduto, passoAPassoShein, recomendacaoPreco, setConfig: c => { configPrecificacao = c; } };'
+  'return { MARKETPLACE_PRESETS, presetPorId, mlFretePresets, camposComPreset, precoRecomendadoProduto, resultadoProduto, passoAPassoShein, recomendacaoPreco, setConfig: c => { configPrecificacao = c; } };'
 ].join('\n');
 const calc = new Function('var configPrecificacao = {};\n' + codigo)();
 
@@ -126,6 +134,21 @@ teste('Mercado Livre ignora isenção da Shein', () => {
   const p = { marketplace: 'ml', custoProduto: 40, taxaFixaMarketplace: 13.85, comissaoMarketplace: 14,
               isencaoComissaoShein: true, lucroDesejado: 10, outrosCustos: [] };
   assert.strictEqual(r2(calc.precoRecomendadoProduto(p)), r2(53.85 / (1 - 0.14 - 0.04 - 0.10)));
+});
+
+console.log('Mercado Livre — valores do frete editáveis:');
+teste('Sem valor salvo, usa o padrão (frete grátis R$13,85 / sem frete grátis R$7,95)', () => {
+  calc.setConfig({ imposto: 4, custoEmbalagem: 0, custoFixo: 0, comissaoAfiliado: 0, gerenciamento: 0 });
+  assert.deepStrictEqual(calc.mlFretePresets().map(o => o.taxaFixa), [13.85, 7.95]);
+  assert.strictEqual(calc.presetPorId('ml').taxaFixa, 13.85);
+});
+teste('Valores salvos substituem o padrão (inclusive a taxa do preset ML)', () => {
+  calc.setConfig({ imposto: 4, custoEmbalagem: 0, custoFixo: 0, comissaoAfiliado: 0, gerenciamento: 0, mlFreteGratis: 19.9, mlFreteComprador: 6.5 });
+  assert.deepStrictEqual(calc.mlFretePresets().map(o => o.taxaFixa), [19.9, 6.5]);
+  assert.strictEqual(calc.presetPorId('ml').taxaFixa, 19.9);
+  assert.strictEqual(calc.camposComPreset({ custoProduto: 40 }, 'ml').taxaFixaMarketplace, 19.9);
+  // outros presets não mudam
+  assert.strictEqual(calc.presetPorId('shein').taxaFixa, 5);
 });
 
 console.log(`\n${ok} testes passaram.`);
