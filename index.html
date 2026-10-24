@@ -3588,7 +3588,6 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
   // esquerda o que eu sei (custos, meta), à direita a resposta (preços,
   // como cadastrar, teste de preço, pra onde vai o dinheiro). Os ids dos
   // campos são os mesmos de antes — lerCampos/recomendacaoPreco não mudam.
-  const temEscada = ehShopee || ehTiktok;
   const passo = (n, titulo, extra = '') => `<div class="qc-passo-tit"><span class="qc-num">${n}</span> ${titulo}${extra}</div>`;
   return `
     <div class="qc-grid">
@@ -3679,10 +3678,10 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
         </div>
 
         <div class="qc-passo">
-          ${passo(5, ehShein ? 'Testar um preço cheio' : 'Testar um preço')}
+          ${passo(5, 'Testar um preço')}
           <div class="qc-teste">
             <div class="field">
-              <label>${ehShein ? 'Preço cheio — o que você cadastra na Shein (R$)' : 'Preço de venda (R$)'}</label>
+              <label>Preço de venda (R$)</label>
               <input type="number" id="${prefix}PrecoVenda" step="0.01" min="0" placeholder="0,00">
             </div>
             <div class="summary-card qc-lucro">
@@ -3695,7 +3694,6 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
       </div>
 
       <div class="qc-col">
-        ${temEscada ? `
         <div class="qc-passo">
           ${passo(6, 'Como cadastrar no anúncio', ' <span class="prec-sub">— preço cheio + descontos</span>')}
           <div class="qc-escada-cfg">
@@ -3708,12 +3706,11 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
             </span>
           </div>
           <div class="qc-escada" id="${prefix}Escada"></div>
-        </div>` : ''}
+        </div>
 
         <div class="qc-passo">
-          ${passo(temEscada ? 7 : 6, 'Para onde vai o preço')}
+          ${passo(7, 'Para onde vai o preço')}
           <div class="preco-breakdown" id="${prefix}Breakdown"></div>
-          ${ehShein ? `<div class="passo-shein" id="${prefix}PassoShein" style="display:none;"></div>` : ''}
         </div>
       </div>
     </div>
