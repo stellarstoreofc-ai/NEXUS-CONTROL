@@ -465,6 +465,7 @@
   .soma-dia{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
   .soma-dia input{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font:inherit;font-weight:700;}
   .soma-dia .btn-icon{border:1px solid var(--border);background:var(--surface);border-radius:8px;width:34px;height:34px;cursor:pointer;font-weight:800;}
+  .soma-fds{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;margin-left:auto;}
   .soma-sessao{margin-top:16px;}
   .soma-sessao:empty{display:none;}
   .soma-sessao h3{font-size:14px;margin-bottom:6px;}
@@ -1190,6 +1191,7 @@
       <input type="date" id="somaData" aria-label="Dia dos pedidos">
       <button type="button" class="btn-icon" id="btnSomaDiaProx" aria-label="Próximo dia">›</button>
       <strong id="somaDiaRotulo"></strong>
+      <label class="soma-fds"><input type="checkbox" id="somaPularFds" checked> Pular sábado e domingo</label>
     </div>
     <div class="field-hint" id="somaJaTem" style="margin:-4px 0 10px;"></div>
     <div class="soma-lista" id="somaLista"></div>
@@ -1202,6 +1204,7 @@
     <div class="modal-actions" style="flex-wrap:wrap;">
       <button type="button" class="btn btn-outline" id="btnSomaLimpar" style="margin-right:auto;">Limpar</button>
       <button type="button" class="btn btn-outline" data-fechar="overlaySoma">Fechar</button>
+      <button type="button" class="btn btn-outline" id="btnSomaPular" title="Dia sem pedido: vai pro próximo sem lançar nada">Pular dia ›</button>
       <button type="button" class="btn btn-primary" id="btnSomaLancar">Lançar dia e ir pro próximo ›</button>
     </div>
     <div class="soma-sessao" id="somaSessao"></div>
@@ -4316,7 +4319,9 @@ function abrirSomaRapida(f){
         </div>`).join('')
     : `<p class="field-hint">Esse fornecedor ainda não tem produtos cadastrados — use "+ Item fora do cadastro" ou cadastre os produtos em Pedidos do dia.</p>`;
   document.getElementById('somaAvulsos').innerHTML = '';
-  document.getElementById('somaData').value = diaInicialSoma(f);
+  let inicio = diaInicialSoma(f);
+  if(document.getElementById('somaPularFds').checked && ehFimDeSemana(inicio)) inicio = proximoDiaSoma(inicio);
+  document.getElementById('somaData').value = inicio;
   somaSessao = [];
   renderSessaoSoma(f);
   recalcularSoma();
@@ -4389,6 +4394,36 @@ function renderSessaoSoma(f){
     <div class="total"><span>Soma desses dias · ${pecas} peças</span><span>${fmt(total)}</span></div>
     <p class="field-hint">Total em aberto com ${escapeHtml(f.nome)} agora: <strong>${fmt(saldoForn(f))}</strong></p>`;
 }
+// Próximo dia a lançar: o seguinte, pulando sábado e domingo se a opção
+// estiver marcada (sexta → segunda).
+function ehFimDeSemana(dia){
+  const [y, m, d] = dia.split('-').map(Number);
+  const sem = new Date(y, m - 1, d).getDay();
+  return sem === 0 || sem === 6;
+}
+function proximoDiaSoma(dia){
+  const pular = document.getElementById('somaPularFds').checked;
+  let prox = somarDias(dia, 1);
+  while(pular && ehFimDeSemana(prox)) prox = somarDias(prox, 1);
+  return prox;
+}
+document.getElementById('btnSomaPular').addEventListener('click', () => {
+  const input = document.getElementById('somaData');
+  const atual = input.value || hojeLocal();
+  input.value = proximoDiaSoma(atual);
+  limparQtdsSoma();
+  recalcularSoma();
+  mostrarToastForn(`⏭️ ${formatDate(atual)} pulado. Agora o ${formatDate(input.value)}.`);
+  focarPrimeiraQtdSoma();
+});
+document.getElementById('somaPularFds').addEventListener('change', e => {
+  // Ligou a opção parado num sábado/domingo: já vai pra segunda.
+  const input = document.getElementById('somaData');
+  if(e.target.checked && input.value && ehFimDeSemana(input.value)){
+    input.value = proximoDiaSoma(somarDias(input.value, -1));
+    recalcularSoma();
+  }
+});
 function mudarDiaSoma(n){
   const input = document.getElementById('somaData');
   input.value = somarDias(input.value || hojeLocal(), n);
@@ -4438,10 +4473,11 @@ document.getElementById('btnSomaLancar').addEventListener('click', () => {
   saveFornecedores(true);
   fornMes = dia.slice(0, 7);
   renderFornAba();
-  mostrarToastForn(`✅ ${formatDate(dia)}: ${fmt(total)} lançados. Agora o ${formatDate(somarDias(dia, 1))}.`);
+  const proximo = proximoDiaSoma(dia);
+  mostrarToastForn(`✅ ${formatDate(dia)}: ${fmt(total)} lançados. Agora o ${formatDate(proximo)}.`);
   // Próximo dia, quantidades zeradas (os preços digitados ficam).
   limparQtdsSoma();
-  document.getElementById('somaData').value = somarDias(dia, 1);
+  document.getElementById('somaData').value = proximo;
   renderSessaoSoma(f);
   recalcularSoma();
   focarPrimeiraQtdSoma();
