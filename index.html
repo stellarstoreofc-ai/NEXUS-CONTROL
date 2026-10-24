@@ -119,9 +119,21 @@
   .qc-outros-cab label{margin:0!important;}
   .calc-card .toggle-tarifa{padding:8px 10px;margin-bottom:8px;font-size:12px;}
   .calc-card .ml-frete-valores{padding:6px 10px;margin:0 0 8px;}
-  .calc-card .preco-breakdown-bar{height:14px;}
-  .calc-card .preco-breakdown-lista{margin-top:6px;gap:2px;}
-  .calc-card .preco-breakdown-item{font-size:12px;}
+  /* ⑦ Para onde vai o preço: maior e mais legível que o resto da calculadora */
+  .calc-card .preco-breakdown-bar{height:24px;border-radius:12px;}
+  .calc-card .preco-breakdown-lista{margin-top:12px;gap:7px;}
+  .calc-card .preco-breakdown-item{font-size:14.5px;grid-template-columns:14px 1fr auto 58px;gap:10px;}
+  .calc-card .preco-breakdown-swatch{width:14px;height:14px;border-radius:4px;}
+  .calc-card .preco-breakdown-label{font-weight:700;color:var(--text);}
+  .calc-card .preco-breakdown-valor{font-weight:800;font-size:15px;}
+  .calc-card .preco-breakdown-pct{font-weight:700;font-size:13.5px;text-align:right;}
+  @media (max-width:1599px){
+    .calc-card .preco-breakdown-bar{height:18px;}
+    .calc-card .preco-breakdown-lista{margin-top:8px;gap:3px;}
+    .calc-card .preco-breakdown-item{font-size:13px;gap:6px;grid-template-columns:12px 1fr auto 46px;}
+    .calc-card .preco-breakdown-valor{font-size:13.5px;}
+    .calc-card .preco-breakdown-pct{font-size:12px;}
+  }
   .calc-card .produto-preview-faixa{margin-top:6px;font-size:11.5px;}
   .qc-passo .field:last-child{margin-bottom:0;}
   .qc-taxas{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:10px;padding:8px 10px;margin-top:4px;}
@@ -3666,25 +3678,8 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
           <div class="produto-preview-faixa" id="${prefix}Faixa" style="display:none;"></div>
         </div>
 
-        ${temEscada ? `
         <div class="qc-passo">
-          ${passo(5, 'Como cadastrar no anúncio', ' <span class="prec-sub">— preço cheio + descontos</span>')}
-          <div class="qc-escada-cfg">
-            <label>Promoção <input type="number" id="${prefix}DescPromo" step="0.5" min="0" max="90" value="20"> %</label>
-            <label>Oferta relâmpago <input type="number" id="${prefix}DescRelampago" step="0.5" min="0" max="90" value="5"> %</label>
-            <span class="qc-escada-alvo">
-              Chegar no:
-              <label><input type="radio" name="${prefix}EscadaAlvo" value="rec" checked> Recomendado</label>
-              <label><input type="radio" name="${prefix}EscadaAlvo" value="lanc"> Lançamento</label>
-            </span>
-          </div>
-          <div class="qc-escada" id="${prefix}Escada"></div>
-        </div>` : ''}
-      </div>
-
-      <div class="qc-col">
-        <div class="qc-passo">
-          ${passo(temEscada ? 6 : 5, ehShein ? 'Testar um preço cheio' : 'Testar um preço')}
+          ${passo(5, ehShein ? 'Testar um preço cheio' : 'Testar um preço')}
           <div class="qc-teste">
             <div class="field">
               <label>${ehShein ? 'Preço cheio — o que você cadastra na Shein (R$)' : 'Preço de venda (R$)'}</label>
@@ -3697,6 +3692,23 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="qc-col">
+        ${temEscada ? `
+        <div class="qc-passo">
+          ${passo(6, 'Como cadastrar no anúncio', ' <span class="prec-sub">— preço cheio + descontos</span>')}
+          <div class="qc-escada-cfg">
+            <label>Promoção <input type="number" id="${prefix}DescPromo" step="0.5" min="0" max="90" value="20"> %</label>
+            <label>Oferta relâmpago <input type="number" id="${prefix}DescRelampago" step="0.5" min="0" max="90" value="5"> %</label>
+            <span class="qc-escada-alvo">
+              Chegar no:
+              <label><input type="radio" name="${prefix}EscadaAlvo" value="rec" checked> Recomendado</label>
+              <label><input type="radio" name="${prefix}EscadaAlvo" value="lanc"> Lançamento</label>
+            </span>
+          </div>
+          <div class="qc-escada" id="${prefix}Escada"></div>
+        </div>` : ''}
 
         <div class="qc-passo">
           ${passo(temEscada ? 7 : 6, 'Para onde vai o preço')}
