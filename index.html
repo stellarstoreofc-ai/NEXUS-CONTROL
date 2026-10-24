@@ -93,13 +93,61 @@
 
   main{max-width:1100px;width:100%;margin:0 auto;padding:24px clamp(16px,3vw,32px) 60px;}
   /* Calculadora de precificação usa a tela larga: calculadora fixa à esquerda */
-  main:has(#page-precificacao.active){max-width:1640px;}
-  .prec-layout{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);gap:22px;align-items:start;}
-  .prec-calc{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;border-radius:var(--radius);scrollbar-width:thin;}
-  .prec-calc .chart-card,.prec-main > .chart-card{margin-top:0;}
+  main:has(#page-precificacao.active){max-width:1320px;}
+  .calc-card{margin-top:0;}
+  .calc-card > h3{margin-bottom:14px;}
+  .qc-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:12.5px;font-weight:800;flex-shrink:0;}
+  .qc-passo-tit{display:flex;align-items:center;gap:8px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14.5px;margin:4px 0 10px;}
+  #quickMarketplaceTabs{margin-bottom:16px;}
+  .qc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;align-items:start;}
+  .qc-col{display:flex;flex-direction:column;gap:14px;min-width:0;}
+  .qc-passo{border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:var(--surface);}
+  .qc-passo .field:last-child{margin-bottom:0;}
+  .qc-taxas{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:10px;padding:8px 10px;margin-top:4px;}
+  .qc-taxas strong{color:var(--text);}
+  .qc-passo .config-taxas{margin-top:8px;}
+  .qc-passo .config-taxas > summary{display:none;}   /* abre pelo “Ajustar taxas” */
+  .qc-passo .preco-breakdown{margin-top:0;padding-top:0;border-top:none;}
+  .qc-passo .preco-breakdown-titulo{display:none;}
+  .qc-precos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .qc-preco{border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
+  .qc-preco.lanc{background:#eef2ff;border:1px solid #c7d2fe;}
+  .qc-preco.rec{background:var(--green-bg);border:1px solid #a7f3d0;}
+  .qc-preco .label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);}
+  .qc-preco .card-value{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(20px,2.4vw,26px);font-weight:800;}
+  .qc-preco.lanc .card-value{color:var(--accent);}
+  .qc-preco.rec .card-value{color:var(--green);}
+  .qc-preco-info{font-size:12px;color:var(--muted);font-weight:700;min-height:16px;}
+  .qc-preco .btn{margin-top:4px;}
+  .qc-escada-cfg{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:10px;}
+  .qc-escada-cfg input[type=number]{width:62px;border:1px solid var(--border);border-radius:8px;padding:5px 6px;font:inherit;font-weight:800;color:var(--text);}
+  .qc-escada-alvo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .qc-escada-alvo label{display:flex;align-items:center;gap:4px;cursor:pointer;}
+  .qc-escada{display:flex;flex-direction:column;gap:6px;align-items:stretch;}
+  .qc-degrau{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:var(--bg);font-size:13px;}
+  .qc-degrau em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:700;}
+  .qc-degrau strong{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;white-space:nowrap;}
+  .qc-degrau.cheio{background:var(--navy);color:#fff;}
+  .qc-degrau.cheio em{color:#c7d2fe;}
+  .qc-degrau:not(.cheio){margin-left:18px;}
+  .qc-degrau.final{background:var(--green-bg);}
+  .qc-degrau.final strong{color:var(--green);}
+  .qc-escada .btn{align-self:flex-start;margin-top:2px;}
+  .qc-teste{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;}
+  .qc-teste .field{margin-bottom:0;}
+  .qc-lucro{padding:10px 14px;}
+  @keyframes qcPisca{0%{box-shadow:0 0 0 0 rgba(37,99,235,.5)}100%{box-shadow:0 0 0 10px rgba(37,99,235,0)}}
+  .qc-pisca{animation:qcPisca .8s ease;border-color:var(--accent)!important;}
+  .prec-config-gerenc{border-top:1px dashed var(--border);padding-top:12px;margin-bottom:18px;max-width:50%;}
+  @media (max-width:900px){
+    .qc-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width:480px){
+    .qc-precos,.qc-teste{grid-template-columns:1fr;}
+    .prec-config-gerenc{max-width:none;}
+    .qc-degrau:not(.cheio){margin-left:8px;}
+  }
   .prec-sub{font-size:12px;font-weight:600;color:var(--muted);}
-  .prec-calc #quickMarketplaceTabs{flex-wrap:nowrap;}
-  .prec-calc #quickMarketplaceTabs .tab{padding:7px 9px;font-size:12.5px;white-space:nowrap;flex:1;}
   .prec-config{padding:0;}
   .prec-config summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;flex-direction:column;gap:4px;}
   .prec-config summary::-webkit-details-marker{display:none;}
@@ -111,10 +159,9 @@
   .prec-config > :not(summary){margin-left:20px;margin-right:20px;}
   .prec-config > .field-row:last-of-type{margin-bottom:18px;}
   .prec-toolbar{margin-top:20px;}
-  @media (max-width:1100px){
-    .prec-layout{grid-template-columns:1fr;}
-    .prec-calc{position:static;max-height:none;overflow:visible;}
-  }
+  .prec-config{margin-top:16px;}
+  .prec-config > .field-row:last-of-type{margin-bottom:0;}
+
   .page{display:none;}
   .page.active{display:block;}
 
@@ -1014,28 +1061,24 @@
 
       <!-- PÁGINA: PRECIFICAÇÃO DE PRODUTOS -->
       <section class="page" id="page-precificacao">
-        <div class="prec-layout">
-        <aside class="prec-calc">
-        <div class="chart-card">
-          <h3>🧮 Calculadora rápida <span class="prec-sub">(não salva produto)</span></h3>
+        <div class="chart-card calc-card">
+          <h3>🧮 Calculadora de precificação <span class="prec-sub">(não salva produto — é pra simular)</span></h3>
+          <div class="qc-passo-tit"><span class="qc-num">1</span> Em qual marketplace?</div>
           <div class="tabs" id="quickMarketplaceTabs">
             <button class="tab active" data-mkt="shopee">Shopee</button>
             <button class="tab" data-mkt="ml">Mercado Livre</button>
             <button class="tab" data-mkt="shein">Shein</button>
             <button class="tab" data-mkt="tiktok">TikTok Shop</button>
           </div>
-          <p style="font-size:12px;color:var(--muted);margin:10px 0 4px;">Taxas e comissões já vêm com valores de referência de cada marketplace — confirme com as taxas reais da sua conta, pois variam por categoria e mudam com frequência.</p>
           <div id="quickCalcPanels"></div>
         </div>
-        </aside>
 
-        <div class="prec-main">
         <details class="chart-card prec-config" id="precConfig">
           <summary>
-            <span class="prec-config-titulo">⚙️ Configurações padrão da precificação</span>
+            <span class="prec-config-titulo">⚙️ Custos da empresa <span class="prec-sub">(preenche uma vez — vale pra todos os produtos)</span></span>
             <span class="prec-config-resumo" id="precConfigResumo"></span>
           </summary>
-          <p style="font-size:12px;color:var(--muted);margin:14px 0;">Preencha uma vez os custos que já são fixos na sua empresa — a calculadora rápida e os produtos já usam esses valores.</p>
+          <p style="font-size:12px;color:var(--muted);margin:14px 0;">Custos que já são fixos na sua empresa — a calculadora e os produtos usam esses valores automaticamente.</p>
           <div class="field-row">
             <div class="field">
               <label>Imposto (%)</label>
@@ -1057,10 +1100,11 @@
               <input type="number" id="cfgComissaoAfiliado" step="0.01" min="0" max="100" placeholder="Ex: 0">
             </div>
           </div>
-          <div class="field-row">
+          <div class="prec-config-gerenc">
             <div class="field">
               <label>Gerenciamento (%)</label>
               <input type="number" id="cfgGerenciamento" step="0.01" min="0" max="100" placeholder="Ex: 3">
+              <div class="field-hint">% de gerenciamento — aparece por último no "Para onde vai o preço".</div>
             </div>
           </div>
         </details>
@@ -1070,8 +1114,6 @@
           <button class="btn btn-primary btn-sm" id="btnNovoProduto">+ Novo produto</button>
         </div>
         <div class="list" id="produtosList"></div>
-        </div>
-        </div>
       </section>
     </main>
 
@@ -2313,8 +2355,8 @@ function breakdownPrecoProduto(p, precoCheio){
     { label: 'Comissão marketplace', valor: comissaoMarketplace, cor: 'var(--bk-comissao)' },
     { label: 'Imposto',              valor: imposto,             cor: 'var(--bk-imposto)' },
     { label: 'Comissão afiliado',    valor: afiliado,            cor: 'var(--bk-afiliado)' },
-    { label: 'Gerenciamento',        valor: gerenciamento,       cor: 'var(--bk-gerenciamento)' },
-    { label: 'Lucro',                valor: lucro,               cor: 'var(--bk-lucro)' }
+    { label: 'Lucro',                valor: lucro,               cor: 'var(--bk-lucro)' },
+    { label: 'Gerenciamento',        valor: gerenciamento,       cor: 'var(--bk-gerenciamento)' }
   ];
 }
 
@@ -3095,6 +3137,65 @@ function atualizarPreview(campos, prefixoSaida){
 
   renderBreakdownPreco(campos, prefixoSaida, rec);
   renderPassoShein(campos, prefixoSaida, rec);
+  renderExtrasQuickCalc(campos, prefixoSaida, rec);
+}
+
+// Só existe nos painéis da calculadora (no modal de produto os elementos não
+// existem e a função sai cedo). Tudo aqui reusa recomendacaoPreco/
+// resultadoProduto — nenhuma conta nova de taxa ou margem.
+function renderExtrasQuickCalc(campos, prefix, rec){
+  const elLanc = document.getElementById(prefix + 'PrecoLancamento');
+  if(!elLanc) return;
+  const mkt = marketplaceDoPreview(campos, prefix);
+  const num = (suf, padrao) => { const el = document.getElementById(prefix + suf); const v = el ? parseFloat(el.value) : NaN; return isNaN(v) ? padrao : v; };
+  const lucroNoPreco = rr => rr ? resultadoProduto({ ...rr.campos, precoVenda: rr.preco }) : null;
+
+  // Resumo das taxas em uso (o detalhe fica no "Ajustar taxas")
+  const comissao = comissaoEfetivaProduto(campos);
+  const frete = campos.freteMarketplace || 0;
+  const elTaxas = document.getElementById(prefix + 'TaxasResumo');
+  if(elTaxas){
+    const nome = (MARKETPLACES_QUICK.find(m => m.prefix === prefix) || {}).id;
+    elTaxas.innerHTML = `Taxas usadas: <strong>${comissao}%${frete ? ` + frete ${frete}%` : ''} + ${fmt(campos.taxaFixaMarketplace)}</strong> por venda${faixasDoMarketplace(mkt) ? ' · <span class="prec-sub">mudam pelo preço</span>' : ''}${nome === 'shein' && descontoSheinProduto(campos) ? ` · cupom/campanha ${descontoSheinProduto(campos)}%` : ''}`;
+  }
+
+  // Recomendado: quanto sobra em R$
+  const elRecInfo = document.getElementById(prefix + 'RecInfo');
+  const rRec = lucroNoPreco(rec);
+  if(elRecInfo) elRecInfo.textContent = rRec ? `lucro ${fmt(rRec.lucro)} por venda (${rRec.margem.toFixed(1)}%)` : '';
+
+  // Lançamento: mesmo cálculo com a meta de lançamento
+  const metaLanc = num('LucroLancamento', 3);
+  const recLanc = recomendacaoPreco({ ...campos, lucroDesejado: metaLanc }, mkt);
+  elLanc.textContent = recLanc ? fmt(recLanc.preco) : '—';
+  marcarValorNegativo(elLanc, !recLanc);
+  const rLanc = lucroNoPreco(recLanc);
+  document.getElementById(prefix + 'LancInfo').textContent = rLanc ? `lucro ${fmt(rLanc.lucro)} por venda (${rLanc.margem.toFixed(1)}%)` : '';
+  const elLancAviso = document.getElementById(prefix + 'LancAviso');
+  const metaNormal = campos.lucroDesejado || 0;
+  elLancAviso.style.display = metaLanc >= metaNormal && metaNormal > 0 ? 'block' : 'none';
+  elLancAviso.textContent = 'A meta de lançamento está igual ou maior que a meta normal — normalmente ela é menor, pra começar mais barato.';
+
+  // Escada: do preço que o cliente vai pagar, volta pro preço cheio do anúncio
+  const elEscada = document.getElementById(prefix + 'Escada');
+  if(!elEscada) return;
+  const alvoEl = document.querySelector(`input[name="${prefix}EscadaAlvo"]:checked`);
+  const usarLanc = alvoEl && alvoEl.value === 'lanc';
+  const alvo = usarLanc ? recLanc : rec;
+  const pPromo = Math.min(90, Math.max(0, num('DescPromo', 20))) / 100;
+  const pRel = Math.min(90, Math.max(0, num('DescRelampago', 5))) / 100;
+  if(!alvo){ elEscada.innerHTML = '<p class="forn-hist-vazio">Preencha os custos pra calcular.</p>'; elEscada.dataset.final = ''; return; }
+  const r2 = v => Math.round(v * 100) / 100;
+  // Arredonda o preço cheio pra cima, pra depois dos descontos não ficar abaixo do alvo.
+  const cheio = Math.ceil(alvo.preco / ((1 - pPromo) * (1 - pRel)) * 100 - 1e-6) / 100;
+  const comPromo = r2(cheio * (1 - pPromo));
+  const final = r2(comPromo * (1 - pRel));
+  elEscada.dataset.final = final;
+  elEscada.innerHTML = `
+    <div class="qc-degrau cheio"><span>Preço cheio do anúncio <em>← é esse que você cadastra</em></span><strong>${fmt(cheio)}</strong></div>
+    <div class="qc-degrau"><span>− ${(pPromo * 100).toLocaleString('pt-BR')}% promoção</span><strong>${fmt(comPromo)}</strong></div>
+    <div class="qc-degrau final"><span>− ${(pRel * 100).toLocaleString('pt-BR')}% oferta relâmpago <em>← o cliente paga</em></span><strong>${fmt(final)}</strong></div>
+    <button type="button" class="btn btn-outline btn-sm" data-action="testar-escada">Testar ${fmt(final)}</button>`;
 }
 
 function atualizarPreviewProduto(){
@@ -3387,83 +3488,137 @@ const MARKETPLACES_QUICK = [
 ];
 
 function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
-  const avisoTiktok = ehTiktok ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A faixa de comissão (até R$50 / acima de R$50) muda automaticamente conforme o preço de venda informado.</p>` : '';
-  const avisoShopee = ehShopee ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;">A comissão/taxa fixa muda automaticamente conforme o preço de venda (até R$79,99: 20% + R$4,50 · R$80–99,99: 14% + R$16 · R$100–199,99: 14% + R$20 · R$200 ou mais: 14% + R$26). O preço recomendado testa cada faixa e sugere o menor preço que bate sua meta de lucro.</p>` : '';
+  // Passos numerados (②–⑦) pra dar pra explicar a calculadora na ordem: à
+  // esquerda o que eu sei (custos, meta), à direita a resposta (preços,
+  // como cadastrar, teste de preço, pra onde vai o dinheiro). Os ids dos
+  // campos são os mesmos de antes — lerCampos/recomendacaoPreco não mudam.
+  const temEscada = ehShopee || ehTiktok;
+  const passo = (n, titulo, extra = '') => `<div class="qc-passo-tit"><span class="qc-num">${n}</span> ${titulo}${extra}</div>`;
   return `
-    ${avisoTiktok}${avisoShopee}
-    <div class="field">
-      <label>Custo do produto (R$)</label>
-      <input type="number" id="${prefix}CustoProduto" step="0.01" min="0" placeholder="0,00">
-    </div>
+    <div class="qc-grid">
+      <div class="qc-col">
+        <div class="qc-passo">
+          ${passo(2, 'Custos deste produto')}
+          <div class="field-row">
+            <div class="field">
+              <label>Custo do produto (R$)</label>
+              <input type="number" id="${prefix}CustoProduto" step="0.01" min="0" placeholder="0,00">
+            </div>
+            <div class="field">
+              <label>Custo de ads (R$)</label>
+              <input type="number" id="${prefix}CustoAds" step="0.01" min="0" placeholder="0,00">
+            </div>
+          </div>
+          ${ehTiktok ? htmlToggleTarifaZerada(prefix + 'TarifaZerada', false) : ''}
+          ${ehShein ? htmlCamposShein(prefix) : ''}
+          ${ehMl ? htmlOpcoesMlQuick(prefix) : ''}
+          <div class="field">
+            <label>Outros custos (opcional)</label>
+            <div id="${prefix}OutrosCustosList"></div>
+            <button type="button" class="btn btn-outline btn-sm" data-action="add-outro-custo">+ Adicionar custo</button>
+          </div>
+          <div class="qc-taxas">
+            <span id="${prefix}TaxasResumo"></span>
+            <button type="button" class="btn btn-outline btn-sm" data-action="abrir-taxas">✏️ Ajustar taxas</button>
+          </div>
+          <details class="config-taxas" id="${prefix}TaxasDetalhe">
+            <summary>Taxas do marketplace</summary>
+            <div class="config-taxas-body">
+              ${ehShopee ? `<p class="field-hint" style="margin:0 0 10px;">Shopee muda a taxa pelo preço: até R$79,99: 20% + R$4,50 · R$80–99,99: 14% + R$16 · R$100–199,99: 14% + R$20 · R$200+: 14% + R$26.</p>` : ''}
+              ${ehTiktok ? `<p class="field-hint" style="margin:0 0 10px;">TikTok muda a taxa pelo preço: até R$50 ou acima de R$50.</p>` : ''}
+              <div class="field-row">
+                <div class="field">
+                  <label>Taxa fixa (R$)</label>
+                  <input type="number" id="${prefix}TaxaFixa" step="0.01" min="0" placeholder="0,00">
+                </div>
+                <div class="field">
+                  <label>Comissão (%)</label>
+                  <input type="number" id="${prefix}ComissaoMarketplace" step="0.01" min="0" max="100" placeholder="0">
+                </div>
+              </div>
+              ${ehTiktok ? `
+              <div class="field">
+                <label>Frete (%)</label>
+                <input type="number" id="${prefix}FreteMarketplace" step="0.01" min="0" max="100" placeholder="6">
+              </div>` : ''}
+            </div>
+          </details>
+        </div>
 
-    <div class="field">
-      <label>Custo de ads (R$)</label>
-      <input type="number" id="${prefix}CustoAds" step="0.01" min="0" placeholder="0,00">
-    </div>
-
-    <div class="field">
-      <label>Meta de lucro (%)</label>
-      <input type="number" id="${prefix}LucroDesejado" step="0.01" min="0" max="99" placeholder="10">
-    </div>
-
-    ${ehTiktok ? htmlToggleTarifaZerada(prefix + 'TarifaZerada', false) : ''}
-    ${ehShein ? htmlCamposShein(prefix) : ''}
-    ${ehMl ? htmlOpcoesMlQuick(prefix) : ''}
-
-    <div class="produto-preview">
-      <div class="summary-grid">
-        <div class="summary-card">
-          <div class="label">Preço recomendado</div>
-          <div class="card-value" id="${prefix}PrecoRecomendado">R$ 0,00</div>
+        <div class="qc-passo">
+          ${passo(3, 'Quanto quero lucrar')}
+          <div class="field-row">
+            <div class="field">
+              <label>Meta de lucro (%)</label>
+              <input type="number" id="${prefix}LucroDesejado" step="0.01" min="0" max="99" placeholder="10">
+            </div>
+            <div class="field">
+              <label>Meta no lançamento (%)</label>
+              <input type="number" id="${prefix}LucroLancamento" step="0.01" min="0" max="99" placeholder="3">
+              <div class="field-hint">Menor, pra começar barato e ranquear.</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="produto-preview-aviso" id="${prefix}Aviso" style="display:none;"></div>
-      <div class="produto-preview-faixa" id="${prefix}Faixa" style="display:none;"></div>
-      <button type="button" class="btn btn-outline btn-sm" data-action="usar-recomendado" style="margin-top:14px;">Usar preço recomendado</button>
-    </div>
 
-    <div class="field">
-      <label>${ehShein ? 'Preço cheio — o que você cadastra na Shein (R$)' : 'Preço de venda (R$)'}</label>
-      <input type="number" id="${prefix}PrecoVenda" step="0.01" min="0" placeholder="0,00">
-    </div>
+      <div class="qc-col">
+        <div class="qc-passo">
+          ${passo(4, 'Preços sugeridos')}
+          <div class="qc-precos">
+            <div class="qc-preco lanc">
+              <div class="label">🚀 Lançamento</div>
+              <div class="card-value" id="${prefix}PrecoLancamento">—</div>
+              <div class="qc-preco-info" id="${prefix}LancInfo"></div>
+              <button type="button" class="btn btn-outline btn-sm" data-action="usar-lancamento">Testar este preço</button>
+            </div>
+            <div class="qc-preco rec">
+              <div class="label">✅ Recomendado</div>
+              <div class="card-value" id="${prefix}PrecoRecomendado">R$ 0,00</div>
+              <div class="qc-preco-info" id="${prefix}RecInfo"></div>
+              <button type="button" class="btn btn-outline btn-sm" data-action="usar-recomendado">Testar este preço</button>
+            </div>
+          </div>
+          <div class="produto-preview-aviso" id="${prefix}Aviso" style="display:none;"></div>
+          <div class="produto-preview-aviso" id="${prefix}LancAviso" style="display:none;"></div>
+          <div class="produto-preview-faixa" id="${prefix}Faixa" style="display:none;"></div>
+        </div>
 
-    <div class="produto-preview">
-      <div class="summary-grid">
-        <div class="summary-card">
-          <div class="label">Lucro</div>
-          <div class="card-value" id="${prefix}Lucro">R$ 0,00</div>
+        ${temEscada ? `
+        <div class="qc-passo">
+          ${passo(5, 'Como cadastrar no anúncio', ' <span class="prec-sub">— preço cheio + descontos</span>')}
+          <div class="qc-escada-cfg">
+            <label>Promoção <input type="number" id="${prefix}DescPromo" step="0.5" min="0" max="90" value="20"> %</label>
+            <label>Oferta relâmpago <input type="number" id="${prefix}DescRelampago" step="0.5" min="0" max="90" value="5"> %</label>
+            <span class="qc-escada-alvo">
+              Chegar no:
+              <label><input type="radio" name="${prefix}EscadaAlvo" value="rec" checked> Recomendado</label>
+              <label><input type="radio" name="${prefix}EscadaAlvo" value="lanc"> Lançamento</label>
+            </span>
+          </div>
+          <div class="qc-escada" id="${prefix}Escada"></div>
+        </div>` : ''}
+
+        <div class="qc-passo">
+          ${passo(temEscada ? 6 : 5, ehShein ? 'Testar um preço cheio' : 'Testar um preço')}
+          <div class="qc-teste">
+            <div class="field">
+              <label>${ehShein ? 'Preço cheio — o que você cadastra na Shein (R$)' : 'Preço de venda (R$)'}</label>
+              <input type="number" id="${prefix}PrecoVenda" step="0.01" min="0" placeholder="0,00">
+            </div>
+            <div class="summary-card qc-lucro">
+              <div class="label">Lucro</div>
+              <div class="card-value" id="${prefix}Lucro">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="qc-passo">
+          ${passo(temEscada ? 7 : 6, 'Para onde vai o preço')}
+          <div class="preco-breakdown" id="${prefix}Breakdown"></div>
+          ${ehShein ? `<div class="passo-shein" id="${prefix}PassoShein" style="display:none;"></div>` : ''}
         </div>
       </div>
     </div>
-
-    <div class="preco-breakdown" id="${prefix}Breakdown"></div>
-    ${ehShein ? `<div class="passo-shein" id="${prefix}PassoShein" style="display:none;"></div>` : ''}
-
-    <details class="config-taxas">
-      <summary>Configurar taxas do marketplace</summary>
-      <div class="config-taxas-body">
-        <div class="field">
-          <label>Taxa fixa marketplace (R$)</label>
-          <input type="number" id="${prefix}TaxaFixa" step="0.01" min="0" placeholder="0,00">
-        </div>
-
-        <div class="field">
-          <label>Comissão marketplace (%)</label>
-          <input type="number" id="${prefix}ComissaoMarketplace" step="0.01" min="0" max="100" placeholder="0">
-        </div>
-        ${ehTiktok ? `
-        <div class="field">
-          <label>Frete (%)</label>
-          <input type="number" id="${prefix}FreteMarketplace" step="0.01" min="0" max="100" placeholder="6">
-        </div>
-        ` : ''}
-        <div class="field">
-          <label>Outros custos</label>
-          <div id="${prefix}OutrosCustosList"></div>
-          <button type="button" class="btn btn-outline btn-sm" data-action="add-outro-custo">+ Adicionar custo</button>
-        </div>
-      </div>
-    </details>
   `;
 }
 
@@ -3546,6 +3701,12 @@ function initQuickCalcPanels(){
   // Valor do frete do ML: salva na config e redesenha os cards (que usam esse
   // valor nas colunas ML) só quando sai do campo.
   container.addEventListener('change', e => {
+    // Rádio "chegar no" da escada de descontos
+    if(e.target.type === 'radio'){
+      const panel = e.target.closest('.quick-panel');
+      if(panel) atualizarPreview(lerCampos(panel.dataset.prefix, panel.dataset.prefix + 'OutrosCustosList'), panel.dataset.prefix);
+      return;
+    }
     if(!e.target.classList.contains('ml-frete-valor')) return;
     if(!(parseFloat(e.target.value) >= 0)) e.target.value = valorFreteMl(e.target.dataset.frete);
     saveConfigPrecificacao();
@@ -3575,8 +3736,30 @@ function initQuickCalcPanels(){
     const btn = e.target.closest('button[data-action]');
     if(!btn) return;
 
+    // Preço escolhido nos passos ④/⑤ vai pro "Testar um preço" (com a faixa de taxa certa).
+    const testarPreco = preco => {
+      document.getElementById(prefix + 'PrecoVenda').value = Number(preco).toFixed(2);
+      if(panel.dataset.tiktok === 'true') aplicarPreset(prefix, faixaTiktokPeloPreco(Number(preco)));
+      if(panel.dataset.shopee === 'true') aplicarPreset(prefix, faixaShopeePeloPreco(Number(preco)));
+      atualizarPreview(lerCampos(prefix, outrosContainerId), prefix);
+      const campo = document.getElementById(prefix + 'PrecoVenda');
+      campo.classList.remove('qc-pisca'); void campo.offsetWidth; campo.classList.add('qc-pisca');
+    };
     if(btn.dataset.action === 'add-outro-custo'){
       addOutroCustoRow(outrosContainerId);
+    } else if(btn.dataset.action === 'abrir-taxas'){
+      const d = document.getElementById(prefix + 'TaxasDetalhe');
+      d.open = !d.open;
+      if(d.open) d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else if(btn.dataset.action === 'usar-lancamento'){
+      const campos = lerCampos(prefix, outrosContainerId);
+      const metaEl = document.getElementById(prefix + 'LucroLancamento');
+      const meta = metaEl && metaEl.value !== '' ? parseFloat(metaEl.value) : 3;
+      const recL = recomendacaoPreco({ ...campos, lucroDesejado: meta }, marketplaceDoPreview(campos, prefix));
+      if(recL) testarPreco(recL.preco);
+    } else if(btn.dataset.action === 'testar-escada'){
+      const final = parseFloat(document.getElementById(prefix + 'Escada').dataset.final);
+      if(final > 0) testarPreco(final);
     } else if(btn.dataset.action === 'usar-recomendado'){
       const campos = lerCampos(prefix, outrosContainerId);
       const rec = recomendacaoPreco(campos, marketplaceDoPreview(campos, prefix));
@@ -3605,6 +3788,7 @@ function initQuickCalcDefaults(){
   MARKETPLACES_QUICK.forEach(m => {
     aplicarPreset(m.prefix, m.preset);
     document.getElementById(m.prefix + 'LucroDesejado').value = 10;
+    document.getElementById(m.prefix + 'LucroLancamento').value = 3;
     atualizarPreview(lerCampos(m.prefix, m.prefix + 'OutrosCustosList'), m.prefix);
   });
 }
