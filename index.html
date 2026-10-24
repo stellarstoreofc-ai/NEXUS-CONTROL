@@ -159,6 +159,14 @@
   .qc-teste .field{margin-bottom:0;}
   .qc-lucro{padding:8px 12px;}
   .qc-lucro .card-value{font-size:20px;margin-top:2px;}
+  .qc-lucro-info{font-size:11.5px;font-weight:700;color:var(--muted);margin-top:2px;}
+  .qc-lucro{transition:background .2s,border-color .2s;}
+  .qc-lucro.lucro-neg{background:var(--red-bg);border-color:#fca5a5;}
+  .qc-lucro.lucro-neg .card-value,.qc-lucro.lucro-neg .qc-lucro-info{color:var(--red);}
+  .qc-lucro.lucro-baixo{background:var(--amber-bg);border-color:#fcd34d;}
+  .qc-lucro.lucro-baixo .card-value,.qc-lucro.lucro-baixo .qc-lucro-info{color:var(--amber);}
+  .qc-lucro.lucro-bom{background:var(--green-bg);border-color:#a7f3d0;}
+  .qc-lucro.lucro-bom .card-value,.qc-lucro.lucro-bom .qc-lucro-info{color:var(--green);}
   @keyframes qcPisca{0%{box-shadow:0 0 0 0 rgba(37,99,235,.5)}100%{box-shadow:0 0 0 10px rgba(37,99,235,0)}}
   .qc-pisca{animation:qcPisca .8s ease;border-color:var(--accent)!important;}
   .prec-config-gerenc{border-top:1px dashed var(--border);padding-top:12px;margin-bottom:18px;max-width:50%;}
@@ -3226,6 +3234,32 @@ function renderExtrasQuickCalc(campos, prefix, rec){
   elLancAviso.style.display = metaLanc >= metaNormal && metaNormal > 0 ? 'block' : 'none';
   elLancAviso.textContent = 'A meta de lançamento está igual ou maior que a meta normal — normalmente ela é menor, pra começar mais barato.';
 
+  // Cor do lucro no "Testar um preço", comparando com a meta de lucro do passo ③:
+  // vermelho = prejuízo, amarelo = positivo mas abaixo da meta, verde = bateu a meta.
+  const elLucroInfo = document.getElementById(prefix + 'LucroInfo');
+  const cardLucro = elLucroInfo && elLucroInfo.closest('.qc-lucro');
+  if(cardLucro){
+    cardLucro.classList.remove('lucro-neg', 'lucro-baixo', 'lucro-bom');
+    const temPreco = (campos.precoVenda || 0) > 0 && descontoValido(campos);
+    if(!temPreco){
+      elLucroInfo.textContent = 'digite um preço pra ver';
+    } else {
+      const { lucro, margem } = resultadoProduto(campos);
+      const meta = campos.lucroDesejado || 0;
+      const m = margem.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+      if(lucro < -0.004){
+        cardLucro.classList.add('lucro-neg');
+        elLucroInfo.textContent = `prejuízo · ${m}% de margem`;
+      } else if(margem < meta - 0.05){
+        cardLucro.classList.add('lucro-baixo');
+        elLucroInfo.textContent = `${m}% de margem · abaixo da meta de ${meta}%`;
+      } else {
+        cardLucro.classList.add('lucro-bom');
+        elLucroInfo.textContent = `${m}% de margem · ${meta > 0 ? 'bateu a meta' : 'positivo'} ✓`;
+      }
+    }
+  }
+
   // Escada: do preço que o cliente vai pagar, volta pro preço cheio do anúncio
   const elEscada = document.getElementById(prefix + 'Escada');
   if(!elEscada) return;
@@ -3659,6 +3693,7 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
             <div class="summary-card qc-lucro">
               <div class="label">Lucro</div>
               <div class="card-value" id="${prefix}Lucro">R$ 0,00</div>
+              <div class="qc-lucro-info" id="${prefix}LucroInfo"></div>
             </div>
           </div>
         </div>
