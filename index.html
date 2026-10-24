@@ -92,6 +92,29 @@
     cursor:pointer;padding:6px 11px;border-radius:8px;line-height:1;}
 
   main{max-width:1100px;width:100%;margin:0 auto;padding:24px clamp(16px,3vw,32px) 60px;}
+  /* Calculadora de precificação usa a tela larga: calculadora fixa à esquerda */
+  main:has(#page-precificacao.active){max-width:1640px;}
+  .prec-layout{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);gap:22px;align-items:start;}
+  .prec-calc{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;border-radius:var(--radius);scrollbar-width:thin;}
+  .prec-calc .chart-card,.prec-main > .chart-card{margin-top:0;}
+  .prec-sub{font-size:12px;font-weight:600;color:var(--muted);}
+  .prec-calc #quickMarketplaceTabs{flex-wrap:nowrap;}
+  .prec-calc #quickMarketplaceTabs .tab{padding:7px 9px;font-size:12.5px;white-space:nowrap;flex:1;}
+  .prec-config{padding:0;}
+  .prec-config summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;flex-direction:column;gap:4px;}
+  .prec-config summary::-webkit-details-marker{display:none;}
+  .prec-config-titulo{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:10px;}
+  .prec-config-titulo::after{content:'Editar ▾';font-size:12px;font-weight:700;color:var(--accent);}
+  .prec-config[open] .prec-config-titulo::after{content:'Fechar ▴';}
+  .prec-config-resumo{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .prec-config[open] .prec-config-resumo{display:none;}
+  .prec-config > :not(summary){margin-left:20px;margin-right:20px;}
+  .prec-config > .field-row:last-of-type{margin-bottom:18px;}
+  .prec-toolbar{margin-top:20px;}
+  @media (max-width:1100px){
+    .prec-layout{grid-template-columns:1fr;}
+    .prec-calc{position:static;max-height:none;overflow:visible;}
+  }
   .page{display:none;}
   .page.active{display:block;}
 
@@ -399,7 +422,7 @@
   .forn-dia-total .valor{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--navy);}
   .forn-dia-total .valor.pop{animation:fornPop .35s ease;}
   @keyframes fornPop{0%{transform:scale(1)}40%{transform:scale(1.18);color:var(--green)}100%{transform:scale(1)}}
-  .forn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;}
+  .forn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;align-items:start;}
   .forn-prod{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;gap:8px;position:relative;transition:border-color .2s,transform .1s;}
   .forn-prod.tem{border-color:var(--green);background:linear-gradient(180deg,var(--green-bg),var(--surface) 60%);}
   .forn-prod-foto{width:100%;aspect-ratio:1/1;max-width:100%;border-radius:10px;object-fit:cover;background:var(--bg);}
@@ -421,10 +444,45 @@
   .forn-hist{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin-top:18px;align-items:start;}
   .forn-hist-col{display:flex;flex-direction:column;gap:12px;}
   @media (max-width:760px){ .forn-hist{grid-template-columns:1fr;} }
+  .rel-meses{margin-top:0;margin-bottom:16px;}
+  .rel-cab{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .rel-cab h3{margin:0;}
+  .rel-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .rel-chip{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:800;color:var(--muted);cursor:pointer;text-transform:capitalize;}
+  .rel-chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
+  .rel-card{border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:var(--surface);}
+  .rel-card.quitado{border-color:var(--green);background:var(--green-bg);}
+  .rel-card-topo{display:flex;justify-content:space-between;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:2px;}
+  .rel-card-topo strong{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;}
+  .rel-origem{font-size:11px;font-weight:700;color:var(--muted);}
+  .rel-linha{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);}
+  .rel-linha strong{color:var(--text);font-variant-numeric:tabular-nums;}
+  .rel-linha strong.verde,.rel-total strong.verde{color:var(--green);}
+  .rel-linha.falta{font-weight:800;color:var(--text);border-top:1px dashed var(--border);padding-top:6px;}
+  .rel-linha.falta strong{color:var(--amber);font-size:16px;}
+  .rel-card.quitado .rel-linha.falta strong{color:var(--green);}
+  .rel-barra{height:7px;background:var(--border);border-radius:999px;overflow:hidden;}
+  .rel-barra span{display:block;height:100%;background:var(--green);border-radius:999px;}
+  .rel-acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+  .rel-total{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;}
+  .rel-total .label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:#c7d2fe;}
+  .rel-total-nums{display:flex;gap:22px;flex-wrap:wrap;}
+  .rel-total-nums div{display:flex;flex-direction:column;}
+  .rel-total-nums span{font-size:11.5px;color:#c7d2fe;font-weight:700;}
+  .rel-total-nums strong{font-family:'Plus Jakarta Sans',sans-serif;font-size:19px;}
+  .rel-total strong.verde{color:#6ee7b7;}
+  .rel-total strong.ambar{color:#fcd34d;}
+  .forn-manual-tag{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:2px;}
   .forn-add{border:1px dashed var(--border);background:transparent;border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer;}
   .forn-add:hover{border-color:var(--accent);color:var(--accent);}
   .forn-hero-editar{background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:2px 7px;font-size:12px;cursor:pointer;margin-left:4px;vertical-align:middle;}
   .forn-hero-editar:hover{background:rgba(255,255,255,.3);}
+  .ped-status{flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12.5px;border-radius:10px;padding:8px 12px;}
+  .ped-status.rascunho{background:var(--amber-bg);color:#92400e;border:1px solid #fcd34d;}
+  .ped-status.ok{background:var(--green-bg);color:var(--green);font-weight:700;}
+  .ped-outros-rasc{font-size:12.5px;color:#92400e;margin:-6px 0 12px;}
+  .ped-outros-rasc .link,.ped-status .link{background:none;border:none;color:var(--accent);font:inherit;font-weight:800;cursor:pointer;padding:0;}
   .forn-dia-direita{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end;}
   .forn-hist .chart-card{margin-top:0;}
   .forn-hist-linha{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
@@ -444,10 +502,14 @@
   .modal .forn-foto-wrap .preview{width:72px;height:72px;border-radius:12px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px;color:var(--muted);flex-shrink:0;}
   .modal .forn-foto-wrap .preview img{width:100%;height:100%;object-fit:cover;}
   /* Pedidos: produto com variações (tamanhos) ocupa mais espaço no grid */
-  .forn-prod.com-var{grid-column:span 2;}
-  .forn-prod.com-var .forn-prod-topo{display:flex;gap:10px;align-items:center;}
-  .forn-prod.com-var .forn-prod-foto{width:64px;height:64px;aspect-ratio:auto;flex-shrink:0;}
-  .forn-prod.com-var .forn-prod-foto.placeholder{font-size:24px;}
+
+  .forn-prod-topo{display:flex;gap:10px;align-items:center;padding-right:64px;}
+  .forn-prod-topo .forn-prod-foto{width:64px;height:64px;aspect-ratio:auto;flex-shrink:0;}
+  .forn-prod-topo .forn-prod-foto.placeholder{font-size:24px;}
+  .forn-prod-arrastar{position:absolute;top:8px;right:44px;background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:8px;padding:2px 7px;font-size:15px;line-height:1.2;color:var(--muted);cursor:grab;touch-action:none;user-select:none;}
+  .forn-prod-arrastar:active{cursor:grabbing;}
+  .forn-prod.arrastando{opacity:.55;outline:2px dashed var(--accent);outline-offset:2px;}
+  body.arrastando-produto{user-select:none;cursor:grabbing;}
   .forn-vars{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:6px;}
   .forn-var{border:1px solid var(--border);border-radius:10px;padding:6px 4px;text-align:center;background:var(--surface);}
   .forn-var.tem{border-color:var(--green);background:var(--green-bg);}
@@ -550,14 +612,14 @@
   .print-preview img{display:block;width:100%;height:auto;}
   .print-acoes{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 8px;}
   @media (max-width:480px){
-    .forn-prod.com-var{grid-column:1 / -1;}
     .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));}
     .forn-vars.compacta .forn-var-ctrl button{width:22px;height:22px;}
-    .forn-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+    .forn-grid{grid-template-columns:1fr;gap:10px;}
     .forn-qtd button{width:36px;height:36px;font-size:19px;}
     .forn-qtd input{height:36px;font-size:16px;}
     .forn-dia-total{text-align:left;}
     .forn-dia-direita{width:100%;justify-content:space-between;}
+    .forn-dia-direita [data-acao="confirmar-pedido"]{flex:1 1 100%;padding:11px;font-size:14px;}
   }
 
   /* Modal */
@@ -754,7 +816,7 @@
       <button data-page="lembretes">✅ Lembretes</button>
       <button data-page="contas" class="active">📋 Contas</button>
       <button data-page="custofixo">🧮 Custo fixo por pedido</button>
-      <button data-page="precificacao">🏷️ Precificação de produtos</button>
+      <button data-page="precificacao">🧮 Calculadora de precificação</button>
       <button data-page="fornecedores">🚚 Fornecedores</button>
     </nav>
     <div class="sidebar-footer">
@@ -952,9 +1014,28 @@
 
       <!-- PÁGINA: PRECIFICAÇÃO DE PRODUTOS -->
       <section class="page" id="page-precificacao">
-        <div class="chart-card" style="max-width:520px;">
-          <h3>Configurações padrão da precificação</h3>
-          <p style="font-size:12px;color:var(--muted);margin:0 0 14px;">Preencha uma vez os custos que já são fixos na sua empresa — a calculadora rápida e os produtos novos já vêm com esses valores preenchidos.</p>
+        <div class="prec-layout">
+        <aside class="prec-calc">
+        <div class="chart-card">
+          <h3>🧮 Calculadora rápida <span class="prec-sub">(não salva produto)</span></h3>
+          <div class="tabs" id="quickMarketplaceTabs">
+            <button class="tab active" data-mkt="shopee">Shopee</button>
+            <button class="tab" data-mkt="ml">Mercado Livre</button>
+            <button class="tab" data-mkt="shein">Shein</button>
+            <button class="tab" data-mkt="tiktok">TikTok Shop</button>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:10px 0 4px;">Taxas e comissões já vêm com valores de referência de cada marketplace — confirme com as taxas reais da sua conta, pois variam por categoria e mudam com frequência.</p>
+          <div id="quickCalcPanels"></div>
+        </div>
+        </aside>
+
+        <div class="prec-main">
+        <details class="chart-card prec-config" id="precConfig">
+          <summary>
+            <span class="prec-config-titulo">⚙️ Configurações padrão da precificação</span>
+            <span class="prec-config-resumo" id="precConfigResumo"></span>
+          </summary>
+          <p style="font-size:12px;color:var(--muted);margin:14px 0;">Preencha uma vez os custos que já são fixos na sua empresa — a calculadora rápida e os produtos já usam esses valores.</p>
           <div class="field-row">
             <div class="field">
               <label>Imposto (%)</label>
@@ -982,25 +1063,15 @@
               <input type="number" id="cfgGerenciamento" step="0.01" min="0" max="100" placeholder="Ex: 3">
             </div>
           </div>
-        </div>
+        </details>
 
-        <div class="chart-card" style="max-width:520px;">
-          <h3>Calculadora rápida por marketplace (não salva produto)</h3>
-          <div class="tabs" id="quickMarketplaceTabs">
-            <button class="tab active" data-mkt="shopee">Shopee</button>
-            <button class="tab" data-mkt="ml">Mercado Livre</button>
-            <button class="tab" data-mkt="shein">Shein</button>
-            <button class="tab" data-mkt="tiktok">TikTok Shop</button>
-          </div>
-          <p style="font-size:12px;color:var(--muted);margin:10px 0 4px;">Taxas e comissões já vêm com valores de referência de cada marketplace — confirme com as taxas reais da sua conta, pois variam por categoria e mudam com frequência.</p>
-          <div id="quickCalcPanels"></div>
-        </div>
-
-        <div class="toolbar" style="margin-top:24px;">
-          <h3 style="margin:0;">Meus produtos</h3>
+        <div class="toolbar prec-toolbar">
+          <h3 style="margin:0;">🏷️ Meus produtos</h3>
           <button class="btn btn-primary btn-sm" id="btnNovoProduto">+ Novo produto</button>
         </div>
         <div class="list" id="produtosList"></div>
+        </div>
+        </div>
       </section>
     </main>
 
@@ -1231,6 +1302,46 @@
       <button type="button" class="btn btn-primary" id="btnSomaLancar">Lançar dia e ir pro próximo ›</button>
     </div>
     <div class="soma-sessao" id="somaSessao"></div>
+  </div>
+</div>
+
+<!-- Modal: valor do mês (relatório) -->
+<div class="overlay" id="overlayValorMes">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>✍️ Valor do mês</h2>
+      <button type="button" class="modal-close-x" data-fechar="overlayValorMes" aria-label="Fechar">✕</button>
+    </div>
+    <form id="formValorMes">
+      <p class="field-hint" style="margin:-8px 0 14px;">Pra quando você já tem o total do mês anotado — sem precisar lançar pedido por pedido.</p>
+      <div class="field">
+        <label>Mês</label>
+        <input type="month" id="valorMesMes" required>
+      </div>
+      <div class="field">
+        <label>Quanto era pra pagar nesse mês (R$)</label>
+        <input type="number" id="valorMesValor" step="0.01" min="0" placeholder="Ex: 2881,00" required>
+        <div class="field-hint" id="valorMesInfo"></div>
+      </div>
+      <div class="field">
+        <label>Já paguei desse mês (opcional, R$)</label>
+        <input type="number" id="valorMesPago" step="0.01" min="0" placeholder="Ex: 1500,00">
+        <div class="field-hint">Entra como um pagamento referente a esse mês (soma com os que já estiverem registrados).</div>
+      </div>
+      <div class="field">
+        <label>Data desse pagamento</label>
+        <input type="date" id="valorMesData">
+      </div>
+      <label class="forn-check">
+        <input type="checkbox" id="valorMesContas">
+        <span>Lançar esse pagamento também em <strong>Contas</strong> (deixe desmarcado se for um pagamento antigo que você já controlou por fora).</span>
+      </label>
+      <div class="modal-actions" style="flex-wrap:wrap;">
+        <button type="button" class="btn btn-danger-text" id="btnValorMesRemover" style="margin-right:auto;display:none;">Tirar valor informado</button>
+        <button type="button" class="btn btn-outline" data-fechar="overlayValorMes">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -1533,7 +1644,7 @@ const pageTitles = {
   relatorio: 'Relatório mensal',
   lembretes: 'Lembretes',
   custofixo: 'Custo fixo por pedido',
-  precificacao: 'Precificação de produtos',
+  precificacao: 'Calculadora de precificação',
   fornecedores: 'Fornecedores'
 };
 
@@ -3504,6 +3615,13 @@ function renderConfigPrecificacao(){
   document.getElementById('cfgCustoFixo').value = configPrecificacao.custoFixo;
   document.getElementById('cfgComissaoAfiliado').value = configPrecificacao.comissaoAfiliado;
   document.getElementById('cfgGerenciamento').value = configPrecificacao.gerenciamento;
+  atualizarResumoConfigPrecificacao();
+}
+// Linha curta com os valores atuais, visível com o cartão recolhido.
+function atualizarResumoConfigPrecificacao(){
+  const c = configPrecificacao;
+  document.getElementById('precConfigResumo').textContent =
+    `Imposto ${c.imposto || 0}% · Embalagem ${fmt(c.custoEmbalagem)} · Custo fixo ${fmt(c.custoFixo)} · Afiliado ${c.comissaoAfiliado || 0}% · Gerenciamento ${c.gerenciamento || 0}%`;
 }
 
 // Imposto/custo de embalagem/custo fixo/comissão do afiliado não têm campo
@@ -3518,6 +3636,7 @@ function aplicarConfigPrecificacaoQuickCalc(){
 
 function salvarConfigPrecificacaoDoForm(){
   configPrecificacao = {
+    ...configPrecificacao,   // mantém campos sem input neste cartão (ex.: valores do frete do ML)
     imposto: parseFloat(document.getElementById('cfgImposto').value) || 0,
     custoEmbalagem: parseFloat(document.getElementById('cfgCustoEmbalagem').value) || 0,
     custoFixo: parseFloat(document.getElementById('cfgCustoFixo').value) || 0,
@@ -3526,6 +3645,8 @@ function salvarConfigPrecificacaoDoForm(){
   };
   saveConfigPrecificacao();
   aplicarConfigPrecificacaoQuickCalc();
+  atualizarResumoConfigPrecificacao();
+  renderProdutos();   // os cards dos produtos usam esses valores ao vivo
 }
 
 ['cfgImposto','cfgCustoEmbalagem','cfgCustoFixo','cfgComissaoAfiliado','cfgGerenciamento']
@@ -3627,8 +3748,25 @@ function totalDiaForn(f, dia){
 function pecasDiaForn(f, dia){
   return Object.values((f.compras || {})[dia] || {}).reduce((s, i) => s + (i.qtd || 0), 0);
 }
+// Soma só dos pedidos lançados (dia a dia / soma rápida) num mês.
+function totalPedidosMes(f, ym){
+  return r2f(Object.keys(f.compras || {}).filter(d => d.startsWith(ym)).reduce((s, d) => s + totalDiaForn(f, d), 0));
+}
+// Total do mês informado à mão no relatório (f.totaisMes[ym] = { valor, em }),
+// pra quem já tinha a soma anotada e não quer lançar pedido por pedido.
+function totalManualMes(f, ym){
+  const t = (f.totaisMes || {})[ym];
+  return t && typeof t.valor === 'number' ? t.valor : null;
+}
+// Quanto era pra pagar no mês: o total informado à mão (se houver) ou a soma
+// dos pedidos — nunca os dois somados, pra não contar em dobro.
+function compradoMesForn(f, ym){
+  const manual = totalManualMes(f, ym);
+  return manual !== null ? manual : totalPedidosMes(f, ym);
+}
 function totalCompradoForn(f, prefixo = ''){
-  return r2f(Object.keys(f.compras || {}).filter(d => d.startsWith(prefixo)).reduce((s, d) => s + totalDiaForn(f, d), 0));
+  const meses = new Set([...Object.keys(f.compras || {}).map(d => d.slice(0, 7)), ...Object.keys(f.totaisMes || {})]);
+  return r2f([...meses].filter(m => m.startsWith(prefixo)).reduce((s, m) => s + compradoMesForn(f, m), 0));
 }
 // Mês a que um pagamento se refere: o escolhido no "Referente ao mês" ou,
 // se não tiver (pagamento antigo), o mês da data.
@@ -3661,6 +3799,7 @@ function sequenciaForn(f){
 function mesesForn(f){
   const meses = new Set([hojeLocal().slice(0, 7)]);
   Object.keys(f.compras || {}).forEach(d => meses.add(d.slice(0, 7)));
+  Object.keys(f.totaisMes || {}).forEach(m => meses.add(m));
   (f.pagamentos || []).forEach(p => meses.add(refPagamento(p)));
   return [...meses].sort().reverse();
 }
@@ -3680,8 +3819,31 @@ function resumoProdutosMes(f, ym){
   return Object.values(mapa).sort((a, b) => b.valor - a.valor);
 }
 
+// Rascunho do pedido do dia: os −/+ da aba Pedidos mexem aqui
+// (f.rascunhos[dia], mesmo formato de f.compras[dia]) e nada disso entra no
+// saldo/fechamento até "Confirmar pedido" copiar pra f.compras[dia].
+function rascunhoDoDia(f, dia){ return (f.rascunhos || {})[dia] || null; }
+function pedidoNaTela(f, dia){ return rascunhoDoDia(f, dia) || (f.compras || {})[dia] || {}; }
+function garantirRascunho(f, dia){
+  f.rascunhos = f.rascunhos || {};
+  if(!f.rascunhos[dia]) f.rascunhos[dia] = JSON.parse(JSON.stringify((f.compras || {})[dia] || {}));
+  return f.rascunhos[dia];
+}
+function jsonOrdenado(v){
+  if(Array.isArray(v)) return '[' + v.map(jsonOrdenado).join(',') + ']';
+  if(v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + jsonOrdenado(v[k])).join(',') + '}';
+  return JSON.stringify(v);
+}
+// Se o rascunho voltou a ser igual ao confirmado, ele some (nada a confirmar).
+function limparRascunhoSeIgual(f, dia){
+  const rasc = rascunhoDoDia(f, dia);
+  if(rasc && jsonOrdenado(rasc) === jsonOrdenado((f.compras || {})[dia] || {})) delete f.rascunhos[dia];
+}
+function totalItens(mapa){ return r2f(Object.values(mapa || {}).reduce((s, i) => s + (i.qtd || 0) * (i.preco || 0), 0)); }
+function pecasItens(mapa){ return Object.values(mapa || {}).reduce((s, i) => s + (i.qtd || 0), 0); }
+
 function precoDoDia(f, produto, dia){
-  const item = ((f.compras || {})[dia] || {})[produto.id];
+  const item = (rascunhoDoDia(f, dia) || {})[produto.id] || ((f.compras || {})[dia] || {})[produto.id];
   if(item) return item.preco;
   const pend = precoDiaPendente[`${f.id}|${dia}|${produto.id}`];
   return pend !== undefined ? pend : (produto.preco || 0);
@@ -3690,10 +3852,10 @@ function precoDoDia(f, produto, dia){
 // Quantidade comprada num dia — do produto inteiro (variacao = null) ou de uma
 // variação/tamanho. O preço e o nome ficam gravados no próprio lançamento,
 // então mudar o cadastro depois não mexe no passado.
-function definirQtdForn(f, produto, dia, qtd, variacao = null){
+function definirQtdForn(f, produto, dia, qtd, variacao = null, alvo = 'compras'){
   qtd = Math.max(0, Math.round(qtd || 0));
-  f.compras = f.compras || {};
-  const doDia = f.compras[dia] || {};
+  const loja = f[alvo] = f[alvo] || {};
+  const doDia = loja[dia] || {};
   const existente = doDia[produto.id];
   const item = existente || { qtd: 0, preco: precoDoDia(f, produto, dia), nome: produto.nome };
   item.nome = produto.nome;
@@ -3712,8 +3874,10 @@ function definirQtdForn(f, produto, dia, qtd, variacao = null){
   } else {
     delete doDia[produto.id];
   }
-  if(Object.keys(doDia).length) f.compras[dia] = doDia;
-  else delete f.compras[dia];
+  // Rascunho vazio é um estado válido (zerou um pedido já confirmado) — só
+  // em f.compras o dia vazio é apagado.
+  if(Object.keys(doDia).length || alvo === 'rascunhos') loja[dia] = doDia;
+  else delete loja[dia];
 }
 
 // Chave de uma variação lançada: só o tamanho ("28"), só a cor ("Rosa") ou
@@ -3840,7 +4004,7 @@ function htmlCardProdutoPedido(f, p, doDia){
   const foto = p.foto ? `<img class="forn-prod-foto" src="${p.foto}" alt="${escapeHtml(p.nome)}">` : `<div class="forn-prod-foto placeholder">${inicial}</div>`;
   const precoHtml = `<label class="forn-prod-preco">R$ <input type="number" class="forn-preco-dia" data-prod="${p.id}" step="0.01" min="0" value="${preco}" title="Preço neste dia"> /un</label>`;
   const sub = `<div class="forn-prod-sub">${qtd > 0 ? `${qtd} ${qtd === 1 ? 'peça' : 'peças'} × ${fmt(preco)} = ${fmt(qtd * preco)}` : ''}</div>`;
-  const editar = `<button type="button" class="forn-prod-edit" data-acao="editar-produto" data-prod="${p.id}" title="Editar produto">✏️</button>`;
+  const editar = `<button type="button" class="forn-prod-arrastar" data-arrastar="${p.id}" title="Segure e arraste pra mudar a ordem" aria-label="Arrastar ${escapeHtml(p.nome)} pra mudar a ordem">⠿</button><button type="button" class="forn-prod-edit" data-acao="editar-produto" data-prod="${p.id}" title="Editar produto">✏️</button>`;
   const vars = p.variacoes || [];
   const cores = p.cores || [];
   const porVar = (item && item.variacoes) || {};
@@ -3896,9 +4060,7 @@ function htmlCardProdutoPedido(f, p, doDia){
   return `
     <div class="forn-prod${qtd > 0 ? ' tem' : ''}" data-prod="${p.id}">
       ${editar}
-      ${foto}
-      <div class="forn-prod-nome">${escapeHtml(p.nome)}</div>
-      ${precoHtml}
+      <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}</div>${precoHtml}</div></div>
       <div class="forn-qtd">
         <button type="button" class="menos" data-acao="menos" data-prod="${p.id}" aria-label="Diminuir">−</button>
         <input type="number" class="forn-qtd-input" data-prod="${p.id}" min="0" step="1" value="${qtd}" aria-label="Quantidade">
@@ -3913,10 +4075,13 @@ function renderPedidos(){
   const f = prepararTelaForn(el);
   if(!f) return;
   const hoje = hojeLocal();
-  const doDia = (f.compras || {})[fornDia] || {};
-  const totalDia = totalDiaForn(f, fornDia);
-  const pecas = pecasDiaForn(f, fornDia);
+  const doDia = pedidoNaTela(f, fornDia);
+  const totalDia = totalItens(doDia);
+  const pecas = pecasItens(doDia);
   const seq = sequenciaForn(f);
+  const rasc = rascunhoDoDia(f, fornDia);
+  const confirmado = (f.compras || {})[fornDia];
+  const outrosRascunhos = Object.keys(f.rascunhos || {}).filter(d => d !== fornDia).sort();
   // Itens do dia de produtos que já foram excluídos do cadastro continuam
   // contando no total — aparecem numa linha à parte.
   const orfaos = Object.entries(doDia).filter(([id]) => !(f.produtos || []).some(p => p.id === id));
@@ -3938,9 +4103,13 @@ function renderPedidos(){
           <div class="label">Pedido do dia · ${pecas} ${pecas === 1 ? 'peça' : 'peças'}</div>
           <div class="valor" id="fornTotalDia">${fmt(totalDia)}</div>
         </div>
-        <button type="button" class="btn btn-primary btn-sm" data-acao="print-dia" ${pecas ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'} title="Gerar a imagem do pedido pra mandar pro fornecedor">📸 Print do pedido</button>
+        <button type="button" class="btn btn-outline btn-sm" data-acao="print-dia" ${pecas ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'} title="Gerar a imagem do pedido pra mandar pro fornecedor">📸 Print</button>
+        ${rasc ? `<button type="button" class="btn btn-primary btn-sm" data-acao="confirmar-pedido">✅ Confirmar pedido</button>` : ''}
       </div>
+      ${rasc ? `<div class="ped-status rascunho"><span>📝 <strong>Rascunho</strong> — ainda não somado no que você deve. Toque em <strong>Confirmar pedido</strong> pra somar.</span><button type="button" class="btn btn-danger-text btn-sm" data-acao="descartar-rascunho">Descartar alterações</button></div>`
+        : (confirmado && pecas ? `<div class="ped-status ok">✅ Pedido confirmado — já está somado no que você deve. Mexer de novo vira rascunho até confirmar.</div>` : '')}
     </div>
+    ${outrosRascunhos.length ? `<p class="ped-outros-rasc">📝 Pedido não confirmado em: ${outrosRascunhos.map(d => `<button type="button" class="link" data-acao="abrir-dia" data-dia="${d}">${formatDate(d)}</button>`).join(' · ')}</p>` : ''}
 
     <div class="forn-grid">
       ${(f.produtos || []).map(p => htmlCardProdutoPedido(f, p, doDia)).join('')}
@@ -3969,8 +4138,6 @@ function renderFornecedores(){
   const resumo = resumoProdutosMes(f, ym);
   const diasDoMes = Object.keys(f.compras || {}).filter(d => d.startsWith(ym) && totalDiaForn(f, d) > 0).sort().reverse();
   const pagamentosDoMes = (f.pagamentos || []).filter(p => refPagamento(p) === ym).sort((a, b) => b.data.localeCompare(a.data));
-  // Meses anteriores ainda com algo a pagar — lembrete no topo.
-  const mesesPendentes = mesesForn(f).filter(m => m !== ym && faltaMesForn(f, m) > 0.004);
 
   el.innerHTML = htmlChipsForn() + `
     <div class="forn-hero">
@@ -3982,11 +4149,8 @@ function renderFornecedores(){
           <button type="button" class="btn btn-sm" data-acao="soma-rapida" style="background:rgba(255,255,255,.15);color:#fff;" title="Lançar dia por dia os pedidos anotados no papel">🧮 Soma rápida</button>
         </div>
       </div>
-      ${mesesPendentes.length ? `<div class="forn-stat" style="grid-column:auto;">
-        <div class="label">Outros meses em aberto</div>
-        ${mesesPendentes.slice(0, 4).map(m => `<div class="forn-hist-linha"><button type="button" class="link" style="background:none;border:none;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;padding:0;text-transform:capitalize;" data-acao="ir-mes" data-mes="${m}">${nomeMes(m)}</button><strong style="color:var(--amber);">${fmt(faltaMesForn(f, m))}</strong></div>`).join('')}
-      </div>` : ''}
     </div>
+    ${htmlRelatorioMeses(f)}
 
     <div class="forn-mes-nav">
       <button type="button" class="btn-icon" data-acao="mes-anterior" aria-label="Mês anterior">‹</button>
@@ -3997,9 +4161,10 @@ function renderFornecedores(){
 
     <div class="forn-fech${fech ? ' fechado' : ''}">
       <div class="forn-fech-status">${fech ? `🔒 Mês fechado em ${formatDate(fech.em)}` : '🟡 Mês aberto'}</div>
+      ${Object.keys(f.rascunhos || {}).some(d => d.startsWith(ym)) ? `<div class="forn-fech-alerta">📝 Tem pedido não confirmado em ${Object.keys(f.rascunhos).filter(d => d.startsWith(ym)).sort().map(d => `<button type="button" class="link" style="background:none;border:none;color:var(--accent);font:inherit;font-weight:800;cursor:pointer;padding:0;" data-acao="abrir-dia" data-dia="${d}">${formatDate(d)}</button>`).join(', ')} — ele só entra no total depois de confirmado.</div>` : ''}
       ${alteradoDepois ? `<div class="forn-fech-alerta">⚠️ As compras mudaram depois do fechamento (era ${fmt(fech.total)}, agora ${fmt(comprado)}). Feche de novo pra atualizar.</div>` : ''}
       <div class="forn-fech-nums">
-        <div><div class="label">Comprado no mês</div><div class="valor">${fmt(comprado)}</div></div>
+        <div><div class="label">Era pra pagar no mês</div><div class="valor">${fmt(comprado)}</div>${totalManualMes(f, ym) !== null ? `<div class="forn-manual-tag">✍️ valor informado à mão${totalPedidosMes(f, ym) > 0 ? ` · pedidos lançados: ${fmt(totalPedidosMes(f, ym))} (não somados)` : ''}</div>` : ''}</div>
         <div><div class="label">Pago (referente ao mês)</div><div class="valor" style="color:var(--green);">${fmt(pago)}</div></div>
         <div class="falta${falta <= 0.004 ? ' zerado' : ''}"><div class="label">Falta pagar do mês</div><div class="valor">${falta <= 0.004 ? (comprado > 0 ? '✅ Pago' : fmt(0)) : fmt(falta)}</div></div>
       </div>
@@ -4009,7 +4174,7 @@ function renderFornecedores(){
       </div>
       <div class="forn-fech-acoes">
         ${!fech || alteradoDepois ? `<button type="button" class="btn btn-primary btn-sm" data-acao="fechar-mes" ${comprado > 0 ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'}>🔒 Fechar o mês</button>` : `<button type="button" class="btn btn-outline btn-sm" data-acao="reabrir-mes">Reabrir mês</button>`}
-        <button type="button" class="btn btn-outline btn-sm" data-acao="print-mes" ${comprado > 0 ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'}>📸 Print do fechamento</button>
+        <button type="button" class="btn btn-outline btn-sm" data-acao="print-mes" ${resumo.length ? '' : 'disabled style="opacity:.5;cursor:not-allowed;" title="O print lista os pedidos lançados — este mês não tem pedidos"'}>📸 Print do fechamento</button>
       </div>
     </div>
 
@@ -4046,6 +4211,125 @@ function renderFornecedores(){
       </div>
     </div>`;
 }
+
+// ---------- Relatório por mês (cartões: era pra pagar / pago / falta) ----------
+// Quais meses estão marcados no relatório (só na sessão). Sem nada marcado
+// ainda, mostra os 6 meses mais recentes com movimento.
+let relMesesSel = null;
+function mesesComMovimento(f){
+  const hoje = hojeLocal().slice(0, 7);
+  return mesesForn(f).filter(m => m === hoje || compradoMesForn(f, m) > 0 || totalPagoForn(f, m) > 0);
+}
+function htmlRelatorioMeses(f){
+  const meses = mesesComMovimento(f).sort();
+  if(!relMesesSel) relMesesSel = new Set(meses.slice(-6));
+  const sel = meses.filter(m => relMesesSel.has(m));
+  const curto = m => `${NOMES_MES[+m.slice(5, 7) - 1].slice(0, 3)}/${m.slice(2, 4)}`;
+  let tEra = 0, tPago = 0;
+  const cards = sel.map(m => {
+    const era = compradoMesForn(f, m), pago = totalPagoForn(f, m), falta = r2f(era - pago);
+    tEra += era; tPago += pago;
+    const pct = era > 0 ? Math.min(100, pago / era * 100) : (pago > 0 ? 100 : 0);
+    const manual = totalManualMes(f, m) !== null;
+    return `<div class="rel-card${falta <= 0.004 && era > 0 ? ' quitado' : ''}">
+      <div class="rel-card-topo"><strong>${nomeMes(m).replace(/^./, c => c.toUpperCase())}</strong>
+        <span class="rel-origem">${manual ? '✍️ informado' : (era > 0 ? `📦 ${diasComCompraNoMes(f, m)} dias de pedido` : 'sem pedidos')}</span></div>
+      <div class="rel-linha"><span>Era pra pagar</span><strong>${fmt(era)}</strong></div>
+      <div class="rel-linha"><span>Pago</span><strong class="verde">${fmt(pago)}</strong></div>
+      <div class="rel-barra"><span style="width:${pct.toFixed(1)}%"></span></div>
+      <div class="rel-linha falta"><span>${falta < -0.004 ? 'Crédito' : 'Falta'}</span><strong>${falta <= 0.004 && falta >= -0.004 ? (era > 0 ? '✅ Quitado' : fmt(0)) : fmt(Math.abs(falta))}</strong></div>
+      <div class="rel-acoes">
+        <button type="button" class="btn btn-outline btn-sm" data-acao="valor-mes" data-mes="${m}" title="Informar o total do mês sem lançar pedido por pedido">✍️ Valor do mês</button>
+        ${falta > 0.004 ? `<button type="button" class="btn btn-outline btn-sm" data-acao="pagar-mes-rel" data-mes="${m}">💸 Pagar</button>` : ''}
+        <button type="button" class="btn btn-outline btn-sm" data-acao="ir-mes" data-mes="${m}" title="Ver o fechamento detalhado deste mês">🔍</button>
+      </div>
+    </div>`;
+  }).join('');
+  const tFalta = r2f(tEra - tPago);
+  return `
+    <div class="chart-card rel-meses">
+      <div class="rel-cab">
+        <h3>📊 Relatório por mês</h3>
+        <button type="button" class="btn btn-primary btn-sm" data-acao="valor-mes" data-mes="">✍️ Lançar valor de um mês</button>
+      </div>
+      <div class="rel-chips">
+        ${meses.map(m => `<button type="button" class="rel-chip${relMesesSel.has(m) ? ' active' : ''}" data-acao="rel-mes" data-mes="${m}">${curto(m)}</button>`).join('')}
+      </div>
+      ${sel.length ? `<div class="rel-grid">${cards}</div>
+      <div class="rel-total">
+        <div><div class="label">${sel.length === 1 ? 'Total do mês marcado' : `Total dos ${sel.length} meses marcados`}</div></div>
+        <div class="rel-total-nums">
+          <div><span>Era pra pagar</span><strong>${fmt(tEra)}</strong></div>
+          <div><span>Pago</span><strong class="verde">${fmt(tPago)}</strong></div>
+          <div><span>${tFalta < -0.004 ? 'Crédito' : 'Falta'}</span><strong class="ambar">${fmt(Math.abs(tFalta))}</strong></div>
+        </div>
+      </div>` : `<p class="forn-hist-vazio">Marque um ou mais meses acima pra ver o relatório.</p>`}
+    </div>`;
+}
+
+// Modal "valor do mês": total que era pra pagar (substitui a soma dos pedidos
+// daquele mês) + opcionalmente um pagamento já feito, referente ao mês.
+function abrirModalValorMes(f, ym){
+  const mes = ym || somarMeses(hojeLocal().slice(0, 7), -1);
+  document.getElementById('valorMesMes').value = mes;
+  preencherModalValorMes(f);
+  document.getElementById('valorMesPago').value = '';
+  document.getElementById('valorMesData').value = hojeLocal();
+  document.getElementById('valorMesContas').checked = false;
+  abrirOverlay('overlayValorMes');
+  setTimeout(() => document.getElementById('valorMesValor').focus(), 50);
+}
+function preencherModalValorMes(f){
+  const ym = document.getElementById('valorMesMes').value;
+  if(!ym) return;
+  const manual = totalManualMes(f, ym);
+  const pedidos = totalPedidosMes(f, ym);
+  const pago = totalPagoForn(f, ym);
+  document.getElementById('valorMesValor').value = manual !== null ? manual : '';
+  document.getElementById('valorMesInfo').innerHTML = [
+    pedidos > 0 ? `Pedidos lançados em ${nomeMes(ym)}: <strong>${fmt(pedidos)}</strong> — o valor informado aqui <strong>substitui</strong> essa soma (não soma em dobro).` : `Nenhum pedido lançado em ${nomeMes(ym)}.`,
+    pago > 0 ? `Já registrado como pago desse mês: <strong>${fmt(pago)}</strong>.` : ''
+  ].filter(Boolean).join('<br>');
+  document.getElementById('btnValorMesRemover').style.display = manual !== null ? '' : 'none';
+}
+document.getElementById('valorMesMes').addEventListener('change', () => { const f = fornecedorAtivo(); if(f) preencherModalValorMes(f); });
+document.getElementById('formValorMes').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = fornecedorAtivo();
+  const ym = document.getElementById('valorMesMes').value;
+  const valor = r2f(parseFloat(document.getElementById('valorMesValor').value));
+  if(!f || !ym || !(valor >= 0)) return;
+  f.totaisMes = { ...(f.totaisMes || {}), [ym]: { valor, em: hojeLocal() } };
+  const pagoAgora = r2f(parseFloat(document.getElementById('valorMesPago').value) || 0);
+  if(pagoAgora > 0){
+    const dataPag = document.getElementById('valorMesData').value || hojeLocal();
+    const pagamento = { id: uid(), data: dataPag, ref: ym, valor: pagoAgora, obs: 'Informado no relatório', contaId: null };
+    if(document.getElementById('valorMesContas').checked){
+      const conta = { id: uid(), descricao: `Fornecedor: ${f.nome} (${nomeMes(ym)})`, valor: pagoAgora, vencimento: dataPag, categoria: 'Fornecedores', status: 'pago', tipo: 'despesa', pagoEm: dataPag };
+      data.push(conta);
+      pagamento.contaId = conta.id;
+    }
+    f.pagamentos = [...(f.pagamentos || []), pagamento];
+  }
+  if(relMesesSel) relMesesSel.add(ym);
+  saveFornecedores(true);
+  fecharOverlay('overlayValorMes');
+  renderFornAba();
+  const falta = faltaMesForn(f, ym);
+  mostrarToastForn(`✍️ ${nomeMes(ym)}: era pra pagar ${fmt(valor)} · falta ${fmt(Math.max(0, falta))}.`, falta <= 0.004);
+});
+document.getElementById('btnValorMesRemover').addEventListener('click', () => {
+  const f = fornecedorAtivo();
+  const ym = document.getElementById('valorMesMes').value;
+  if(!f || totalManualMes(f, ym) === null) return;
+  if(!confirm(`Tirar o valor informado de ${nomeMes(ym)}? O mês volta a usar a soma dos pedidos lançados (${fmt(totalPedidosMes(f, ym))}). Os pagamentos continuam.`)) return;
+  const t = { ...(f.totaisMes || {}) };
+  delete t[ym];
+  f.totaisMes = t;
+  saveFornecedores(true);
+  fecharOverlay('overlayValorMes');
+  renderFornAba();
+});
 
 // Aba aberta dentro da página Fornecedores ('pedidos' | 'fechamento').
 let fornAba = 'pedidos';
@@ -4278,7 +4562,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
 }
 
 function linhasPedidoDia(f, dia){
-  const doDia = (f.compras || {})[dia] || {};
+  const doDia = pedidoNaTela(f, dia);
   return Object.entries(doDia).flatMap(([id, item]) => linhasDoItem(produtoDoForn(f, id), item, item.nome));
 }
 function textoWhatsPedido(f, titulo, linhas, totalPecas, totalValor){
@@ -4363,7 +4647,9 @@ function abrirPrintMes(f, ym){
     titulo: `Fechamento — ${f.nome}`,
     subtitulo: nomeMes(ym).replace(/^./, c => c.toUpperCase()) + ` · ${diasComCompraNoMes(f, ym)} dias de pedido`,
     linhas, nomeArquivo: `fechamento-${ym}.png`,
-    rodape: pago > 0 ? `Já pago: ${fmt(pago)}  ·  Falta: ${fmt(Math.max(0, falta))}` : ''
+    // Mês com valor informado à mão: o print lista os pedidos, mas o rodapé
+    // mostra o total que vale pro mês.
+    rodape: [totalManualMes(f, ym) !== null ? `Total informado do mês: ${fmt(totalManualMes(f, ym))}` : '', pago > 0 ? `Já pago: ${fmt(pago)}  ·  Falta: ${fmt(Math.max(0, falta))}` : ''].filter(Boolean).join('  ·  ')
   });
 }
 
@@ -4553,6 +4839,8 @@ document.getElementById('btnSomaLancar').addEventListener('click', () => {
     const produto = l.produtoId ? produtoDoForn(f, l.produtoId) : null;
     const chave = (produto ? produto.id : 'avulso') + '#soma-' + uid();
     doDia[chave] = { qtd: l.qtd, preco: l.preco, nome: produto ? produto.nome : l.nome };
+    const rasc = rascunhoDoDia(f, dia);
+    if(rasc) rasc[chave] = { ...doDia[chave] };
     chaves.push(chave);
   });
   f.compras[dia] = doDia;
@@ -4578,7 +4866,8 @@ document.getElementById('somaSessao').addEventListener('click', e => {
   const item = somaSessao[Number(b.dataset.desfazer)];
   if(!f || !item) return;
   const doDia = (f.compras || {})[item.dia] || {};
-  item.chaves.forEach(k => delete doDia[k]);
+  const rascDesfazer = rascunhoDoDia(f, item.dia);
+  item.chaves.forEach(k => { delete doDia[k]; if(rascDesfazer) delete rascDesfazer[k]; });
   if(!Object.keys(doDia).length) delete f.compras[item.dia];
   somaSessao.splice(Number(b.dataset.desfazer), 1);
   saveFornecedores(true);
@@ -4825,7 +5114,7 @@ document.getElementById('formFornPagamento').addEventListener('submit', e => {
 // ---- Interações das duas telas (delegadas) ----
 function cliqueTelaForn(e){
   const chip = e.target.closest('.forn-chip');
-  if(chip){ fornAtivoId = chip.dataset.forn; renderTelaFornAtual(); return; }
+  if(chip){ fornAtivoId = chip.dataset.forn; relMesesSel = null; renderTelaFornAtual(); return; }
   const btn = e.target.closest('[data-acao]');
   if(!btn || btn.disabled) return;
   const f = fornecedorAtivo();
@@ -4847,16 +5136,54 @@ function cliqueTelaForn(e){
   if(acao === 'mes-anterior'){ fornMes = somarMeses(fornMes, -1); return renderFornecedores(); }
   if(acao === 'mes-seguinte'){ fornMes = somarMeses(fornMes, 1); return renderFornecedores(); }
   if(acao === 'mes-atual'){ fornMes = hojeLocal().slice(0, 7); return renderFornecedores(); }
-  if(acao === 'ir-mes'){ fornMes = btn.dataset.mes; return renderFornecedores(); }
+  if(acao === 'ir-mes'){
+    fornMes = btn.dataset.mes;
+    renderFornecedores();
+    const nav = document.querySelector('#fornConteudo .forn-mes-nav');
+    if(nav) nav.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if(acao === 'rel-mes'){
+    const m = btn.dataset.mes;
+    if(relMesesSel.has(m)) relMesesSel.delete(m); else relMesesSel.add(m);
+    return renderFornecedores();
+  }
+  if(acao === 'valor-mes') return abrirModalValorMes(f, btn.dataset.mes || null);
+  if(acao === 'pagar-mes-rel') return abrirModalPagamentoForn(btn.dataset.mes);
   if(acao === 'apagar-soma-dia'){
     const doDia = (f.compras || {})[fornDia] || {};
-    const chaves = Object.keys(doDia).filter(k => k.includes('#soma-'));
-    const total = r2f(chaves.reduce((s, k) => s + doDia[k].qtd * doDia[k].preco, 0));
+    const chaves = Object.keys(pedidoNaTela(f, fornDia)).filter(k => k.includes('#soma-'));
+    const total = r2f(chaves.reduce((s, k) => { const i = pedidoNaTela(f, fornDia)[k]; return s + i.qtd * i.preco; }, 0));
     if(!chaves.length || !confirm(`Apagar ${fmt(total)} lançados pela soma rápida em ${formatDate(fornDia)}?`)) return;
-    chaves.forEach(k => delete doDia[k]);
+    const rasc = rascunhoDoDia(f, fornDia);
+    chaves.forEach(k => { delete doDia[k]; if(rasc) delete rasc[k]; });
     if(!Object.keys(doDia).length) delete f.compras[fornDia];
+    limparRascunhoSeIgual(f, fornDia);
     saveFornecedores(true);
     return renderPedidos();
+  }
+  if(acao === 'confirmar-pedido'){
+    const rasc = rascunhoDoDia(f, fornDia);
+    if(!rasc) return;
+    const antes = totalDiaForn(f, fornDia);
+    f.compras = f.compras || {};
+    if(Object.keys(rasc).length) f.compras[fornDia] = rasc;
+    else {
+      if(antes > 0 && !confirm(`O pedido de ${formatDate(fornDia)} ficou vazio. Confirmar vai tirar ${fmt(antes)} do que você deve. Continuar?`)) return;
+      delete f.compras[fornDia];
+    }
+    delete f.rascunhos[fornDia];
+    saveFornecedores(true);
+    renderPedidos();
+    const agora = totalDiaForn(f, fornDia);
+    return mostrarToastForn(agora > 0 ? `✅ Pedido de ${formatDate(fornDia)} confirmado: ${fmt(agora)}. Em aberto com ${f.nome}: ${fmt(saldoForn(f))}.` : `Pedido de ${formatDate(fornDia)} removido.`, agora > 0);
+  }
+  if(acao === 'descartar-rascunho'){
+    if(!rascunhoDoDia(f, fornDia)) return;
+    delete f.rascunhos[fornDia];
+    saveFornecedores(true);
+    renderPedidos();
+    return mostrarToastForn('↩️ Alterações descartadas.');
   }
   if(acao === 'print-dia') return abrirPrintDia(f);
   if(acao === 'print-mes') return abrirPrintMes(f, fornMes);
@@ -4886,10 +5213,11 @@ function cliqueTelaForn(e){
   if(acao === 'mais' || acao === 'menos'){
     const produto = (f.produtos || []).find(p => p.id === btn.dataset.prod);
     if(!produto) return;
-    const item = ((f.compras || {})[fornDia] || {})[produto.id];
+    const item = garantirRascunho(f, fornDia)[produto.id];
     const variacao = btn.dataset.var !== undefined ? btn.dataset.var : null;
     const atual = variacao !== null ? (((item || {}).variacoes || {})[variacao] || 0) : ((item || {}).qtd || 0);
-    definirQtdForn(f, produto, fornDia, atual + (acao === 'mais' ? 1 : -1), variacao);
+    definirQtdForn(f, produto, fornDia, atual + (acao === 'mais' ? 1 : -1), variacao, 'rascunhos');
+    limparRascunhoSeIgual(f, fornDia);
     saveFornecedores();
     renderPedidos();
     animarTotalDia();
@@ -4906,19 +5234,70 @@ function mudancaTelaForn(e){
   const produto = (f.produtos || []).find(p => p.id === e.target.dataset.prod);
   if(!produto) return;
   if(e.target.classList.contains('forn-qtd-input')){
-    definirQtdForn(f, produto, fornDia, parseFloat(e.target.value) || 0);
+    garantirRascunho(f, fornDia);
+    definirQtdForn(f, produto, fornDia, parseFloat(e.target.value) || 0, null, 'rascunhos');
+    limparRascunhoSeIgual(f, fornDia);
     saveFornecedores();
     renderPedidos();
     animarTotalDia();
   } else if(e.target.classList.contains('forn-preco-dia')){
     const preco = r2f(Math.max(0, parseFloat(e.target.value) || 0));
-    const item = ((f.compras || {})[fornDia] || {})[produto.id];
-    if(item){ item.preco = preco; saveFornecedores(); }
+    const temItem = !!pedidoNaTela(f, fornDia)[produto.id];
+    if(temItem){
+      garantirRascunho(f, fornDia)[produto.id].preco = preco;
+      limparRascunhoSeIgual(f, fornDia);
+      saveFornecedores();
+    }
     else precoDiaPendente[`${f.id}|${fornDia}|${produto.id}`] = preco;
     renderPedidos();
     animarTotalDia();
   }
 }
+// Reordenar produtos arrastando a alça ⠿: move o cartão no DOM enquanto o
+// ponteiro passa por cima dos outros e, ao soltar, salva a ordem em
+// f.produtos (que é a mesma ordem da Soma rápida). Pointer events cobrem
+// mouse e toque; a alça tem touch-action:none pra não rolar a página.
+document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
+  const alca = e.target.closest('[data-arrastar]');
+  if(!alca || e.button > 0) return;
+  const f = fornecedorAtivo();
+  const card = alca.closest('.forn-prod[data-prod]');
+  if(!f || !card) return;
+  e.preventDefault();
+  const grade = card.parentElement;
+  const ordemAntes = [...grade.querySelectorAll('.forn-prod[data-prod]')].map(x => x.dataset.prod).join(',');
+  card.classList.add('arrastando');
+  document.body.classList.add('arrastando-produto');
+  try{ alca.setPointerCapture(e.pointerId); } catch(err){}
+  const mover = ev => {
+    // Rola a página quando o ponteiro chega perto da borda.
+    if(ev.clientY < 70) window.scrollBy(0, -14);
+    else if(ev.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
+    const el = document.elementFromPoint(ev.clientX, ev.clientY);
+    const alvo = el && el.closest('.forn-prod[data-prod]');
+    if(!alvo || alvo === card || alvo.parentElement !== grade) return;
+    const cards = [...grade.querySelectorAll('.forn-prod[data-prod]')];
+    const antes = cards.indexOf(card) > cards.indexOf(alvo);
+    grade.insertBefore(card, antes ? alvo : alvo.nextSibling);
+  };
+  const soltar = () => {
+    alca.removeEventListener('pointermove', mover);
+    alca.removeEventListener('pointerup', soltar);
+    alca.removeEventListener('pointercancel', soltar);
+    card.classList.remove('arrastando');
+    document.body.classList.remove('arrastando-produto');
+    const ordem = [...grade.querySelectorAll('.forn-prod[data-prod]')].map(x => x.dataset.prod);
+    if(ordem.join(',') === ordemAntes) return;
+    const pos = id => { const i = ordem.indexOf(id); return i < 0 ? Infinity : i; };
+    f.produtos = [...(f.produtos || [])].sort((a, b) => pos(a.id) - pos(b.id));
+    saveFornecedores(true);
+    renderPedidos();
+  };
+  alca.addEventListener('pointermove', mover);
+  alca.addEventListener('pointerup', soltar);
+  alca.addEventListener('pointercancel', soltar);
+});
+
 const paginaFornecedores = document.getElementById('page-fornecedores');
 paginaFornecedores.addEventListener('click', cliqueTelaForn);
 paginaFornecedores.addEventListener('change', mudancaTelaForn);
