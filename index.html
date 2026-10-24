@@ -94,6 +94,7 @@
   main{max-width:1100px;width:100%;margin:0 auto;padding:24px clamp(16px,3vw,32px) 60px;}
   /* Calculadora de precificação usa a tela larga: calculadora fixa à esquerda */
   main:has(#page-precificacao.active){max-width:1320px;}
+  main:has(#page-fornecedores.active){max-width:1640px;}
   .calc-card{margin-top:0;}
   .calc-card > h3{margin-bottom:14px;}
   .qc-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:12.5px;font-weight:800;flex-shrink:0;}
@@ -469,7 +470,11 @@
   .forn-dia-total .valor{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--navy);}
   .forn-dia-total .valor.pop{animation:fornPop .35s ease;}
   @keyframes fornPop{0%{transform:scale(1)}40%{transform:scale(1.18);color:var(--green)}100%{transform:scale(1)}}
-  .forn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;align-items:start;}
+  /* Cartões de produto do pedido: 4 por linha no computador, 3 / 2 / 1 em telas menores */
+  .forn-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start;}
+  @media (max-width:1279px){ .forn-grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+  @media (max-width:999px){ .forn-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  @media (max-width:640px){ .forn-grid{grid-template-columns:1fr;} }
   .forn-prod{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;gap:8px;position:relative;transition:border-color .2s,transform .1s;}
   .forn-prod.tem{border-color:var(--green);background:linear-gradient(180deg,var(--green-bg),var(--surface) 60%);}
   .forn-prod-foto{width:100%;aspect-ratio:1/1;max-width:100%;border-radius:10px;object-fit:cover;background:var(--bg);}
@@ -574,7 +579,7 @@
   .forn-cor-nome{font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.3px;}
   .forn-cor-qtd{margin-left:auto;font-size:11.5px;font-weight:800;color:#fff;background:var(--green);border-radius:999px;padding:2px 9px;}
   .forn-cor-secao.tem .forn-cor-nome{color:var(--green);}
-  .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:5px;}
+  .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:4px;}
   .forn-vars.compacta .forn-var{padding:4px 2px;border-radius:8px;}
   .forn-vars.compacta .forn-var-nome{font-size:11.5px;}
   .forn-vars.compacta .forn-var-ctrl{gap:3px;margin-top:2px;}
