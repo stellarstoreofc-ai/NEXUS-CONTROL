@@ -9,6 +9,7 @@ create table if not exists financeiro_dados (
   custo_fixo jsonb not null default '{}'::jsonb,
   produtos jsonb not null default '[]'::jsonb,
   config_precificacao jsonb not null default '{}'::jsonb,
+  fornecedores jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
 );
 
@@ -16,6 +17,7 @@ create table if not exists financeiro_dados (
 -- alter table financeiro_dados add column if not exists custo_fixo jsonb not null default '{}'::jsonb;
 -- alter table financeiro_dados add column if not exists produtos jsonb not null default '[]'::jsonb;
 -- alter table financeiro_dados add column if not exists config_precificacao jsonb not null default '{}'::jsonb;
+-- alter table financeiro_dados add column if not exists fornecedores jsonb not null default '[]'::jsonb;
 
 alter table financeiro_dados enable row level security;
 
