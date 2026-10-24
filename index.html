@@ -93,55 +93,81 @@
 
   main{max-width:1100px;width:100%;margin:0 auto;padding:24px clamp(16px,3vw,32px) 60px;}
   /* Calculadora de precificação usa a tela larga: calculadora fixa à esquerda */
-  main:has(#page-precificacao.active){max-width:1320px;}
+  main:has(#page-precificacao.active){max-width:1760px;}
   main:has(#page-fornecedores.active){max-width:1640px;}
   .calc-card{margin-top:0;}
   .calc-card > h3{margin-bottom:14px;}
   .qc-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:12.5px;font-weight:800;flex-shrink:0;}
   .qc-passo-tit{display:flex;align-items:center;gap:8px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14.5px;margin:4px 0 10px;}
   #quickMarketplaceTabs{margin-bottom:16px;}
-  .qc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;align-items:start;}
-  .qc-col{display:flex;flex-direction:column;gap:14px;min-width:0;}
-  .qc-passo{border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:var(--surface);}
+  .qc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;}
+  .qc-col{display:flex;flex-direction:column;gap:10px;min-width:0;}
+  .qc-passo{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface);}
+  /* Calculadora compacta, pra caber numa tela só no computador */
+  .calc-card{padding:12px 16px;}
+  .qc-topo{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;margin-bottom:10px;}
+  .qc-topo .qc-passo-tit{margin:0;}
+  .qc-topo #quickMarketplaceTabs{margin:0;}
+  .qc-topo-nota{margin-left:auto;}
+  .calc-card .field{margin-bottom:8px;}
+  .calc-card .field label{font-size:12px;margin-bottom:3px;}
+  .calc-card .field input,.calc-card .field select{padding:7px 10px;border-radius:8px;}
+  .calc-card .field-row{gap:8px;}
+  .calc-card .qc-passo-tit{font-size:13.5px;margin:0 0 8px;}
+  .calc-card .qc-num{width:21px;height:21px;font-size:11.5px;}
+  .qc-outros-cab{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;}
+  .qc-outros-cab label{margin:0!important;}
+  .calc-card .toggle-tarifa{padding:8px 10px;margin-bottom:8px;font-size:12px;}
+  .calc-card .ml-frete-valores{padding:6px 10px;margin:0 0 8px;}
+  .calc-card .preco-breakdown-bar{height:14px;}
+  .calc-card .preco-breakdown-lista{margin-top:6px;gap:2px;}
+  .calc-card .preco-breakdown-item{font-size:12px;}
+  .calc-card .produto-preview-faixa{margin-top:6px;font-size:11.5px;}
   .qc-passo .field:last-child{margin-bottom:0;}
   .qc-taxas{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:10px;padding:8px 10px;margin-top:4px;}
   .qc-taxas strong{color:var(--text);}
   .qc-passo .config-taxas{margin-top:8px;}
-  .qc-passo .config-taxas > summary{display:none;}   /* abre pelo “Ajustar taxas” */
+  .qc-passo .config-taxas > summary{display:none;}
+  .qc-passo .config-taxas:not([open]){display:none;}   /* abre pelo “Ajustar taxas” */
   .qc-passo .preco-breakdown{margin-top:0;padding-top:0;border-top:none;}
   .qc-passo .preco-breakdown-titulo{display:none;}
   .qc-precos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .qc-preco{border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
+  .qc-preco{border-radius:12px;padding:9px 12px;display:flex;flex-direction:column;gap:2px;align-items:flex-start;}
   .qc-preco.lanc{background:#eef2ff;border:1px solid #c7d2fe;}
   .qc-preco.rec{background:var(--green-bg);border:1px solid #a7f3d0;}
   .qc-preco .label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);}
-  .qc-preco .card-value{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(20px,2.4vw,26px);font-weight:800;}
+  .qc-preco .card-value{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(18px,1.6vw,23px);font-weight:800;}
   .qc-preco.lanc .card-value{color:var(--accent);}
   .qc-preco.rec .card-value{color:var(--green);}
   .qc-preco-info{font-size:12px;color:var(--muted);font-weight:700;min-height:16px;}
   .qc-preco .btn{margin-top:4px;}
-  .qc-escada-cfg{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:10px;}
+  .qc-escada-cfg{display:flex;gap:6px 12px;flex-wrap:wrap;align-items:center;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;}
   .qc-escada-cfg input[type=number]{width:62px;border:1px solid var(--border);border-radius:8px;padding:5px 6px;font:inherit;font-weight:800;color:var(--text);}
   .qc-escada-alvo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
   .qc-escada-alvo label{display:flex;align-items:center;gap:4px;cursor:pointer;}
-  .qc-escada{display:flex;flex-direction:column;gap:6px;align-items:stretch;}
-  .qc-degrau{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:var(--bg);font-size:13px;}
+  .qc-escada{display:flex;flex-direction:column;gap:4px;align-items:stretch;}
+  .qc-degrau{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 10px;border-radius:9px;background:var(--bg);font-size:12.5px;}
   .qc-degrau em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:700;}
-  .qc-degrau strong{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;white-space:nowrap;}
+  .qc-degrau strong{font-family:'Plus Jakarta Sans',sans-serif;font-size:14.5px;white-space:nowrap;}
   .qc-degrau.cheio{background:var(--navy);color:#fff;}
   .qc-degrau.cheio em{color:#c7d2fe;}
-  .qc-degrau:not(.cheio){margin-left:18px;}
+  .qc-degrau:not(.cheio){margin-left:12px;}
   .qc-degrau.final{background:var(--green-bg);}
   .qc-degrau.final strong{color:var(--green);}
   .qc-escada .btn{align-self:flex-start;margin-top:2px;}
   .qc-teste{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;}
   .qc-teste .field{margin-bottom:0;}
-  .qc-lucro{padding:10px 14px;}
+  .qc-lucro{padding:8px 12px;}
+  .qc-lucro .card-value{font-size:20px;margin-top:2px;}
   @keyframes qcPisca{0%{box-shadow:0 0 0 0 rgba(37,99,235,.5)}100%{box-shadow:0 0 0 10px rgba(37,99,235,0)}}
   .qc-pisca{animation:qcPisca .8s ease;border-color:var(--accent)!important;}
   .prec-config-gerenc{border-top:1px dashed var(--border);padding-top:12px;margin-bottom:18px;max-width:50%;}
+  @media (max-width:1279px){
+    .qc-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
   @media (max-width:900px){
     .qc-grid{grid-template-columns:1fr;}
+    .qc-topo-nota{margin-left:0;}
   }
   @media (max-width:480px){
     .qc-precos,.qc-teste{grid-template-columns:1fr;}
@@ -1084,13 +1110,15 @@
       <!-- PÁGINA: PRECIFICAÇÃO DE PRODUTOS -->
       <section class="page" id="page-precificacao">
         <div class="chart-card calc-card">
-          <h3>🧮 Calculadora de precificação <span class="prec-sub">(não salva produto — é pra simular)</span></h3>
-          <div class="qc-passo-tit"><span class="qc-num">1</span> Em qual marketplace?</div>
-          <div class="tabs" id="quickMarketplaceTabs">
-            <button class="tab active" data-mkt="shopee">Shopee</button>
-            <button class="tab" data-mkt="ml">Mercado Livre</button>
-            <button class="tab" data-mkt="shein">Shein</button>
-            <button class="tab" data-mkt="tiktok">TikTok Shop</button>
+          <div class="qc-topo">
+            <div class="qc-passo-tit"><span class="qc-num">1</span> Em qual marketplace?</div>
+            <div class="tabs" id="quickMarketplaceTabs">
+              <button class="tab active" data-mkt="shopee">Shopee</button>
+              <button class="tab" data-mkt="ml">Mercado Livre</button>
+              <button class="tab" data-mkt="shein">Shein</button>
+              <button class="tab" data-mkt="tiktok">TikTok Shop</button>
+            </div>
+            <span class="prec-sub qc-topo-nota">simulação — não salva produto</span>
           </div>
           <div id="quickCalcPanels"></div>
         </div>
@@ -3534,10 +3562,9 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
           ${ehTiktok ? htmlToggleTarifaZerada(prefix + 'TarifaZerada', false) : ''}
           ${ehShein ? htmlCamposShein(prefix) : ''}
           ${ehMl ? htmlOpcoesMlQuick(prefix) : ''}
-          <div class="field">
-            <label>Outros custos (opcional)</label>
+          <div class="field qc-outros">
+            <div class="qc-outros-cab"><label>Outros custos (opcional)</label><button type="button" class="btn btn-outline btn-sm" data-action="add-outro-custo">+ Adicionar</button></div>
             <div id="${prefix}OutrosCustosList"></div>
-            <button type="button" class="btn btn-outline btn-sm" data-action="add-outro-custo">+ Adicionar custo</button>
           </div>
           <div class="qc-taxas">
             <span id="${prefix}TaxasResumo"></span>
@@ -3575,9 +3602,9 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
               <input type="number" id="${prefix}LucroDesejado" step="0.01" min="0" max="99" placeholder="10">
             </div>
             <div class="field">
-              <label>Meta no lançamento (%)</label>
+              <label title="Menor que a meta normal, pra começar barato e ranquear o anúncio">🚀 Meta no lançamento (%)</label>
               <input type="number" id="${prefix}LucroLancamento" step="0.01" min="0" max="99" placeholder="3">
-              <div class="field-hint">Menor, pra começar barato e ranquear.</div>
+
             </div>
           </div>
         </div>
@@ -3619,7 +3646,9 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
           </div>
           <div class="qc-escada" id="${prefix}Escada"></div>
         </div>` : ''}
+      </div>
 
+      <div class="qc-col">
         <div class="qc-passo">
           ${passo(temEscada ? 6 : 5, ehShein ? 'Testar um preço cheio' : 'Testar um preço')}
           <div class="qc-teste">
@@ -4203,7 +4232,9 @@ function prepararTelaForn(el){
 
 // ---------- Tela: Pedidos do dia ----------
 // Cores abertas em cada cartão ("prodId|cor" → true), só na sessão.
-const corAbertaPedido = {};
+// Cores recolhidas em cada cartão ("prodId|cor" → true), só na sessão — por
+// padrão todas ficam abertas, pra já dar pra escolher a quantidade.
+const corFechadaPedido = {};
 function htmlCardProdutoPedido(f, p, doDia){
   const item = doDia[p.id];
   const qtd = item ? item.qtd : 0;
@@ -4241,9 +4272,9 @@ function htmlCardProdutoPedido(f, p, doDia){
     </div>`;
   }).join('')}</div>`;
   if(cores.length && vars.length){
-    // Cor + tamanho: cada cor começa recolhida (foto, nome, total e os números
-    // já escolhidos) e abre a numeração em uma linha ao tocar. Quais cores
-    // estão abertas fica em corAbertaPedido (só na sessão).
+    // Cor + tamanho: cada cor vem aberta, com a numeração em uma linha; tocar
+    // no nome recolhe (fica só foto, nome, total e os números já escolhidos). Quais cores
+    // estão recolhidas fica em corFechadaPedido (só na sessão; o padrão é aberta).
     const qtdCor = n => vars.reduce((s, v) => s + (porVar[n + SEP_COR + v] || 0), 0);
     const escolhidos = n => vars.filter(v => porVar[n + SEP_COR + v] > 0).map(v => `${v}:${porVar[n + SEP_COR + v]}`).join(' · ');
     return `
@@ -4253,7 +4284,7 @@ function htmlCardProdutoPedido(f, p, doDia){
         ${cores.map(c => {
           const q = qtdCor(c.nome);
           const fotoCor = fotoDaCor(p, c.nome);
-          const aberta = !!corAbertaPedido[p.id + '|' + c.nome];
+          const aberta = !corFechadaPedido[p.id + '|' + c.nome];
           return `<div class="forn-cor-secao${q > 0 ? ' tem' : ''}${aberta ? ' aberta' : ''}">
             <button type="button" class="forn-cor-cab" data-acao="toggle-cor" data-prod="${p.id}" data-cor="${escapeHtml(c.nome)}" aria-expanded="${aberta}">
               ${fotoCor ? `<img src="${fotoCor}" alt="">` : `<span class="forn-cor-bolinha"></span>`}
@@ -5399,7 +5430,7 @@ function cliqueTelaForn(e){
   }
   if(acao === 'toggle-cor'){
     const k = btn.dataset.prod + '|' + btn.dataset.cor;
-    if(corAbertaPedido[k]) delete corAbertaPedido[k]; else corAbertaPedido[k] = true;
+    if(corFechadaPedido[k]) delete corFechadaPedido[k]; else corFechadaPedido[k] = true;
     return renderPedidos();
   }
   if(acao === 'confirmar-pedido'){
@@ -5494,7 +5525,7 @@ function mudancaTelaForn(e){
   }
 }
 // Reordenar produtos arrastando a alça ⠿: move o cartão no DOM enquanto o
-// ponteiro passa por cima dos outros e, ao soltar, salva a ordem em
+// ponteiro anda pela grade e, ao soltar, salva a ordem em
 // f.produtos (que é a mesma ordem da Soma rápida). Pointer events cobrem
 // mouse e toque; a alça tem touch-action:none pra não rolar a página.
 document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
@@ -5509,18 +5540,48 @@ document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
   card.classList.add('arrastando');
   document.body.classList.add('arrastando-produto');
   try{ alca.setPointerCapture(e.pointerId); } catch(err){}
+  // O destino é o cartão mais perto do ponteiro (não precisa estar exatamente
+  // em cima — vãos entre cartões de alturas diferentes também contam), e
+  // antes/depois sai do lado do centro desse cartão. Sobre o "+ Novo produto"
+  // vai pro fim. Perto da borda da tela a página rola sozinha enquanto segura.
+  let px = e.clientX, py = e.clientY, rolando = null;
+  const novo = grade.querySelector('.forn-prod-novo');
+  const distancia = (rc, x, y) => Math.hypot(Math.max(rc.left - x, 0, x - rc.right), Math.max(rc.top - y, 0, y - rc.bottom));
+  const reposicionar = () => {
+    if(novo){
+      const rn = novo.getBoundingClientRect();
+      if(px >= rn.left && px <= rn.right && py >= rn.top && py <= rn.bottom){
+        if(card.nextElementSibling !== novo) grade.insertBefore(card, novo);
+        return;
+      }
+    }
+    const outros = [...grade.querySelectorAll('.forn-prod[data-prod]')].filter(c => c !== card);
+    if(!outros.length) return;
+    let alvo = null, melhor = Infinity;
+    outros.forEach(c => { const d = distancia(c.getBoundingClientRect(), px, py); if(d < melhor){ melhor = d; alvo = c; } });
+    if(!alvo) return;
+    const rc = alvo.getBoundingClientRect();
+    // Uma coluna só (celular): decide por cima/baixo; senão, esquerda/direita.
+    const umaColuna = outros.every(c => Math.abs(c.getBoundingClientRect().left - rc.left) < 4);
+    const depois = umaColuna ? py > rc.top + rc.height / 2 : px > rc.left + rc.width / 2;
+    if(depois){ if(alvo.nextElementSibling !== card) grade.insertBefore(card, alvo.nextElementSibling); }
+    else { if(card.nextElementSibling !== alvo) grade.insertBefore(card, alvo); }
+  };
+  const passoRolagem = () => {
+    const borda = 90;
+    let v = 0;
+    if(py < borda) v = -Math.ceil((borda - py) / 6);
+    else if(py > window.innerHeight - borda) v = Math.ceil((py - (window.innerHeight - borda)) / 6);
+    if(v){ window.scrollBy(0, v); reposicionar(); }
+    rolando = requestAnimationFrame(passoRolagem);
+  };
+  rolando = requestAnimationFrame(passoRolagem);
   const mover = ev => {
-    // Rola a página quando o ponteiro chega perto da borda.
-    if(ev.clientY < 70) window.scrollBy(0, -14);
-    else if(ev.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
-    const el = document.elementFromPoint(ev.clientX, ev.clientY);
-    const alvo = el && el.closest('.forn-prod[data-prod]');
-    if(!alvo || alvo === card || alvo.parentElement !== grade) return;
-    const cards = [...grade.querySelectorAll('.forn-prod[data-prod]')];
-    const antes = cards.indexOf(card) > cards.indexOf(alvo);
-    grade.insertBefore(card, antes ? alvo : alvo.nextSibling);
+    px = ev.clientX; py = ev.clientY;
+    reposicionar();
   };
   const soltar = () => {
+    cancelAnimationFrame(rolando);
     alca.removeEventListener('pointermove', mover);
     alca.removeEventListener('pointerup', soltar);
     alca.removeEventListener('pointercancel', soltar);
