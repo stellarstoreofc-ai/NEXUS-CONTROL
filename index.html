@@ -450,7 +450,19 @@
   .forn-var-ctrl .menos{background:var(--bg);}
   .forn-var-ctrl .mais{background:var(--green);color:#fff;}
   .forn-var-ctrl span{min-width:18px;font-weight:800;font-size:15px;}
-  .forn-cores{display:flex;gap:6px;flex-wrap:wrap;}
+  /* Cor + tamanho: uma seção por cor, empilhadas, com grade compacta */
+  .forn-cor-secao{border-top:1px dashed var(--border);padding-top:8px;}
+  .forn-cor-cab{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .forn-cor-cab img,.forn-cor-bolinha{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--border);flex-shrink:0;background:var(--bg);}
+  .forn-cor-nome{font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.3px;}
+  .forn-cor-qtd{margin-left:auto;font-size:11.5px;font-weight:800;color:#fff;background:var(--green);border-radius:999px;padding:2px 9px;}
+  .forn-cor-secao.tem .forn-cor-nome{color:var(--green);}
+  .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:5px;}
+  .forn-vars.compacta .forn-var{padding:4px 2px;border-radius:8px;}
+  .forn-vars.compacta .forn-var-nome{font-size:11.5px;}
+  .forn-vars.compacta .forn-var-ctrl{gap:3px;margin-top:2px;}
+  .forn-vars.compacta .forn-var-ctrl button{width:24px;height:24px;font-size:14px;border-radius:7px;}
+  .forn-vars.compacta .forn-var-ctrl span{min-width:14px;font-size:14px;}
   .soma-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
   .soma-linha{display:grid;grid-template-columns:40px minmax(0,1fr) 70px 86px 84px;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:10px;}
   .soma-linha.tem{border-color:var(--green);background:var(--green-bg);}
@@ -489,12 +501,6 @@
     .soma-linha.avulso .soma-nome{grid-area:nome;}
     .soma-linha.avulso .rem{grid-area:rem;}
   }
-  .forn-cor-chip{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:3px 10px 3px 3px;font:inherit;font-size:12.5px;font-weight:700;color:var(--text);cursor:pointer;}
-  .forn-cor-chip.sem-foto{padding-left:10px;}
-  .forn-cor-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover;}
-  .forn-cor-chip.active{border-color:var(--navy);background:var(--navy);color:#fff;}
-  .forn-cor-chip .qtd{font-size:11px;font-weight:800;background:var(--green);color:#fff;border-radius:999px;padding:1px 7px;}
-  .forn-cor-atual{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
   .forn-cor-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
   .forn-cor-row .cor-foto{width:44px;height:44px;border-radius:10px;border:1px dashed var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden;flex-shrink:0;padding:0;}
   .forn-cor-row .cor-foto img{width:100%;height:100%;object-fit:cover;}
@@ -531,6 +537,8 @@
   .print-acoes{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 8px;}
   @media (max-width:480px){
     .forn-prod.com-var{grid-column:1 / -1;}
+    .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));}
+    .forn-vars.compacta .forn-var-ctrl button{width:22px;height:22px;}
     .forn-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
     .forn-qtd button{width:36px;height:36px;font-size:19px;}
     .forn-qtd input{height:36px;font-size:16px;}
@@ -3548,8 +3556,6 @@ let fotoFornProduto = null;
 // Preço digitado num produto que ainda não tem quantidade no dia — vale assim
 // que o primeiro "+" for tocado (não é salvo sozinho).
 const precoDiaPendente = {};
-// Cor aberta em cada cartão do Pedidos (só na sessão, não é salva).
-const corAtivaPedido = {};
 
 // Data local (não UTC): à noite no Brasil o toISOString já viraria o dia seguinte.
 function hojeLocal(){
@@ -3749,22 +3755,24 @@ function produtoDoForn(f, produtoId){
 }
 // Linhas do print: produto com cores vira uma linha por cor (com a foto da cor).
 function linhasDoItem(produto, item, nomeItem){
+  // Uma linha por cor (ou uma só, sem cor), já com a numeração separada:
+  // { nome, cor, foto, preco, qtd, valor, tamanhos: [{ tam, qtd }] }.
   const grupos = variacoesPorCor(item.variacoes, produto || {});
+  const tamanhosProduto = (produto && produto.variacoes) || [];
+  const listaTam = g => Object.entries(g).filter(([t, q]) => t !== '' && q > 0)
+    .sort(([a], [b]) => ordenarPor(tamanhosProduto)(a, b))
+    .map(([tam, qtd]) => ({ tam, qtd }));
   const cores = Object.keys(grupos).filter(c => c !== '');
-  const tamanhos = (produto && produto.variacoes) || [];
-  const txtTam = g => Object.entries(g).filter(([t]) => t !== '').sort(([a], [b]) => ordenarPor(tamanhos)(a, b)).map(([t, q]) => `${t}: ${q}`).join(' · ');
-  if(!cores.length){
-    const vars = textoVariacoes(item.variacoes, produto || {});
-    return [{ foto: produto ? produto.foto : null, nome: nomeItem, qtd: item.qtd, valor: r2f(item.qtd * item.preco),
-              detalhe: (vars ? `Tam. ${vars}  ·  ` : '') + `${fmt(item.preco)}/un` }];
-  }
-  return cores.sort(ordenarPor(nomesCores(produto))).map(cor => {
-    const g = grupos[cor];
-    const qtd = Object.values(g).reduce((s, q) => s + q, 0);
-    const t = txtTam(g);
-    return { foto: fotoDaCor(produto, cor), nome: `${nomeItem} — ${cor}`, qtd, valor: r2f(qtd * item.preco),
+  const montar = (cor, g, qtd) => {
+    const tamanhos = listaTam(g || {});
+    const t = tamanhos.map(x => `${x.tam}: ${x.qtd}`).join(' · ');
+    return { foto: cor ? fotoDaCor(produto, cor) : (produto ? produto.foto : null), nome: nomeItem, cor, preco: item.preco,
+             qtd, valor: r2f(qtd * item.preco), tamanhos,
              detalhe: (t ? `Tam. ${t}  ·  ` : '') + `${fmt(item.preco)}/un` };
-  });
+  };
+  if(!cores.length) return [montar('', grupos[''], item.qtd)];
+  return cores.sort(ordenarPor(nomesCores(produto))).map(cor =>
+    montar(cor, grupos[cor], Object.values(grupos[cor]).reduce((s, q) => s + q, 0)));
 }
 
 function avisoColunaFornecedores(){
@@ -3834,29 +3842,26 @@ function htmlCardProdutoPedido(f, p, doDia){
     </div>`;
   };
   if(cores.length && vars.length){
-    // Cor + tamanho: botões de cor no topo (com a foto e o total da cor) e a
-    // grade de tamanhos da cor escolhida. A foto do cartão vira a da cor.
-    const nomes = cores.map(c => c.nome);
-    let corAtual = corAtivaPedido[p.id];
-    if(!nomes.includes(corAtual)) corAtual = nomes.find(n => vars.some(v => porVar[n + SEP_COR + v] > 0)) || nomes[0];
-    corAtivaPedido[p.id] = corAtual;
+    // Cor + tamanho: todas as cores empilhadas, cada uma com a foto, o total
+    // já lançado e a própria grade de numeração (compacta) logo abaixo — dá
+    // pra ver de uma vez tudo o que foi selecionado no produto.
     const qtdCor = n => vars.reduce((s, v) => s + (porVar[n + SEP_COR + v] || 0), 0);
-    const fotoCor = fotoDaCor(p, corAtual);
-    const fotoHtml = fotoCor ? `<img class="forn-prod-foto" src="${fotoCor}" alt="${escapeHtml(p.nome + ' ' + corAtual)}">` : `<div class="forn-prod-foto placeholder">${inicial}</div>`;
     return `
       <div class="forn-prod com-var${qtd > 0 ? ' tem' : ''}" data-prod="${p.id}">
         ${editar}
-        <div class="forn-prod-topo">${fotoHtml}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}</div>${precoHtml}</div></div>
-        <div class="forn-cores">
-          ${cores.map(c => {
-            const q = qtdCor(c.nome);
-            return `<button type="button" class="forn-cor-chip${c.nome === corAtual ? ' active' : ''}${c.foto ? '' : ' sem-foto'}" data-acao="cor" data-prod="${p.id}" data-cor="${escapeHtml(c.nome)}">
-              ${c.foto ? `<img src="${c.foto}" alt="">` : ''}${escapeHtml(c.nome)}${q > 0 ? `<span class="qtd">${q}</span>` : ''}
-            </button>`;
-          }).join('')}
-        </div>
-        <div class="forn-cor-atual">Tamanhos — ${escapeHtml(corAtual)}</div>
-        <div class="forn-vars">${vars.map(v => celula(v, corAtual + SEP_COR + v)).join('')}</div>
+        <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}</div>${precoHtml}</div></div>
+        ${cores.map(c => {
+          const q = qtdCor(c.nome);
+          const fotoCor = fotoDaCor(p, c.nome);
+          return `<div class="forn-cor-secao${q > 0 ? ' tem' : ''}">
+            <div class="forn-cor-cab">
+              ${fotoCor ? `<img src="${fotoCor}" alt="">` : `<span class="forn-cor-bolinha"></span>`}
+              <span class="forn-cor-nome">${escapeHtml(c.nome)}</span>
+              ${q > 0 ? `<span class="forn-cor-qtd">${q} ${q === 1 ? 'par' : 'pares'}</span>` : ''}
+            </div>
+            <div class="forn-vars compacta">${vars.map(v => celula(v, c.nome + SEP_COR + v)).join('')}</div>
+          </div>`;
+        }).join('')}
         ${sub}
       </div>`;
   }
@@ -4110,97 +4115,156 @@ function quebrarTexto(ctx, texto, larguraMax){
   return linhas;
 }
 async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape }){
+  // Layout pensado pra quem recebe: um bloco por modelo/cor, com a cor numa
+  // etiqueta e a numeração numa grade (Nº em cima, quantidade grande embaixo).
   try{ await document.fonts.ready; } catch(e){}
-  const W = 1080, PAD = 56, FOTO = 120;
+  const W = 1080, PAD = 56, FOTO = 124;
+  const BOX_W = 108, BOX_H = 100, GAP = 12;
+  const porLinhaGrade = Math.floor((W - PAD * 2 + GAP) / (BOX_W + GAP));
   const fonte = (peso, tam) => `${peso} ${tam}px 'Plus Jakarta Sans', 'Nunito Sans', Arial, sans-serif`;
+  const unidade = (l, n) => (l.tamanhos && l.tamanhos.length) ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
+  const tudoPar = linhas.every(l => l.tamanhos && l.tamanhos.length);
+  const unTotal = n => tudoPar ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
   const medidor = document.createElement('canvas').getContext('2d');
-  const larguraTexto = W - PAD * 2 - FOTO - 24 - 230;
+  const larguraNome = W - PAD * 2 - FOTO - 28 - 250;
   const fotos = await Promise.all(linhas.map(l => carregarImagem(l.foto)));
   const layout = linhas.map(l => {
-    medidor.font = fonte(800, 34);
-    const nome = quebrarTexto(medidor, l.nome, larguraTexto).slice(0, 2);
-    medidor.font = fonte(600, 26);
-    const det = l.detalhe ? quebrarTexto(medidor, l.detalhe, larguraTexto).slice(0, 6) : [];
-    const h = Math.max(FOTO, nome.length * 42 + det.length * 34 + 8) + 36;
-    return { nome, det, h };
+    medidor.font = fonte(800, 38);
+    const nome = quebrarTexto(medidor, l.nome, larguraNome).slice(0, 2);
+    const topo = Math.max(FOTO, 58 + (nome.length - 1) * 44 + 70);
+    const linhasGrade = l.tamanhos && l.tamanhos.length ? Math.ceil(l.tamanhos.length / porLinhaGrade) : 0;
+    const grade = linhasGrade ? 26 + linhasGrade * (BOX_H + GAP) - GAP : 0;
+    return { nome, topo, h: 30 + topo + grade + 34 };
   });
-  const HEADER = 230, FOOTER = 210;
+  const HEADER = 260, FOOTER = rodape ? 230 : 190;
   const H = HEADER + layout.reduce((s, l) => s + l.h, 0) + FOOTER;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
+  const retArred = (x, y, w, h, raio) => { ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x, y, w, h, raio); else ctx.rect(x, y, w, h); };
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
+
+  // Cabeçalho: data, título e resumo (modelos · peças)
   const grad = ctx.createLinearGradient(0, 0, W, 0);
   grad.addColorStop(0, '#0f2254');
   grad.addColorStop(1, '#16308a');
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, HEADER - 30);
+  ctx.fillRect(0, 0, W, HEADER - 26);
   ctx.fillStyle = '#c7d2fe';
   ctx.font = fonte(700, 28);
-  ctx.fillText(subtitulo, PAD, 76);
+  ctx.fillText(subtitulo, PAD, 72);
   ctx.fillStyle = '#ffffff';
-  ctx.font = fonte(800, 52);
-  ctx.fillText(quebrarTexto(ctx, titulo, W - PAD * 2)[0], PAD, 146);
+  ctx.font = fonte(800, 54);
+  ctx.fillText(quebrarTexto(ctx, titulo, W - PAD * 2)[0], PAD, 140);
+  const modelos = new Set(linhas.map(l => l.nome)).size;
+  ctx.fillStyle = '#c7d2fe';
+  ctx.font = fonte(700, 28);
+  ctx.fillText(`${modelos} ${modelos === 1 ? 'modelo' : 'modelos'}  ·  ${totalPecas} ${unTotal(totalPecas)}`, PAD, 194);
 
   let y = HEADER;
   linhas.forEach((l, i) => {
     const lay = layout[i];
     const img = fotos[i];
-    const fy = y + 18;
+    const y0 = y + 30;
+    // Foto
     ctx.save();
-    ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(PAD, fy, FOTO, FOTO, 18); else ctx.rect(PAD, fy, FOTO, FOTO);
+    retArred(PAD, y0, FOTO, FOTO, 18);
     ctx.clip();
     if(img){
       const lado = Math.min(img.width, img.height);
-      ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, PAD, fy, FOTO, FOTO);
+      ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, PAD, y0, FOTO, FOTO);
     } else {
       ctx.fillStyle = '#f0f4ff';
-      ctx.fillRect(PAD, fy, FOTO, FOTO);
+      ctx.fillRect(PAD, y0, FOTO, FOTO);
       ctx.fillStyle = '#6b7794';
-      ctx.font = fonte(800, 52);
+      ctx.font = fonte(800, 54);
       ctx.textAlign = 'center';
-      ctx.fillText((l.nome || '?').trim().charAt(0).toUpperCase(), PAD + FOTO / 2, fy + FOTO / 2 + 18);
+      ctx.fillText((l.nome || '?').trim().charAt(0).toUpperCase(), PAD + FOTO / 2, y0 + FOTO / 2 + 19);
       ctx.textAlign = 'left';
     }
     ctx.restore();
-    const tx = PAD + FOTO + 24;
-    let ty = y + 56;
+    // Nome do modelo
+    const tx = PAD + FOTO + 28;
+    let ty = y0 + 40;
     ctx.fillStyle = '#0f1b3d';
-    ctx.font = fonte(800, 34);
-    lay.nome.forEach(t => { ctx.fillText(t, tx, ty); ty += 42; });
+    ctx.font = fonte(800, 38);
+    lay.nome.forEach((t, k) => { ctx.fillText(t, tx, ty + k * 44); });
+    ty += (lay.nome.length - 1) * 44 + 22;
+    // Etiqueta da cor + preço por par
+    let px = tx;
+    if(l.cor){
+      ctx.font = fonte(800, 24);
+      const txt = `COR: ${String(l.cor).toUpperCase()}`;
+      const w = ctx.measureText(txt).width + 32;
+      ctx.fillStyle = '#e0e7ff';
+      retArred(px, ty, w, 44, 22);
+      ctx.fill();
+      ctx.fillStyle = '#0f2254';
+      ctx.fillText(txt, px + 16, ty + 31);
+      px += w + 16;
+    }
     ctx.fillStyle = '#6b7794';
-    ctx.font = fonte(600, 26);
-    lay.det.forEach(t => { ctx.fillText(t, tx, ty); ty += 34; });
+    ctx.font = fonte(700, 24);
+    ctx.fillText(`${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`, px, ty + 31);
+    // Total do bloco (direita)
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f1b3d';
-    ctx.font = fonte(800, 34);
-    ctx.fillText(`${l.qtd} ${l.qtd === 1 ? 'pç' : 'pçs'}`, W - PAD, y + 56);
+    ctx.font = fonte(800, 38);
+    ctx.fillText(`${l.qtd} ${unidade(l, l.qtd)}`, W - PAD, y0 + 40);
     ctx.fillStyle = '#059669';
-    ctx.font = fonte(800, 30);
-    ctx.fillText(fmt(l.valor), W - PAD, y + 100);
+    ctx.font = fonte(800, 32);
+    ctx.fillText(fmt(l.valor), W - PAD, y0 + 86);
     ctx.textAlign = 'left';
+    // Grade de numeração
+    if(l.tamanhos && l.tamanhos.length){
+      const gy = y0 + lay.topo + 26;
+      ctx.fillStyle = '#6b7794';
+      ctx.font = fonte(800, 20);
+      l.tamanhos.forEach((t, k) => {
+        const col = k % porLinhaGrade, lin = Math.floor(k / porLinhaGrade);
+        const bx = PAD + col * (BOX_W + GAP), by = gy + lin * (BOX_H + GAP);
+        ctx.fillStyle = '#f5f8ff';
+        retArred(bx, by, BOX_W, BOX_H, 16);
+        ctx.fill();
+        ctx.strokeStyle = '#c7d2fe';
+        ctx.lineWidth = 2;
+        retArred(bx, by, BOX_W, BOX_H, 16);
+        ctx.stroke();
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#6b7794';
+        ctx.font = fonte(800, 22);
+        ctx.fillText(`Nº ${t.tam}`, bx + BOX_W / 2, by + 32);
+        ctx.fillStyle = '#0f2254';
+        ctx.font = fonte(800, 44);
+        ctx.fillText(String(t.qtd), bx + BOX_W / 2, by + 80);
+        ctx.textAlign = 'left';
+      });
+    }
     y += lay.h;
     ctx.fillStyle = '#e2e8f5';
-    ctx.fillRect(PAD, y - 1, W - PAD * 2, 2);
+    ctx.fillRect(PAD, y - 2, W - PAD * 2, 2);
   });
 
+  // Rodapé: total do pedido
   ctx.fillStyle = '#f0f4ff';
-  ctx.fillRect(0, y + 20, W, FOOTER - 20);
+  ctx.fillRect(0, y + 18, W, FOOTER - 18);
   ctx.fillStyle = '#6b7794';
-  ctx.font = fonte(700, 28);
-  ctx.fillText(`Total: ${totalPecas} ${totalPecas === 1 ? 'peça' : 'peças'}`, PAD, y + 88);
+  ctx.font = fonte(800, 26);
+  ctx.fillText('TOTAL DO PEDIDO', PAD, y + 76);
+  ctx.fillStyle = '#0f1b3d';
+  ctx.font = fonte(800, 34);
+  ctx.fillText(`${totalPecas} ${unTotal(totalPecas)}`, PAD, y + 122);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#0f2254';
-  ctx.font = fonte(800, 56);
-  ctx.fillText(fmt(totalValor), W - PAD, y + 104);
+  ctx.font = fonte(800, 60);
+  ctx.fillText(fmt(totalValor), W - PAD, y + 118);
   ctx.textAlign = 'left';
   if(rodape){
     ctx.fillStyle = '#6b7794';
-    ctx.font = fonte(600, 24);
-    ctx.fillText(rodape, PAD, y + 160);
+    ctx.font = fonte(700, 24);
+    ctx.fillText(rodape, PAD, y + 176);
   }
   return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
 }
@@ -4210,9 +4274,17 @@ function linhasPedidoDia(f, dia){
   return Object.entries(doDia).flatMap(([id, item]) => linhasDoItem(produtoDoForn(f, id), item, item.nome));
 }
 function textoWhatsPedido(f, titulo, linhas, totalPecas, totalValor){
-  return [`*${titulo}*`, '',
-    ...linhas.map(l => `• ${l.nome} — ${l.qtd} ${l.qtd === 1 ? 'peça' : 'peças'} (${fmt(l.valor)})${l.detalhe ? `\n   ${l.detalhe}` : ''}`),
-    '', `*Total: ${totalPecas} ${totalPecas === 1 ? 'peça' : 'peças'} — ${fmt(totalValor)}*`].join('\n');
+  const tudoPar = linhas.every(l => l.tamanhos && l.tamanhos.length);
+  const un = (n, par) => par ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
+  const blocos = linhas.map(l => {
+    const par = !!(l.tamanhos && l.tamanhos.length);
+    return [
+      `*${l.nome}*${l.cor ? ` — Cor: *${l.cor}*` : ''}`,
+      ...(par ? l.tamanhos.map(t => `   Nº ${t.tam}: ${t.qtd} ${un(t.qtd, true)}`) : []),
+      `   = ${l.qtd} ${un(l.qtd, par)} × ${fmt(l.preco)} = *${fmt(l.valor)}*`
+    ].join('\n');
+  });
+  return [`*${titulo}*`, '', blocos.join('\n\n'), '', `*TOTAL: ${totalPecas} ${un(totalPecas, tudoPar)} — ${fmt(totalValor)}*`].join('\n');
 }
 function linkWhatsForn(f, texto){
   let num = String(f.whatsapp || '').replace(/\D/g, '');
@@ -4769,7 +4841,6 @@ function cliqueTelaForn(e){
     saveFornecedores(true);
     return renderPedidos();
   }
-  if(acao === 'cor'){ corAtivaPedido[btn.dataset.prod] = btn.dataset.cor; return renderPedidos(); }
   if(acao === 'print-dia') return abrirPrintDia(f);
   if(acao === 'print-mes') return abrirPrintMes(f, fornMes);
   if(acao === 'fechar-mes'){
