@@ -367,7 +367,8 @@
   .forn-aviso{background:var(--amber-bg);border:1px solid #fcd34d;border-radius:var(--radius);padding:18px 20px;line-height:1.5;}
   .forn-aviso h3{font-size:16px;margin-bottom:8px;}
   .forn-aviso code{display:block;background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12.5px;white-space:pre-wrap;word-break:break-all;}
-  .forn-abas{margin-bottom:14px;display:inline-flex;}
+  .forn-abas{margin-bottom:14px;display:inline-flex;flex-wrap:nowrap;}
+  @media (max-width:480px){ .forn-abas{display:flex;width:100%;} .forn-abas .tab{flex:1;padding:8px 6px;font-size:13px;white-space:nowrap;} .forn-abas .aba-extra{display:none;} }
   .forn-chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
   .forn-chip{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:700;font-size:13.5px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px;}
   .forn-chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
@@ -417,7 +418,14 @@
   .forn-prod-novo{border:2px dashed var(--border);background:transparent;border-radius:var(--radius);min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-weight:800;cursor:pointer;font-size:14px;}
   .forn-prod-novo span{font-size:30px;}
   .forn-prod-novo:hover{border-color:var(--accent);color:var(--accent);}
-  .forn-hist{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:18px;}
+  .forn-hist{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin-top:18px;align-items:start;}
+  .forn-hist-col{display:flex;flex-direction:column;gap:12px;}
+  @media (max-width:760px){ .forn-hist{grid-template-columns:1fr;} }
+  .forn-add{border:1px dashed var(--border);background:transparent;border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer;}
+  .forn-add:hover{border-color:var(--accent);color:var(--accent);}
+  .forn-hero-editar{background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:2px 7px;font-size:12px;cursor:pointer;margin-left:4px;vertical-align:middle;}
+  .forn-hero-editar:hover{background:rgba(255,255,255,.3);}
+  .forn-dia-direita{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end;}
   .forn-hist .chart-card{margin-top:0;}
   .forn-hist-linha{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
   .forn-hist-linha:last-child{border-bottom:none;}
@@ -464,16 +472,22 @@
   .forn-vars.compacta .forn-var-ctrl button{width:24px;height:24px;font-size:14px;border-radius:7px;}
   .forn-vars.compacta .forn-var-ctrl span{min-width:14px;font-size:14px;}
   .soma-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
-  .soma-linha{display:grid;grid-template-columns:40px minmax(0,1fr) 70px 86px 84px;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:10px;}
+  .soma-linha{display:grid;grid-template-columns:40px minmax(0,1fr) 132px 86px 84px;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:10px;}
   .soma-linha.tem{border-color:var(--green);background:var(--green-bg);}
-  .soma-linha.avulso{grid-template-columns:minmax(0,1fr) 70px 86px 84px 28px;margin-bottom:6px;}
+  .soma-linha.avulso{grid-template-columns:minmax(0,1fr) 132px 86px 84px 28px;margin-bottom:6px;}
   .soma-linha img,.soma-linha .ph{width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);}
   .soma-linha .nome{font-weight:800;font-size:13.5px;line-height:1.2;}
   .soma-linha input{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 8px;font:inherit;font-weight:700;min-width:0;}
-  .soma-linha input.soma-qtd{text-align:center;font-size:16px;}
+  .soma-linha input.soma-qtd{text-align:center;font-size:16px;padding:7px 2px;-moz-appearance:textfield;appearance:textfield;}
+  .soma-linha input.soma-qtd::-webkit-inner-spin-button,.soma-linha input.soma-qtd::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+  .soma-qtd-wrap{display:flex;align-items:center;gap:4px;}
+  .soma-qtd-wrap button{width:34px;height:36px;flex-shrink:0;border:none;border-radius:9px;font-size:18px;font-weight:800;cursor:pointer;}
+  .soma-qtd-wrap .soma-menos{background:var(--bg);color:var(--text);}
+  .soma-qtd-wrap .soma-mais{background:var(--green);color:#fff;}
+  .soma-qtd-wrap button:active{transform:scale(.92);}
   .soma-linha .sub{text-align:right;font-weight:800;font-size:13px;color:var(--green);white-space:nowrap;}
   .soma-linha .rem{background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;}
-  .soma-cab{display:grid;grid-template-columns:40px minmax(0,1fr) 70px 86px 84px;gap:8px;padding:0 8px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  .soma-cab{display:grid;grid-template-columns:40px minmax(0,1fr) 132px 86px 84px;gap:8px;padding:0 8px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;}
   .soma-dia{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
   .soma-dia input{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font:inherit;font-weight:700;}
   .soma-dia .btn-icon{border:1px solid var(--border);background:var(--surface);border-radius:8px;width:34px;height:34px;cursor:pointer;font-weight:800;}
@@ -491,13 +505,13 @@
   .soma-total .valor.pop{animation:fornPop .35s ease;}
   @media (max-width:520px){
     .soma-cab{display:none;}
-    .soma-linha{grid-template-columns:36px minmax(0,1fr) 64px;grid-template-areas:"img nome qtd" "img preco sub";}
+    .soma-linha{grid-template-columns:36px minmax(0,1fr) 124px;grid-template-areas:"img nome qtd" "img preco sub";}
     .soma-linha img,.soma-linha .ph{grid-area:img;width:36px;height:36px;}
     .soma-linha .nome{grid-area:nome;}
-    .soma-linha .soma-qtd{grid-area:qtd;}
+    .soma-linha .soma-qtd-wrap{grid-area:qtd;}
     .soma-linha .soma-preco{grid-area:preco;}
     .soma-linha .sub{grid-area:sub;grid-column:3;}
-    .soma-linha.avulso{grid-template-columns:minmax(0,1fr) 64px 28px;grid-template-areas:"nome qtd rem" "preco sub sub";}
+    .soma-linha.avulso{grid-template-columns:minmax(0,1fr) 124px 28px;grid-template-areas:"nome qtd rem" "preco sub sub";}
     .soma-linha.avulso .soma-nome{grid-area:nome;}
     .soma-linha.avulso .rem{grid-area:rem;}
   }
@@ -512,7 +526,7 @@
   .ped-ir{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:13.5px;}
   /* Fornecedores: fechamento do mês */
   .forn-mes-nav{display:flex;align-items:center;gap:8px;margin:4px 0 12px;flex-wrap:wrap;}
-  .forn-mes-nav h3{font-size:16px;min-width:170px;text-align:center;text-transform:capitalize;}
+  .forn-mes-nav h3{font-size:16px;min-width:170px;text-align:center;}
   .forn-mes-nav .btn-icon{border:1px solid var(--border);background:var(--surface);border-radius:8px;width:34px;height:34px;cursor:pointer;font-weight:800;}
   .forn-fech{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:14px;}
   .forn-fech.fechado{border-color:var(--green);}
@@ -543,6 +557,7 @@
     .forn-qtd button{width:36px;height:36px;font-size:19px;}
     .forn-qtd input{height:36px;font-size:16px;}
     .forn-dia-total{text-align:left;}
+    .forn-dia-direita{width:100%;justify-content:space-between;}
   }
 
   /* Modal */
@@ -929,7 +944,7 @@
       <section class="page" id="page-fornecedores">
         <div class="tabs forn-abas" id="fornAbas">
           <button type="button" class="tab active" data-aba="pedidos">📦 Pedidos do dia</button>
-          <button type="button" class="tab" data-aba="fechamento">💰 Fechamento e pagamentos</button>
+          <button type="button" class="tab" data-aba="fechamento">💰 Fechamento<span class="aba-extra"> e pagamentos</span></button>
         </div>
         <div id="pedConteudo"></div>
         <div id="fornConteudo" hidden></div>
@@ -3794,7 +3809,7 @@ function htmlChipsForn(){
           ${escapeHtml(x.nome)}${saldo > 0 ? `<span class="forn-chip-saldo">${fmt(saldo)}</span>` : ''}
         </button>`;
       }).join('')}
-      <button type="button" class="btn btn-primary btn-sm" data-acao="novo-fornecedor">+ Fornecedor</button>
+      <button type="button" class="forn-add" data-acao="novo-fornecedor" title="Novo fornecedor" aria-label="Novo fornecedor">＋ Novo</button>
     </div>`;
 }
 function htmlSemFornecedor(){
@@ -3909,12 +3924,6 @@ function renderPedidos(){
   const excluidos = orfaos.filter(([id]) => !id.includes('#soma-'));
 
   el.innerHTML = htmlChipsForn() + `
-    <div class="ped-ir">
-      <span>Em aberto com <strong>${escapeHtml(f.nome)}</strong>: <strong>${fmt(Math.max(0, saldoForn(f)))}</strong>${seq >= 2 ? ` · <span class="forn-streak">🔥 ${seq} dias seguidos</span>` : ''}</span>
-      <span style="display:flex;gap:8px;flex-wrap:wrap;"><button type="button" class="btn btn-outline btn-sm" data-acao="soma-rapida">🧮 Soma rápida (pedidos do papel)</button>
-      <button type="button" class="btn btn-outline btn-sm" data-acao="ir-fornecedores">Fechamento e pagamentos →</button></span>
-    </div>
-
     <div class="forn-dia">
       <div class="forn-dia-nav">
         <button type="button" class="btn-icon" data-acao="dia-anterior" aria-label="Dia anterior">‹</button>
@@ -3922,10 +3931,14 @@ function renderPedidos(){
         <button type="button" class="btn-icon" data-acao="dia-seguinte" aria-label="Próximo dia">›</button>
         ${fornDia !== hoje ? `<button type="button" class="btn btn-outline btn-sm" data-acao="dia-hoje">Hoje</button>` : ''}
         <strong style="margin-left:4px;">${rotuloDia(fornDia)}</strong>
+        ${seq >= 2 ? `<span class="forn-streak">🔥 ${seq} dias seguidos</span>` : ''}
       </div>
-      <div class="forn-dia-total">
-        <div class="label">Pedido do dia · ${pecas} ${pecas === 1 ? 'peça' : 'peças'}</div>
-        <div class="valor" id="fornTotalDia">${fmt(totalDia)}</div>
+      <div class="forn-dia-direita">
+        <div class="forn-dia-total">
+          <div class="label">Pedido do dia · ${pecas} ${pecas === 1 ? 'peça' : 'peças'}</div>
+          <div class="valor" id="fornTotalDia">${fmt(totalDia)}</div>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" data-acao="print-dia" ${pecas ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'} title="Gerar a imagem do pedido pra mandar pro fornecedor">📸 Print do pedido</button>
       </div>
     </div>
 
@@ -3935,11 +3948,7 @@ function renderPedidos(){
     </div>
     ${daSoma.length ? `<p class="field-hint" style="margin-top:10px;">🧮 Lançado pela soma rápida neste dia: ${daSoma.map(([, i]) => `${escapeHtml(i.nome || 'produto')} ${i.qtd} × ${fmt(i.preco)}`).join(' · ')} — pra mudar, abra a Soma rápida em Fornecedores ou zere abaixo.</p>
       <div class="ped-acoes" style="margin-top:6px;"><button type="button" class="btn btn-danger-text btn-sm" data-acao="apagar-soma-dia">Apagar o que foi lançado pela soma rápida neste dia</button></div>` : ''}
-    ${excluidos.length ? `<p class="field-hint" style="margin-top:10px;">Também neste dia (produtos excluídos do cadastro): ${excluidos.map(([, i]) => `${escapeHtml(i.nome || 'produto')} ${i.qtd} × ${fmt(i.preco)}`).join(' · ')}</p>` : ''}
-
-    <div class="ped-acoes">
-      <button type="button" class="btn btn-primary" data-acao="print-dia" ${pecas ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'}>📸 Gerar print do pedido</button>
-    </div>`;
+    ${excluidos.length ? `<p class="field-hint" style="margin-top:10px;">Também neste dia (produtos excluídos do cadastro): ${excluidos.map(([, i]) => `${escapeHtml(i.nome || 'produto')} ${i.qtd} × ${fmt(i.preco)}`).join(' · ')}</p>` : ''}`;
 }
 
 // ---------- Tela: Fornecedores (dinheiro + fechamento do mês) ----------
@@ -3966,13 +3975,11 @@ function renderFornecedores(){
   el.innerHTML = htmlChipsForn() + `
     <div class="forn-hero">
       <div class="forn-hero-deve">
-        <div class="label">${saldo < 0 ? 'Crédito com' : 'Total em aberto com'} ${escapeHtml(f.nome)}</div>
+        <div class="label">${saldo < 0 ? 'Crédito com' : 'Total em aberto com'} ${escapeHtml(f.nome)} <button type="button" class="forn-hero-editar" data-acao="editar-fornecedor" title="Editar fornecedor" aria-label="Editar fornecedor">✏️</button></div>
         <div class="valor${saldo <= 0.004 ? ' quitado' : ''}">${saldo <= 0.004 && saldo > -0.005 ? '🎉 Tudo pago' : fmt(Math.abs(saldo))}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-sm" data-acao="pagar">💸 Registrar pagamento</button>
-          <button type="button" class="btn btn-sm" data-acao="ir-pedidos" style="background:rgba(255,255,255,.15);color:#fff;">📦 Lançar pedido</button>
-          <button type="button" class="btn btn-sm" data-acao="soma-rapida" style="background:rgba(255,255,255,.15);color:#fff;">🧮 Soma rápida</button>
-          <button type="button" class="btn btn-sm" data-acao="editar-fornecedor" style="background:rgba(255,255,255,.15);color:#fff;">✏️ Editar</button>
+          <button type="button" class="btn btn-sm" data-acao="soma-rapida" style="background:rgba(255,255,255,.15);color:#fff;" title="Lançar dia por dia os pedidos anotados no papel">🧮 Soma rápida</button>
         </div>
       </div>
       ${mesesPendentes.length ? `<div class="forn-stat" style="grid-column:auto;">
@@ -3983,7 +3990,7 @@ function renderFornecedores(){
 
     <div class="forn-mes-nav">
       <button type="button" class="btn-icon" data-acao="mes-anterior" aria-label="Mês anterior">‹</button>
-      <h3>${nomeMes(ym)}</h3>
+      <h3>${nomeMes(ym).replace(/^./, c => c.toUpperCase())}</h3>
       <button type="button" class="btn-icon" data-acao="mes-seguinte" aria-label="Próximo mês">›</button>
       ${ym !== hoje.slice(0, 7) ? `<button type="button" class="btn btn-outline btn-sm" data-acao="mes-atual">Mês atual</button>` : ''}
     </div>
@@ -4002,7 +4009,6 @@ function renderFornecedores(){
       </div>
       <div class="forn-fech-acoes">
         ${!fech || alteradoDepois ? `<button type="button" class="btn btn-primary btn-sm" data-acao="fechar-mes" ${comprado > 0 ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'}>🔒 Fechar o mês</button>` : `<button type="button" class="btn btn-outline btn-sm" data-acao="reabrir-mes">Reabrir mês</button>`}
-        ${falta > 0.004 ? `<button type="button" class="btn btn-outline btn-sm" data-acao="pagar-mes">💸 Pagar este mês</button>` : ''}
         <button type="button" class="btn btn-outline btn-sm" data-acao="print-mes" ${comprado > 0 ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'}>📸 Print do fechamento</button>
       </div>
     </div>
@@ -4017,6 +4023,7 @@ function renderFornecedores(){
             <td class="num">${r.qtd}</td><td class="num">${fmt(r.valor)}</td></tr>`).join('')}</tbody>
         </table></div>` : `<p class="forn-hist-vazio">Nenhum pedido neste mês.</p>`}
       </div>
+      <div class="forn-hist-col">
       <div class="chart-card">
         <h3>Pedidos por dia</h3>
         ${diasDoMes.length ? diasDoMes.map(d => {
@@ -4035,6 +4042,7 @@ function renderFornecedores(){
             <div style="display:flex;align-items:center;gap:8px;"><strong style="color:var(--green);">− ${fmt(p.valor)}</strong>
               <button type="button" class="btn btn-danger-text btn-sm" data-acao="excluir-pagamento" data-pag="${p.id}" title="Excluir pagamento">✕</button></div>
           </div>`).join('') : `<p class="forn-hist-vazio">Nenhum pagamento referente a este mês.</p>`}
+      </div>
       </div>
     </div>`;
 }
@@ -4385,7 +4393,7 @@ function abrirSomaRapida(f){
         <div class="soma-linha" data-prod="${p.id}">
           ${p.foto ? `<img src="${p.foto}" alt="">` : `<div class="ph">${escapeHtml((p.nome || '?').trim().charAt(0).toUpperCase())}</div>`}
           <div class="nome">${escapeHtml(p.nome)}</div>
-          <input type="number" class="soma-qtd" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Quantidade de ${escapeHtml(p.nome)}">
+          <div class="soma-qtd-wrap"><button type="button" class="soma-menos" tabindex="-1" aria-label="Menos ${escapeHtml(p.nome)}">−</button><input type="number" class="soma-qtd" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Quantidade de ${escapeHtml(p.nome)}"><button type="button" class="soma-mais" tabindex="-1" aria-label="Mais ${escapeHtml(p.nome)}">+</button></div>
           <input type="number" class="soma-preco" min="0" step="0.01" value="${p.preco}" aria-label="Preço de ${escapeHtml(p.nome)}">
           <div class="sub"></div>
         </div>`).join('')
@@ -4409,7 +4417,7 @@ function addLinhaAvulsa(){
   row.className = 'soma-linha avulso';
   row.innerHTML = `
     <input type="text" class="soma-nome" placeholder="Nome do item" aria-label="Nome do item">
-    <input type="number" class="soma-qtd" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Quantidade">
+    <div class="soma-qtd-wrap"><button type="button" class="soma-menos" tabindex="-1" aria-label="Menos">−</button><input type="number" class="soma-qtd" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Quantidade"><button type="button" class="soma-mais" tabindex="-1" aria-label="Mais">+</button></div>
     <input type="number" class="soma-preco" min="0" step="0.01" placeholder="R$" aria-label="Preço">
     <div class="sub"></div>
     <button type="button" class="rem" title="Remover">✕</button>`;
@@ -4507,6 +4515,15 @@ document.getElementById('overlaySoma').addEventListener('input', recalcularSoma)
 document.getElementById('btnSomaAvulso').addEventListener('click', () => { addLinhaAvulsa(); recalcularSoma(); });
 document.getElementById('somaAvulsos').addEventListener('click', e => {
   if(e.target.closest('.rem')){ e.target.closest('.soma-linha').remove(); recalcularSoma(); }
+});
+document.getElementById('overlaySoma').addEventListener('click', e => {
+  const b = e.target.closest('.soma-mais, .soma-menos');
+  if(!b) return;
+  const input = b.parentElement.querySelector('.soma-qtd');
+  const atual = Math.max(0, Math.round(parseFloat(input.value) || 0));
+  const novo = Math.max(0, atual + (b.classList.contains('soma-mais') ? 1 : -1));
+  input.value = novo || '';
+  recalcularSoma();
 });
 // Enter na quantidade pula pra próxima linha; na última, lança o dia — dá pra
 // passar a lista do papel inteira só no teclado.
@@ -4818,7 +4835,7 @@ function cliqueTelaForn(e){
   if(acao === 'editar-fornecedor') return abrirModalFornecedor(f);
   if(acao === 'novo-produto') return abrirModalFornProduto();
   if(acao === 'editar-produto') return abrirModalFornProduto((f.produtos || []).find(p => p.id === btn.dataset.prod));
-  if(acao === 'pagar') return abrirModalPagamentoForn();
+  if(acao === 'pagar') return abrirModalPagamentoForn(faltaMesForn(f, fornMes) > 0.004 ? fornMes : null);
   if(acao === 'pagar-mes') return abrirModalPagamentoForn(fornMes);
   if(acao === 'soma-rapida') return abrirSomaRapida(f);
   if(acao === 'ir-pedidos'){ fornDia = hojeLocal(); return abrirAbaForn('pedidos'); }
