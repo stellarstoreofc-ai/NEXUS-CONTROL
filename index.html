@@ -573,11 +573,26 @@
   .forn-var-ctrl .mais{background:var(--green);color:#fff;}
   .forn-var-ctrl span{min-width:18px;font-weight:800;font-size:15px;}
   /* Cor + tamanho: uma seção por cor, empilhadas, com grade compacta */
-  .forn-cor-secao{border-top:1px dashed var(--border);padding-top:8px;}
+  .forn-cor-secao{border-top:1px dashed var(--border);padding-top:6px;}
+  .forn-cor-secao .forn-cor-cab{width:100%;background:none;border:none;padding:2px 0;font:inherit;color:inherit;cursor:pointer;text-align:left;border-radius:8px;margin-bottom:0;}
+  .forn-cor-secao .forn-cor-cab:hover{background:var(--bg);}
+  .forn-cor-secao.aberta .forn-cor-cab{margin-bottom:6px;}
+  .forn-cor-texto{display:flex;flex-direction:column;min-width:0;flex:1;}
+  .forn-cor-escolhidos{font-size:11px;color:var(--green);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .forn-cor-seta{color:var(--muted);font-size:12px;padding:0 4px;}
+  .forn-linha-tam{display:flex;gap:3px;}
+  .forn-tam{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--border);border-radius:8px;padding:3px 1px;background:var(--surface);}
+  .forn-tam.tem{border-color:var(--green);background:var(--green-bg);}
+  .forn-tam-n{font-size:10.5px;font-weight:800;color:var(--muted);}
+  .forn-tam.tem .forn-tam-n{color:var(--green);}
+  .forn-tam-q{font-size:13px;font-weight:800;line-height:1.1;}
+  .forn-tam button{width:100%;max-width:30px;height:20px;border:none;border-radius:6px;font-size:13px;font-weight:800;cursor:pointer;line-height:1;padding:0;}
+  .forn-tam .mais{background:var(--green);color:#fff;}
+  .forn-tam .menos{background:var(--bg);color:var(--text);}
+  .forn-tam button:active{transform:scale(.9);}
   .forn-cor-cab{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
   .forn-cor-cab img,.forn-cor-bolinha{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--border);flex-shrink:0;background:var(--bg);}
   .forn-cor-nome{font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.3px;}
-  .forn-cor-qtd{margin-left:auto;font-size:11.5px;font-weight:800;color:#fff;background:var(--green);border-radius:999px;padding:2px 9px;}
   .forn-cor-secao.tem .forn-cor-nome{color:var(--green);}
   .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:4px;}
   .forn-vars.compacta .forn-var{padding:4px 2px;border-radius:8px;}
@@ -666,6 +681,8 @@
   @media (max-width:480px){
     .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));}
     .forn-vars.compacta .forn-var-ctrl button{width:22px;height:22px;}
+    .forn-tam button{height:24px;max-width:34px;}
+    .forn-tam-q{font-size:14px;}
     .forn-grid{grid-template-columns:1fr;gap:10px;}
     .forn-qtd button{width:36px;height:36px;font-size:19px;}
     .forn-qtd input{height:36px;font-size:16px;}
@@ -4185,6 +4202,8 @@ function prepararTelaForn(el){
 }
 
 // ---------- Tela: Pedidos do dia ----------
+// Cores abertas em cada cartão ("prodId|cor" → true), só na sessão.
+const corAbertaPedido = {};
 function htmlCardProdutoPedido(f, p, doDia){
   const item = doDia[p.id];
   const qtd = item ? item.qtd : 0;
@@ -4209,11 +4228,24 @@ function htmlCardProdutoPedido(f, p, doDia){
       </div>
     </div>`;
   };
+  // Numeração inteira numa linha só: cada tamanho é uma colunazinha
+  // (Nº em cima, + , quantidade, −) que encolhe junto com o cartão.
+  const linhaTamanhos = prefixoChave => `<div class="forn-linha-tam">${vars.map(v => {
+    const chave = prefixoChave + v;
+    const q = porVar[chave] || 0;
+    return `<div class="forn-tam${q > 0 ? ' tem' : ''}">
+      <span class="forn-tam-n">${escapeHtml(v)}</span>
+      <button type="button" class="mais" data-acao="mais" data-prod="${p.id}" data-var="${escapeHtml(chave)}" aria-label="Mais ${escapeHtml(v)}">+</button>
+      <span class="forn-tam-q">${q}</span>
+      <button type="button" class="menos" data-acao="menos" data-prod="${p.id}" data-var="${escapeHtml(chave)}" aria-label="Menos ${escapeHtml(v)}">−</button>
+    </div>`;
+  }).join('')}</div>`;
   if(cores.length && vars.length){
-    // Cor + tamanho: todas as cores empilhadas, cada uma com a foto, o total
-    // já lançado e a própria grade de numeração (compacta) logo abaixo — dá
-    // pra ver de uma vez tudo o que foi selecionado no produto.
+    // Cor + tamanho: cada cor começa recolhida (foto, nome, total e os números
+    // já escolhidos) e abre a numeração em uma linha ao tocar. Quais cores
+    // estão abertas fica em corAbertaPedido (só na sessão).
     const qtdCor = n => vars.reduce((s, v) => s + (porVar[n + SEP_COR + v] || 0), 0);
+    const escolhidos = n => vars.filter(v => porVar[n + SEP_COR + v] > 0).map(v => `${v}:${porVar[n + SEP_COR + v]}`).join(' · ');
     return `
       <div class="forn-prod com-var${qtd > 0 ? ' tem' : ''}" data-prod="${p.id}">
         ${editar}
@@ -4221,15 +4253,29 @@ function htmlCardProdutoPedido(f, p, doDia){
         ${cores.map(c => {
           const q = qtdCor(c.nome);
           const fotoCor = fotoDaCor(p, c.nome);
-          return `<div class="forn-cor-secao${q > 0 ? ' tem' : ''}">
-            <div class="forn-cor-cab">
+          const aberta = !!corAbertaPedido[p.id + '|' + c.nome];
+          return `<div class="forn-cor-secao${q > 0 ? ' tem' : ''}${aberta ? ' aberta' : ''}">
+            <button type="button" class="forn-cor-cab" data-acao="toggle-cor" data-prod="${p.id}" data-cor="${escapeHtml(c.nome)}" aria-expanded="${aberta}">
               ${fotoCor ? `<img src="${fotoCor}" alt="">` : `<span class="forn-cor-bolinha"></span>`}
-              <span class="forn-cor-nome">${escapeHtml(c.nome)}</span>
-              ${q > 0 ? `<span class="forn-cor-qtd">${q} ${q === 1 ? 'par' : 'pares'}</span>` : ''}
-            </div>
-            <div class="forn-vars compacta">${vars.map(v => celula(v, c.nome + SEP_COR + v)).join('')}</div>
+              <span class="forn-cor-texto">
+                <span class="forn-cor-nome">${escapeHtml(c.nome)}${q > 0 ? ` · ${q} ${q === 1 ? 'par' : 'pares'}` : ''}</span>
+                ${q > 0 && !aberta ? `<span class="forn-cor-escolhidos">${escapeHtml(escolhidos(c.nome))}</span>` : ''}
+              </span>
+              <span class="forn-cor-seta">${aberta ? '▴' : '▾'}</span>
+            </button>
+            ${aberta ? linhaTamanhos(c.nome + SEP_COR) : ''}
           </div>`;
         }).join('')}
+        ${sub}
+      </div>`;
+  }
+  if(vars.length && !cores.length){
+    // Só tamanhos: a numeração já aparece direto, numa linha.
+    return `
+      <div class="forn-prod com-var${qtd > 0 ? ' tem' : ''}" data-prod="${p.id}">
+        ${editar}
+        <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}</div>${precoHtml}</div></div>
+        ${linhaTamanhos('')}
         ${sub}
       </div>`;
   }
@@ -5349,6 +5395,11 @@ function cliqueTelaForn(e){
     if(!Object.keys(doDia).length) delete f.compras[fornDia];
     limparRascunhoSeIgual(f, fornDia);
     saveFornecedores(true);
+    return renderPedidos();
+  }
+  if(acao === 'toggle-cor'){
+    const k = btn.dataset.prod + '|' + btn.dataset.cor;
+    if(corAbertaPedido[k]) delete corAbertaPedido[k]; else corAbertaPedido[k] = true;
     return renderPedidos();
   }
   if(acao === 'confirmar-pedido'){
