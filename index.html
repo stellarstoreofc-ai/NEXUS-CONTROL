@@ -367,6 +367,7 @@
   .forn-aviso{background:var(--amber-bg);border:1px solid #fcd34d;border-radius:var(--radius);padding:18px 20px;line-height:1.5;}
   .forn-aviso h3{font-size:16px;margin-bottom:8px;}
   .forn-aviso code{display:block;background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12.5px;white-space:pre-wrap;word-break:break-all;}
+  .forn-abas{margin-bottom:14px;display:inline-flex;}
   .forn-chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
   .forn-chip{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:700;font-size:13.5px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px;}
   .forn-chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
@@ -450,6 +451,43 @@
   .forn-var-ctrl .mais{background:var(--green);color:#fff;}
   .forn-var-ctrl span{min-width:18px;font-weight:800;font-size:15px;}
   .forn-cores{display:flex;gap:6px;flex-wrap:wrap;}
+  .soma-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+  .soma-linha{display:grid;grid-template-columns:40px minmax(0,1fr) 70px 86px 84px;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:10px;}
+  .soma-linha.tem{border-color:var(--green);background:var(--green-bg);}
+  .soma-linha.avulso{grid-template-columns:minmax(0,1fr) 70px 86px 84px 28px;margin-bottom:6px;}
+  .soma-linha img,.soma-linha .ph{width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);}
+  .soma-linha .nome{font-weight:800;font-size:13.5px;line-height:1.2;}
+  .soma-linha input{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 8px;font:inherit;font-weight:700;min-width:0;}
+  .soma-linha input.soma-qtd{text-align:center;font-size:16px;}
+  .soma-linha .sub{text-align:right;font-weight:800;font-size:13px;color:var(--green);white-space:nowrap;}
+  .soma-linha .rem{background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;}
+  .soma-cab{display:grid;grid-template-columns:40px minmax(0,1fr) 70px 86px 84px;gap:8px;padding:0 8px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  .soma-dia{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .soma-dia input{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font:inherit;font-weight:700;}
+  .soma-dia .btn-icon{border:1px solid var(--border);background:var(--surface);border-radius:8px;width:34px;height:34px;cursor:pointer;font-weight:800;}
+  .soma-sessao{margin-top:16px;}
+  .soma-sessao:empty{display:none;}
+  .soma-sessao h3{font-size:14px;margin-bottom:6px;}
+  .soma-sessao .linha{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .soma-sessao .linha .sub{font-size:12px;color:var(--muted);}
+  .soma-sessao .total{display:flex;justify-content:space-between;font-weight:800;padding-top:8px;font-size:15px;}
+  .soma-total{display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;border-radius:12px;padding:14px 16px;margin-top:14px;}
+  .soma-total .label{font-size:12px;font-weight:700;text-transform:uppercase;color:#c7d2fe;}
+  .soma-total .soma-pecas{font-size:13px;font-weight:700;}
+  .soma-total .valor{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;}
+  .soma-total .valor.pop{animation:fornPop .35s ease;}
+  @media (max-width:520px){
+    .soma-cab{display:none;}
+    .soma-linha{grid-template-columns:36px minmax(0,1fr) 64px;grid-template-areas:"img nome qtd" "img preco sub";}
+    .soma-linha img,.soma-linha .ph{grid-area:img;width:36px;height:36px;}
+    .soma-linha .nome{grid-area:nome;}
+    .soma-linha .soma-qtd{grid-area:qtd;}
+    .soma-linha .soma-preco{grid-area:preco;}
+    .soma-linha .sub{grid-area:sub;grid-column:3;}
+    .soma-linha.avulso{grid-template-columns:minmax(0,1fr) 64px 28px;grid-template-areas:"nome qtd rem" "preco sub sub";}
+    .soma-linha.avulso .soma-nome{grid-area:nome;}
+    .soma-linha.avulso .rem{grid-area:rem;}
+  }
   .forn-cor-chip{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:3px 10px 3px 3px;font:inherit;font-size:12.5px;font-weight:700;color:var(--text);cursor:pointer;}
   .forn-cor-chip.sem-foto{padding-left:10px;}
   .forn-cor-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover;}
@@ -693,7 +731,6 @@
       <button data-page="contas" class="active">📋 Contas</button>
       <button data-page="custofixo">🧮 Custo fixo por pedido</button>
       <button data-page="precificacao">🏷️ Precificação de produtos</button>
-      <button data-page="pedidos">📦 Pedidos do dia</button>
       <button data-page="fornecedores">🚚 Fornecedores</button>
     </nav>
     <div class="sidebar-footer">
@@ -877,14 +914,16 @@
         </div>
       </section>
 
-      <!-- PÁGINA: PEDIDOS DO DIA (o que comprei de cada fornecedor no dia, com variações + print) -->
-      <section class="page" id="page-pedidos">
-        <div id="pedConteudo"></div>
-      </section>
-
-      <!-- PÁGINA: FORNECEDORES (quanto devo, fechamento do mês, pagamentos) -->
+      <!-- PÁGINA: FORNECEDORES — duas abas sobre os mesmos dados:
+           Pedidos do dia (o que comprei no dia, com variações + print) e
+           Fechamento e pagamentos (quanto devo, fechamento do mês, pagamentos) -->
       <section class="page" id="page-fornecedores">
-        <div id="fornConteudo"></div>
+        <div class="tabs forn-abas" id="fornAbas">
+          <button type="button" class="tab active" data-aba="pedidos">📦 Pedidos do dia</button>
+          <button type="button" class="tab" data-aba="fechamento">💰 Fechamento e pagamentos</button>
+        </div>
+        <div id="pedConteudo"></div>
+        <div id="fornConteudo" hidden></div>
       </section>
 
       <!-- PÁGINA: PRECIFICAÇÃO DE PRODUTOS -->
@@ -1135,6 +1174,37 @@
         <button type="submit" class="btn btn-primary">Registrar pagamento</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modal: soma rápida (lançar pedidos anotados no papel) -->
+<div class="overlay" id="overlaySoma">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h2 id="somaTitulo">🧮 Soma rápida</h2>
+      <button type="button" class="modal-close-x" data-fechar="overlaySoma" aria-label="Fechar">✕</button>
+    </div>
+    <p class="field-hint" style="margin:-8px 0 12px;">Pra passar pedidos anotados no papel, dia por dia: escolha o dia, digite os pares de cada modelo e toque em "Lançar dia". O preço já vem do cadastro (dá pra mudar na linha).</p>
+    <div class="soma-dia">
+      <button type="button" class="btn-icon" id="btnSomaDiaAnt" aria-label="Dia anterior">‹</button>
+      <input type="date" id="somaData" aria-label="Dia dos pedidos">
+      <button type="button" class="btn-icon" id="btnSomaDiaProx" aria-label="Próximo dia">›</button>
+      <strong id="somaDiaRotulo"></strong>
+    </div>
+    <div class="field-hint" id="somaJaTem" style="margin:-4px 0 10px;"></div>
+    <div class="soma-lista" id="somaLista"></div>
+    <div id="somaAvulsos"></div>
+    <button type="button" class="btn btn-outline btn-sm" id="btnSomaAvulso">+ Item fora do cadastro</button>
+    <div class="soma-total">
+      <div><div class="label">Total deste dia</div><div class="soma-pecas" id="somaPecas">0 peças</div></div>
+      <div class="valor" id="somaTotal">R$ 0,00</div>
+    </div>
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <button type="button" class="btn btn-outline" id="btnSomaLimpar" style="margin-right:auto;">Limpar</button>
+      <button type="button" class="btn btn-outline" data-fechar="overlaySoma">Fechar</button>
+      <button type="button" class="btn btn-primary" id="btnSomaLancar">Lançar dia e ir pro próximo ›</button>
+    </div>
+    <div class="soma-sessao" id="somaSessao"></div>
   </div>
 </div>
 
@@ -1438,7 +1508,6 @@ const pageTitles = {
   lembretes: 'Lembretes',
   custofixo: 'Custo fixo por pedido',
   precificacao: 'Precificação de produtos',
-  pedidos: 'Pedidos do dia',
   fornecedores: 'Fornecedores'
 };
 
@@ -1473,8 +1542,7 @@ function showPage(name){
   else if(name === 'lembretes') renderLembretes();
   else if(name === 'custofixo') renderCustoFixo();
   else if(name === 'precificacao'){ renderConfigPrecificacao(); renderProdutos(); }
-  else if(name === 'pedidos') renderPedidos();
-  else if(name === 'fornecedores') renderFornecedores();
+  else if(name === 'fornecedores') renderFornAba();
 }
 
 // ================= CONTAS =================
@@ -3576,8 +3644,9 @@ function mesesForn(f){
 function resumoProdutosMes(f, ym){
   const mapa = {};
   Object.keys(f.compras || {}).filter(d => d.startsWith(ym)).forEach(d => {
-    Object.entries(f.compras[d]).forEach(([id, item]) => {
-      const chave = id + '|' + item.preco;
+    Object.entries(f.compras[d]).forEach(([chaveItem, item]) => {
+      const id = idBaseItem(chaveItem) === 'avulso' ? chaveItem : idBaseItem(chaveItem);
+      const chave = id + '|' + item.preco + (id === chaveItem && chaveItem.includes('#') ? '|' + item.nome : '');
       const r = mapa[chave] || (mapa[chave] = { produtoId: id, nome: item.nome, preco: item.preco, qtd: 0, valor: 0, variacoes: {} });
       r.qtd += item.qtd;
       r.valor = r2f(r.valor + item.qtd * item.preco);
@@ -3667,8 +3736,13 @@ function textoVariacoes(vars, produto = {}){
     return t ? `${cor} (${t})` : `${cor}: ${g[''] || 0}`;
   }).join(' · ');
 }
+// Lançamentos da soma rápida usam a chave "produtoId#soma-xxx" (não se
+// misturam com o que foi lançado tocando no +/− do dia): o id do produto é
+// o pedaço antes do "#".
+function idBaseItem(chave){ return String(chave).split('#')[0]; }
 function produtoDoForn(f, produtoId){
-  return (f.produtos || []).find(x => x.id === produtoId) || null;
+  const base = idBaseItem(produtoId);
+  return (f.produtos || []).find(x => x.id === base) || null;
 }
 // Linhas do print: produto com cores vira uma linha por cor (com a foto da cor).
 function linhasDoItem(produto, item, nomeItem){
@@ -3823,11 +3897,14 @@ function renderPedidos(){
   // Itens do dia de produtos que já foram excluídos do cadastro continuam
   // contando no total — aparecem numa linha à parte.
   const orfaos = Object.entries(doDia).filter(([id]) => !(f.produtos || []).some(p => p.id === id));
+  const daSoma = orfaos.filter(([id]) => id.includes('#soma-'));
+  const excluidos = orfaos.filter(([id]) => !id.includes('#soma-'));
 
   el.innerHTML = htmlChipsForn() + `
     <div class="ped-ir">
       <span>Em aberto com <strong>${escapeHtml(f.nome)}</strong>: <strong>${fmt(Math.max(0, saldoForn(f)))}</strong>${seq >= 2 ? ` · <span class="forn-streak">🔥 ${seq} dias seguidos</span>` : ''}</span>
-      <button type="button" class="btn btn-outline btn-sm" data-acao="ir-fornecedores">Ver fechamento e pagamentos →</button>
+      <span style="display:flex;gap:8px;flex-wrap:wrap;"><button type="button" class="btn btn-outline btn-sm" data-acao="soma-rapida">🧮 Soma rápida (pedidos do papel)</button>
+      <button type="button" class="btn btn-outline btn-sm" data-acao="ir-fornecedores">Fechamento e pagamentos →</button></span>
     </div>
 
     <div class="forn-dia">
@@ -3848,7 +3925,9 @@ function renderPedidos(){
       ${(f.produtos || []).map(p => htmlCardProdutoPedido(f, p, doDia)).join('')}
       <button type="button" class="forn-prod-novo" data-acao="novo-produto"><span>＋</span>Novo produto</button>
     </div>
-    ${orfaos.length ? `<p class="field-hint" style="margin-top:10px;">Também neste dia (produtos excluídos do cadastro): ${orfaos.map(([, i]) => `${escapeHtml(i.nome || 'produto')} ${i.qtd} × ${fmt(i.preco)}`).join(' · ')}</p>` : ''}
+    ${daSoma.length ? `<p class="field-hint" style="margin-top:10px;">🧮 Lançado pela soma rápida neste dia: ${daSoma.map(([, i]) => `${escapeHtml(i.nome || 'produto')} ${i.qtd} × ${fmt(i.preco)}`).join(' · ')} — pra mudar, abra a Soma rápida em Fornecedores ou zere abaixo.</p>
+      <div class="ped-acoes" style="margin-top:6px;"><button type="button" class="btn btn-danger-text btn-sm" data-acao="apagar-soma-dia">Apagar o que foi lançado pela soma rápida neste dia</button></div>` : ''}
+    ${excluidos.length ? `<p class="field-hint" style="margin-top:10px;">Também neste dia (produtos excluídos do cadastro): ${excluidos.map(([, i]) => `${escapeHtml(i.nome || 'produto')} ${i.qtd} × ${fmt(i.preco)}`).join(' · ')}</p>` : ''}
 
     <div class="ped-acoes">
       <button type="button" class="btn btn-primary" data-acao="print-dia" ${pecas ? '' : 'disabled style="opacity:.5;cursor:not-allowed;"'}>📸 Gerar print do pedido</button>
@@ -3884,6 +3963,7 @@ function renderFornecedores(){
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-sm" data-acao="pagar">💸 Registrar pagamento</button>
           <button type="button" class="btn btn-sm" data-acao="ir-pedidos" style="background:rgba(255,255,255,.15);color:#fff;">📦 Lançar pedido</button>
+          <button type="button" class="btn btn-sm" data-acao="soma-rapida" style="background:rgba(255,255,255,.15);color:#fff;">🧮 Soma rápida</button>
           <button type="button" class="btn btn-sm" data-acao="editar-fornecedor" style="background:rgba(255,255,255,.15);color:#fff;">✏️ Editar</button>
         </div>
       </div>
@@ -3951,11 +4031,23 @@ function renderFornecedores(){
     </div>`;
 }
 
-function renderTelaFornAtual(){
-  const ativa = document.querySelector('.side-nav button.active');
-  if(ativa && ativa.dataset.page === 'pedidos') renderPedidos();
+// Aba aberta dentro da página Fornecedores ('pedidos' | 'fechamento').
+let fornAba = 'pedidos';
+function renderFornAba(){
+  document.querySelectorAll('#fornAbas .tab').forEach(t => t.classList.toggle('active', t.dataset.aba === fornAba));
+  document.getElementById('pedConteudo').hidden = fornAba !== 'pedidos';
+  document.getElementById('fornConteudo').hidden = fornAba !== 'fechamento';
+  if(fornAba === 'pedidos') renderPedidos();
   else renderFornecedores();
 }
+function abrirAbaForn(aba){
+  fornAba = aba;
+  const ativa = document.querySelector('.side-nav button.active');
+  if(ativa && ativa.dataset.page === 'fornecedores') renderFornAba();
+  else showPage('fornecedores');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+const renderTelaFornAtual = () => renderFornAba();
 
 function animarTotalDia(){
   const v = document.getElementById('fornTotalDia');
@@ -4191,6 +4283,185 @@ function abrirPrintMes(f, ym){
     rodape: pago > 0 ? `Já pago: ${fmt(pago)}  ·  Falta: ${fmt(Math.max(0, falta))}` : ''
   });
 }
+
+// ---- Soma rápida: passar pro sistema, dia por dia, pedidos anotados no papel ----
+// Uma linha por produto do cadastro (só digita a quantidade) + itens avulsos.
+// "Lançar dia" grava aquele dia, zera as quantidades e já pula pro dia
+// seguinte; os dias lançados nesta sessão ficam numa lista (com desfazer).
+let somaSessao = [];   // [{ dia, chaves: [], total, pecas }]
+
+// Começa no dia 1 do mês passado — ou, se já passou parte desse mês pela soma
+// rápida, no dia seguinte ao último lançado (pra continuar de onde parou).
+function diaInicialSoma(f){
+  const mesPassado = somarMeses(hojeLocal().slice(0, 7), -1);
+  const diasComSoma = Object.keys(f.compras || {})
+    .filter(d => d.startsWith(mesPassado) && Object.keys(f.compras[d]).some(k => k.includes('#soma-')))
+    .sort();
+  if(!diasComSoma.length) return mesPassado + '-01';
+  const prox = somarDias(diasComSoma[diasComSoma.length - 1], 1);
+  return prox.startsWith(mesPassado) ? prox : diasComSoma[diasComSoma.length - 1];
+}
+function abrirSomaRapida(f){
+  document.getElementById('somaTitulo').textContent = `🧮 Soma rápida — ${f.nome}`;
+  const lista = document.getElementById('somaLista');
+  lista.innerHTML = (f.produtos || []).length
+    ? `<div class="soma-cab"><span></span><span>Modelo</span><span style="text-align:center;">Pares</span><span>R$ /un</span><span style="text-align:right;">Subtotal</span></div>` +
+      f.produtos.map(p => `
+        <div class="soma-linha" data-prod="${p.id}">
+          ${p.foto ? `<img src="${p.foto}" alt="">` : `<div class="ph">${escapeHtml((p.nome || '?').trim().charAt(0).toUpperCase())}</div>`}
+          <div class="nome">${escapeHtml(p.nome)}</div>
+          <input type="number" class="soma-qtd" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Quantidade de ${escapeHtml(p.nome)}">
+          <input type="number" class="soma-preco" min="0" step="0.01" value="${p.preco}" aria-label="Preço de ${escapeHtml(p.nome)}">
+          <div class="sub"></div>
+        </div>`).join('')
+    : `<p class="field-hint">Esse fornecedor ainda não tem produtos cadastrados — use "+ Item fora do cadastro" ou cadastre os produtos em Pedidos do dia.</p>`;
+  document.getElementById('somaAvulsos').innerHTML = '';
+  document.getElementById('somaData').value = diaInicialSoma(f);
+  somaSessao = [];
+  renderSessaoSoma(f);
+  recalcularSoma();
+  abrirOverlay('overlaySoma');
+  focarPrimeiraQtdSoma();
+}
+function focarPrimeiraQtdSoma(){
+  const primeiro = document.querySelector('#overlaySoma .soma-qtd');
+  if(primeiro) setTimeout(() => primeiro.focus(), 50);
+}
+function addLinhaAvulsa(){
+  const row = document.createElement('div');
+  row.className = 'soma-linha avulso';
+  row.innerHTML = `
+    <input type="text" class="soma-nome" placeholder="Nome do item" aria-label="Nome do item">
+    <input type="number" class="soma-qtd" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Quantidade">
+    <input type="number" class="soma-preco" min="0" step="0.01" placeholder="R$" aria-label="Preço">
+    <div class="sub"></div>
+    <button type="button" class="rem" title="Remover">✕</button>`;
+  document.getElementById('somaAvulsos').appendChild(row);
+  row.querySelector('.soma-nome').focus();
+}
+function linhasDaSoma(){
+  return [...document.querySelectorAll('#overlaySoma .soma-linha')].map(row => {
+    const qtd = Math.max(0, Math.round(parseFloat(row.querySelector('.soma-qtd').value) || 0));
+    const preco = r2f(Math.max(0, parseFloat(row.querySelector('.soma-preco').value) || 0));
+    const nomeEl = row.querySelector('.soma-nome');
+    return { row, produtoId: row.dataset.prod || null, nome: nomeEl ? nomeEl.value.trim() : null, qtd, preco };
+  });
+}
+function recalcularSoma(){
+  const f = fornecedorAtivo();
+  let pecas = 0, total = 0;
+  linhasDaSoma().forEach(l => {
+    const sub = r2f(l.qtd * l.preco);
+    l.row.classList.toggle('tem', l.qtd > 0);
+    l.row.querySelector('.sub').textContent = l.qtd > 0 ? fmt(sub) : '';
+    pecas += l.qtd;
+    total = r2f(total + sub);
+  });
+  document.getElementById('somaPecas').textContent = `${pecas} ${pecas === 1 ? 'par/peça' : 'pares/peças'}`;
+  const v = document.getElementById('somaTotal');
+  const antes = v.textContent;
+  v.textContent = fmt(total);
+  if(antes !== v.textContent){ v.classList.remove('pop'); void v.offsetWidth; v.classList.add('pop'); }
+  const dia = document.getElementById('somaData').value;
+  document.getElementById('somaDiaRotulo').textContent = dia ? rotuloDia(dia) : '';
+  const jaTem = document.getElementById('somaJaTem');
+  const jaNoDia = f && dia ? totalDiaForn(f, dia) : 0;
+  jaTem.innerHTML = jaNoDia > 0
+    ? `⚠️ Este dia já tem <strong>${fmt(jaNoDia)}</strong> lançados (${pecasDiaForn(f, dia)} peças). O que você lançar agora soma junto.`
+    : '';
+  const btn = document.getElementById('btnSomaLancar');
+  btn.disabled = !(total > 0 && dia);
+  btn.style.opacity = btn.disabled ? '.5' : '';
+}
+function renderSessaoSoma(f){
+  const el = document.getElementById('somaSessao');
+  if(!somaSessao.length){ el.innerHTML = ''; return; }
+  const total = r2f(somaSessao.reduce((s, x) => s + x.total, 0));
+  const pecas = somaSessao.reduce((s, x) => s + x.pecas, 0);
+  el.innerHTML = `
+    <h3>Dias lançados agora</h3>
+    ${somaSessao.map((x, i) => `
+      <div class="linha">
+        <div><strong>${formatDate(x.dia)}</strong> <span class="sub">· ${x.pecas} ${x.pecas === 1 ? 'peça' : 'peças'}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><strong>${fmt(x.total)}</strong>
+          <button type="button" class="btn btn-danger-text btn-sm" data-desfazer="${i}">desfazer</button></div>
+      </div>`).join('')}
+    <div class="total"><span>Soma desses dias · ${pecas} peças</span><span>${fmt(total)}</span></div>
+    <p class="field-hint">Total em aberto com ${escapeHtml(f.nome)} agora: <strong>${fmt(saldoForn(f))}</strong></p>`;
+}
+function mudarDiaSoma(n){
+  const input = document.getElementById('somaData');
+  input.value = somarDias(input.value || hojeLocal(), n);
+  recalcularSoma();
+}
+document.getElementById('btnSomaDiaAnt').addEventListener('click', () => mudarDiaSoma(-1));
+document.getElementById('btnSomaDiaProx').addEventListener('click', () => mudarDiaSoma(1));
+document.getElementById('overlaySoma').addEventListener('input', recalcularSoma);
+document.getElementById('btnSomaAvulso').addEventListener('click', () => { addLinhaAvulsa(); recalcularSoma(); });
+document.getElementById('somaAvulsos').addEventListener('click', e => {
+  if(e.target.closest('.rem')){ e.target.closest('.soma-linha').remove(); recalcularSoma(); }
+});
+// Enter na quantidade pula pra próxima linha; na última, lança o dia — dá pra
+// passar a lista do papel inteira só no teclado.
+document.getElementById('overlaySoma').addEventListener('keydown', e => {
+  if(e.key !== 'Enter' || !e.target.classList.contains('soma-qtd')) return;
+  e.preventDefault();
+  const qtds = [...document.querySelectorAll('#overlaySoma .soma-qtd')];
+  const prox = qtds[qtds.indexOf(e.target) + 1];
+  if(prox) prox.focus();
+  else document.getElementById('btnSomaLancar').click();
+});
+function limparQtdsSoma(){
+  document.querySelectorAll('#overlaySoma .soma-qtd').forEach(i => { i.value = ''; });
+  document.getElementById('somaAvulsos').innerHTML = '';
+}
+document.getElementById('btnSomaLimpar').addEventListener('click', () => { limparQtdsSoma(); recalcularSoma(); });
+document.getElementById('btnSomaLancar').addEventListener('click', () => {
+  const f = fornecedorAtivo();
+  const dia = document.getElementById('somaData').value;
+  if(!f || !dia) return;
+  const linhas = linhasDaSoma().filter(l => l.qtd > 0 && (l.produtoId || l.nome));
+  if(!linhas.length) return;
+  f.compras = f.compras || {};
+  const doDia = f.compras[dia] || {};
+  const chaves = [];
+  linhas.forEach(l => {
+    const produto = l.produtoId ? produtoDoForn(f, l.produtoId) : null;
+    const chave = (produto ? produto.id : 'avulso') + '#soma-' + uid();
+    doDia[chave] = { qtd: l.qtd, preco: l.preco, nome: produto ? produto.nome : l.nome };
+    chaves.push(chave);
+  });
+  f.compras[dia] = doDia;
+  const total = r2f(linhas.reduce((s, l) => s + l.qtd * l.preco, 0));
+  const pecas = linhas.reduce((s, l) => s + l.qtd, 0);
+  somaSessao.push({ dia, chaves, total, pecas });
+  saveFornecedores(true);
+  fornMes = dia.slice(0, 7);
+  renderFornAba();
+  mostrarToastForn(`✅ ${formatDate(dia)}: ${fmt(total)} lançados. Agora o ${formatDate(somarDias(dia, 1))}.`);
+  // Próximo dia, quantidades zeradas (os preços digitados ficam).
+  limparQtdsSoma();
+  document.getElementById('somaData').value = somarDias(dia, 1);
+  renderSessaoSoma(f);
+  recalcularSoma();
+  focarPrimeiraQtdSoma();
+});
+document.getElementById('somaSessao').addEventListener('click', e => {
+  const b = e.target.closest('[data-desfazer]');
+  if(!b) return;
+  const f = fornecedorAtivo();
+  const item = somaSessao[Number(b.dataset.desfazer)];
+  if(!f || !item) return;
+  const doDia = (f.compras || {})[item.dia] || {};
+  item.chaves.forEach(k => delete doDia[k]);
+  if(!Object.keys(doDia).length) delete f.compras[item.dia];
+  somaSessao.splice(Number(b.dataset.desfazer), 1);
+  saveFornecedores(true);
+  renderFornAba();
+  renderSessaoSoma(f);
+  recalcularSoma();
+  mostrarToastForn(`↩️ ${formatDate(item.dia)} desfeito (${fmt(item.total)}).`);
+});
 
 // ---- Fornecedor: criar / editar / excluir ----
 function abrirModalFornecedor(f = null){
@@ -4441,9 +4712,10 @@ function cliqueTelaForn(e){
   if(acao === 'editar-produto') return abrirModalFornProduto((f.produtos || []).find(p => p.id === btn.dataset.prod));
   if(acao === 'pagar') return abrirModalPagamentoForn();
   if(acao === 'pagar-mes') return abrirModalPagamentoForn(fornMes);
-  if(acao === 'ir-pedidos'){ fornDia = hojeLocal(); return showPage('pedidos'); }
-  if(acao === 'ir-fornecedores'){ fornMes = fornDia.slice(0, 7); return showPage('fornecedores'); }
-  if(acao === 'abrir-dia'){ fornDia = btn.dataset.dia; showPage('pedidos'); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  if(acao === 'soma-rapida') return abrirSomaRapida(f);
+  if(acao === 'ir-pedidos'){ fornDia = hojeLocal(); return abrirAbaForn('pedidos'); }
+  if(acao === 'ir-fornecedores'){ fornMes = fornDia.slice(0, 7); return abrirAbaForn('fechamento'); }
+  if(acao === 'abrir-dia'){ fornDia = btn.dataset.dia; return abrirAbaForn('pedidos'); }
   if(acao === 'dia-anterior'){ fornDia = somarDias(fornDia, -1); return renderPedidos(); }
   if(acao === 'dia-seguinte'){ fornDia = somarDias(fornDia, 1); return renderPedidos(); }
   if(acao === 'dia-hoje'){ fornDia = hojeLocal(); return renderPedidos(); }
@@ -4451,6 +4723,16 @@ function cliqueTelaForn(e){
   if(acao === 'mes-seguinte'){ fornMes = somarMeses(fornMes, 1); return renderFornecedores(); }
   if(acao === 'mes-atual'){ fornMes = hojeLocal().slice(0, 7); return renderFornecedores(); }
   if(acao === 'ir-mes'){ fornMes = btn.dataset.mes; return renderFornecedores(); }
+  if(acao === 'apagar-soma-dia'){
+    const doDia = (f.compras || {})[fornDia] || {};
+    const chaves = Object.keys(doDia).filter(k => k.includes('#soma-'));
+    const total = r2f(chaves.reduce((s, k) => s + doDia[k].qtd * doDia[k].preco, 0));
+    if(!chaves.length || !confirm(`Apagar ${fmt(total)} lançados pela soma rápida em ${formatDate(fornDia)}?`)) return;
+    chaves.forEach(k => delete doDia[k]);
+    if(!Object.keys(doDia).length) delete f.compras[fornDia];
+    saveFornecedores(true);
+    return renderPedidos();
+  }
   if(acao === 'cor'){ corAtivaPedido[btn.dataset.prod] = btn.dataset.cor; return renderPedidos(); }
   if(acao === 'print-dia') return abrirPrintDia(f);
   if(acao === 'print-mes') return abrirPrintMes(f, fornMes);
@@ -4513,10 +4795,12 @@ function mudancaTelaForn(e){
     animarTotalDia();
   }
 }
-['page-pedidos', 'page-fornecedores'].forEach(id => {
-  const pagina = document.getElementById(id);
-  pagina.addEventListener('click', cliqueTelaForn);
-  pagina.addEventListener('change', mudancaTelaForn);
+const paginaFornecedores = document.getElementById('page-fornecedores');
+paginaFornecedores.addEventListener('click', cliqueTelaForn);
+paginaFornecedores.addEventListener('change', mudancaTelaForn);
+document.getElementById('fornAbas').addEventListener('click', e => {
+  const t = e.target.closest('.tab[data-aba]');
+  if(t){ fornAba = t.dataset.aba; renderFornAba(); }
 });
 
 // ================= BACKUP / RESTAURAR =================
