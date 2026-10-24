@@ -85,22 +85,24 @@ teste('Isenção de comissão (90 dias) zera a comissão', () => {
 });
 
 console.log('Shein — taxa fixa de R$5 por venda:');
-teste('Preset da Shein é 16% + R$5', () => {
+teste('Preset da Shein é 18% + R$5', () => {
   const preset = calc.MARKETPLACE_PRESETS.find(m => m.id === 'shein');
-  assert.strictEqual(preset.comissaoMarketplace, 16);
+  assert.strictEqual(preset.comissaoMarketplace, 18);
   assert.strictEqual(preset.taxaFixa, 5);
 });
-teste('Com R$5 de taxa fixa: preço cheio R$98,90 e lucro de 15% do preço final', () => {
+teste('Com o preset (18% + R$5): preço cheio R$102,04 e lucro de 15% do preço final', () => {
   const p = calc.camposComPreset({ ...sheinBase }, 'shein');
   assert.strictEqual(p.taxaFixaMarketplace, 5);
-  // 45 / [(1 − 0,30) × (1 − 0,16 − 0,04 − 0,15)] = 45 / 0,455
+  assert.strictEqual(p.comissaoMarketplace, 18);
+  // 45 / [(1 − 0,30) × (1 − 0,18 − 0,04 − 0,15)] = 45 / 0,441
   const cheio = r2(calc.precoRecomendadoProduto(p));
-  assert.strictEqual(cheio, 98.90);
+  assert.strictEqual(cheio, 102.04);
   const s = calc.passoAPassoShein(p, cheio);
   console.log(`    preço cheio ${s.cheio} | preço final ${s.precoFinal} | comissão ${s.comissao} | imposto ${s.imposto} | custos ${s.custos} | lucro ${s.lucro} (${s.margem.toFixed(2)}%)`);
-  assert.strictEqual(s.precoFinal, 69.23);
+  assert.strictEqual(s.precoFinal, 71.43);
+  assert.strictEqual(s.comissao, 12.86);
   assert.strictEqual(s.custos, 45);   // R$40 + R$5: a taxa fixa não é descontada pelo cupom
-  assert.strictEqual(s.lucro, 10.38);
+  assert.strictEqual(s.lucro, 10.71);
   assert.ok(Math.abs(s.margem - 15) < 0.05, 'margem ' + s.margem);
 });
 
