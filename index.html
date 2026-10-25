@@ -546,6 +546,23 @@
   .forn-prod-novo{border:2px dashed var(--border);background:transparent;border-radius:var(--radius);min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-weight:800;cursor:pointer;font-size:14px;}
   .forn-prod-novo span{font-size:30px;}
   .forn-prod-novo:hover{border-color:var(--accent);color:var(--accent);}
+  .cal-dia.sel{border:2px solid var(--navy);box-shadow:0 0 0 2px rgba(15,34,84,.15);}
+  .dia-fech{border:2px solid var(--navy);}
+  .dia-fech-cab{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .dia-fech-cab h3{margin:0;}
+  .dia-fech-lista{display:flex;flex-direction:column;margin-top:10px;}
+  .dia-fech-linha{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .dia-fech-linha .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .dia-fech-cor{font-size:10.5px;font-weight:800;text-transform:uppercase;background:#e0e7ff;color:var(--navy);border-radius:999px;padding:1px 8px;margin-left:4px;}
+  .dia-fech-num{display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap;}
+  .dia-fech-num span{font-size:12px;color:var(--muted);font-weight:700;}
+  .dia-fech-num strong{color:var(--green);}
+  .dia-fech-total{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--green-bg);font-weight:800;}
+  .dia-fech-total strong{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;color:var(--green);}
+  .dia-fech-movs{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+  .dia-fech-mov{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:8px;padding:6px 10px;}
+  .dia-fech-mov strong{color:var(--accent);white-space:nowrap;}
+  .dia-fech-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
   .cal-mes{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;}
   .cal-sem{font-size:10.5px;font-weight:800;color:var(--muted);text-align:center;padding:2px 0;text-transform:uppercase;}
   .cal-dia{min-height:46px;border:1px solid var(--border);border-radius:7px;background:var(--surface);padding:3px 2px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;font:inherit;cursor:pointer;min-width:0;}
@@ -561,6 +578,8 @@
   .cal-ab{font-size:9px;font-weight:800;color:var(--accent);line-height:1.1;white-space:nowrap;}
   .forn-tag-abat,.forn-tag-pag{font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 7px;margin-left:4px;}
   .forn-tag-abat{background:#eef2ff;color:var(--accent);}
+  .forn-tag-devol{background:var(--amber-bg);color:var(--amber);font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 7px;margin-left:4px;}
+  .cal-dv{font-size:9px;font-weight:800;color:var(--amber);line-height:1.1;white-space:nowrap;}
   .forn-tag-pag{background:var(--green-bg);color:var(--green);}
   .cal-v{font-size:9.5px;font-weight:800;color:var(--green);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
   .forn-hist{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin-top:18px;align-items:start;}
@@ -1140,15 +1159,15 @@
       </section>
 
       <!-- PÁGINA: FORNECEDORES — duas abas sobre os mesmos dados:
-           Pedidos do dia (o que comprei no dia, com variações + print) e
-           Fechamento e pagamentos (quanto devo, fechamento do mês, pagamentos) -->
+           Fechamento e pagamentos (aba principal: quanto devo, fechamento do mês,
+           pagamentos) e Fazer pedido (o que comprei no dia, com variações + print) -->
       <section class="page" id="page-fornecedores">
         <div class="tabs forn-abas" id="fornAbas">
-          <button type="button" class="tab active" data-aba="pedidos">📦 Pedidos do dia</button>
-          <button type="button" class="tab" data-aba="fechamento">💰 Fechamento<span class="aba-extra"> e pagamentos</span></button>
+          <button type="button" class="tab active" data-aba="fechamento">💰 Fechamento<span class="aba-extra"> e pagamentos</span></button>
+          <button type="button" class="tab" data-aba="pedidos">📦 Fazer pedido</button>
         </div>
-        <div id="pedConteudo"></div>
-        <div id="fornConteudo" hidden></div>
+        <div id="pedConteudo" hidden></div>
+        <div id="fornConteudo"></div>
       </section>
 
       <!-- PÁGINA: PRECIFICAÇÃO DE PRODUTOS -->
@@ -1475,6 +1494,42 @@
         <button type="button" class="btn btn-danger-text" id="btnValorMesRemover" style="margin-right:auto;display:none;">Tirar valor informado</button>
         <button type="button" class="btn btn-outline" data-fechar="overlayValorMes">Cancelar</button>
         <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: devolução (peças que voltaram pro fornecedor) -->
+<div class="overlay" id="overlayDevolucao">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h2 id="devolTitulo">↩️ Devolução</h2>
+      <button type="button" class="modal-close-x" data-fechar="overlayDevolucao" aria-label="Fechar">✕</button>
+    </div>
+    <form id="formDevolucao">
+      <p class="field-hint" style="margin:-8px 0 12px;">Quantas peças de cada modelo voltaram. O valor sai do que falta pagar.</p>
+      <div class="soma-lista" id="devolLista"></div>
+      <div class="soma-total">
+        <div><div class="label">Valor da devolução</div><div class="soma-pecas" id="devolPecas">0 peças</div></div>
+        <div class="valor" id="devolTotal">R$ 0,00</div>
+      </div>
+      <div class="field-row" style="margin-top:12px;">
+        <div class="field">
+          <label>Dia da devolução</label>
+          <input type="date" id="devolData" required>
+        </div>
+        <div class="field">
+          <label>Abate do mês</label>
+          <select id="devolRef"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Motivo (opcional)</label>
+        <input type="text" id="devolObs" placeholder="Ex: defeito, numeração errada">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-fechar="overlayDevolucao">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="devolSubmit">Registrar devolução</button>
       </div>
     </form>
   </div>
@@ -4073,8 +4128,19 @@ function totalCompradoForn(f, prefixo = ''){
 // Mês a que um pagamento se refere: o escolhido no "Referente ao mês" ou,
 // se não tiver (pagamento antigo), o mês da data.
 // Há abatimento (desconto/devolução) entre os lançamentos de um mês?
+// Há abatimento ou devolução (algo que abate sem ser pagamento) num mês?
 function temAbatimentoMes(f, ym){
-  return (f.pagamentos || []).some(p => p.tipo === 'abatimento' && refPagamento(p) === ym);
+  return (f.pagamentos || []).some(p => (p.tipo === 'abatimento' || p.tipo === 'devolucao') && refPagamento(p) === ym);
+}
+// Rótulo/ícone de cada tipo de lançamento em f.pagamentos.
+function infoMovimento(p){
+  if(p.tipo === 'devolucao') return { icone: '↩️', nome: 'Devolução', classe: 'forn-tag-devol', cor: 'var(--amber)' };
+  if(p.tipo === 'abatimento') return { icone: '✂️', nome: 'Abatimento', classe: 'forn-tag-abat', cor: 'var(--accent)' };
+  return { icone: '💸', nome: 'Pagamento', classe: 'forn-tag-pag', cor: 'var(--green)' };
+}
+// Texto do que voltou numa devolução ("STIT 230 ×2 · TM 102 ×1").
+function textoItensDevolucao(p){
+  return (p.itens || []).map(i => `${i.nome} ×${i.qtd}`).join(' · ');
 }
 function refPagamento(p){
   return p.ref || (p.data || '').slice(0, 7);
@@ -4483,7 +4549,8 @@ function renderFornecedores(){
         <div class="valor${saldo <= 0.004 ? ' quitado' : ''}">${saldo <= 0.004 && saldo > -0.005 ? '🎉 Tudo pago' : fmt(Math.abs(saldo))}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-sm" data-acao="pagar">💸 Registrar pagamento</button>
-          <button type="button" class="btn btn-sm" data-acao="abater" style="background:rgba(255,255,255,.15);color:#fff;" title="Desconto, devolução ou troca combinada — abate do que falta sem lançar em Contas">✂️ Abater valor</button>
+          <button type="button" class="btn btn-sm" data-acao="abater" style="background:rgba(255,255,255,.15);color:#fff;" title="Desconto ou acerto combinado — abate do que falta sem lançar em Contas">✂️ Abater valor</button>
+          <button type="button" class="btn btn-sm" data-acao="devolucao" style="background:rgba(255,255,255,.15);color:#fff;" title="Peças que você devolveu — o valor sai do que falta pagar">↩️ Devolução</button>
           <button type="button" class="btn btn-sm" data-acao="soma-rapida" style="background:rgba(255,255,255,.15);color:#fff;" title="Lançar dia por dia os pedidos anotados no papel">🧮 Soma rápida</button>
         </div>
       </div>
@@ -4517,6 +4584,8 @@ function renderFornecedores(){
     </div>
 
     <div class="forn-hist">
+      <div class="forn-hist-col">
+      ${diaFechSel && diaFechSel.startsWith(ym) ? htmlResumoDiaFech(f, diaFechSel) : ''}
       <div class="chart-card">
         <h3>Produtos comprados em ${NOMES_MES[+ym.slice(5, 7) - 1]}</h3>
         ${resumo.length ? `<div class="tabela-scroll"><table class="forn-resumo-prod">
@@ -4526,6 +4595,7 @@ function renderFornecedores(){
             <td class="num">${r.qtd}</td><td class="num">${fmt(r.valor)}</td></tr>`).join('')}</tbody>
         </table></div>` : `<p class="forn-hist-vazio">Nenhum pedido neste mês.</p>`}
       </div>
+      </div>
       <div class="forn-hist-col">
       <div class="chart-card">
         <h3>📅 Pedidos por dia</h3>
@@ -4533,13 +4603,13 @@ function renderFornecedores(){
         ${diasDoMes.length ? '' : `<p class="forn-hist-vazio" style="margin-top:8px;">Nada lançado neste mês ainda.</p>`}
       </div>
       <div class="chart-card">
-        <h3>Pagamentos e abatimentos — ${NOMES_MES[+ym.slice(5, 7) - 1]}</h3>
+        <h3>Pagamentos, abatimentos e devoluções — ${NOMES_MES[+ym.slice(5, 7) - 1]}</h3>
         ${pagamentosDoMes.length ? pagamentosDoMes.map(p => `
           <div class="forn-hist-linha">
-            <div><div>${formatDate(p.data)} ${p.tipo === 'abatimento' ? '<span class="forn-tag-abat">✂️ abatimento</span>' : '<span class="forn-tag-pag">💸 pagamento</span>'}</div>${p.obs ? `<div class="sub">${escapeHtml(p.obs)}</div>` : ''}</div>
-            <div style="display:flex;align-items:center;gap:8px;"><strong style="color:${p.tipo === 'abatimento' ? 'var(--accent)' : 'var(--green)'};">− ${fmt(p.valor)}</strong>
+            <div><div>${formatDate(p.data)} <span class="${infoMovimento(p).classe}">${infoMovimento(p).icone} ${infoMovimento(p).nome.toLowerCase()}</span></div>${p.tipo === 'devolucao' && p.itens ? `<div class="sub">${escapeHtml(textoItensDevolucao(p))}</div>` : ''}${p.obs ? `<div class="sub">${escapeHtml(p.obs)}</div>` : ''}</div>
+            <div style="display:flex;align-items:center;gap:8px;"><strong style="color:${infoMovimento(p).cor};">− ${fmt(p.valor)}</strong>
               <button type="button" class="btn btn-danger-text btn-sm" data-acao="excluir-pagamento" data-pag="${p.id}" title="Excluir pagamento">✕</button></div>
-          </div>`).join('') : `<p class="forn-hist-vazio">Nenhum pagamento ou abatimento referente a este mês.</p>`}
+          </div>`).join('') : `<p class="forn-hist-vazio">Nada pago, abatido ou devolvido referente a este mês.</p>`}
       </div>
       </div>
     </div>`;
@@ -4674,6 +4744,56 @@ function diasDoMesCalendario(ym){
   const total = new Date(y, m, 0).getDate();
   return { primeiroSemana, total, dia: n => `${ym}-${String(n).padStart(2, '0')}` };
 }
+// Dia escolhido no calendário do Fechamento (só na sessão) — o resumo dele
+// aparece na própria aba, sem ir pra Pedidos.
+let diaFechSel = null;
+// Itens confirmados de um dia (é o que conta no fechamento — rascunho não).
+function linhasConfirmadasDia(f, dia){
+  return Object.entries((f.compras || {})[dia] || {}).flatMap(([id, item]) => linhasDoItem(produtoDoForn(f, id), item, item.nome));
+}
+function htmlResumoDiaFech(f, dia){
+  const linhas = linhasConfirmadasDia(f, dia);
+  const pecas = linhas.reduce((s, l) => s + l.qtd, 0);
+  const total = r2f(linhas.reduce((s, l) => s + l.valor, 0));
+  const movs = (f.pagamentos || []).filter(p => p.data === dia);
+  const rasc = !!(f.rascunhos || {})[dia];
+  const sem = DIAS_SEMANA_CURTOS[new Date(+dia.slice(0, 4), +dia.slice(5, 7) - 1, +dia.slice(8, 10)).getDay()];
+  return `<div class="chart-card dia-fech" id="diaFechResumo">
+    <div class="dia-fech-cab">
+      <h3>📋 Pedido de ${sem}, ${formatDate(dia)}</h3>
+      <button type="button" class="modal-close-x" data-acao="fechar-dia-fech" aria-label="Fechar resumo do dia">✕</button>
+    </div>
+    ${linhas.length ? `
+      <div class="dia-fech-lista">
+        ${linhas.map(l => `<div class="dia-fech-linha">
+          <div>
+            <strong>${escapeHtml(l.nome)}</strong>${l.cor ? ` <span class="dia-fech-cor">${escapeHtml(l.cor)}</span>` : ''}
+            <div class="sub">${l.tamanhos && l.tamanhos.length ? l.tamanhos.map(t => `Nº ${escapeHtml(t.tam)}: ${t.qtd}`).join(' · ') + ' · ' : ''}${fmt(l.preco)}/un</div>
+          </div>
+          <div class="dia-fech-num"><span>${l.qtd} ${l.qtd === 1 ? 'peça' : 'peças'}</span><strong>${fmt(l.valor)}</strong></div>
+        </div>`).join('')}
+      </div>
+      <div class="dia-fech-total"><span>Total do dia · ${pecas} ${pecas === 1 ? 'peça' : 'peças'}</span><strong>${fmt(total)}</strong></div>`
+      : `<p class="forn-hist-vazio">Nenhum pedido confirmado neste dia.</p>`}
+    ${movs.length ? `<div class="dia-fech-movs">${movs.map(p => `<div class="dia-fech-mov">${infoMovimento(p).icone} ${infoMovimento(p).nome}${p.tipo === 'devolucao' && p.itens ? ` (${escapeHtml(textoItensDevolucao(p))})` : ''}${p.obs ? ` — ${escapeHtml(p.obs)}` : ''}<strong>− ${fmt(p.valor)}</strong></div>`).join('')}</div>` : ''}
+    ${rasc ? `<p class="forn-fech-alerta" style="margin:8px 0 0;">📝 Tem alteração não confirmada nesse dia (rascunho) — não está somada aqui.</p>` : ''}
+    <div class="dia-fech-acoes">
+      ${linhas.length ? `<button type="button" class="btn btn-outline btn-sm" data-acao="print-dia-fech" data-dia="${dia}">📸 Print do dia</button>` : ''}
+      <button type="button" class="btn btn-outline btn-sm" data-acao="abrir-dia" data-dia="${dia}">✏️ Editar na aba Pedidos</button>
+    </div>
+  </div>`;
+}
+function abrirPrintDiaFech(f, dia){
+  const linhas = linhasConfirmadasDia(f, dia);
+  if(!linhas.length) return;
+  abrirPrint({
+    f, tituloModal: 'Print do pedido do dia',
+    titulo: `Pedido — ${f.nome}`,
+    subtitulo: formatDate(dia),
+    linhas, nomeArquivo: `pedido-${dia}.png`
+  });
+}
+
 function htmlCalendarioMes(f, ym){
   const { primeiroSemana, total, dia } = diasDoMesCalendario(ym);
   const hoje = hojeLocal();
@@ -4686,11 +4806,13 @@ function htmlCalendarioMes(f, ym){
     const rasc = !!(f.rascunhos || {})[d];
     const pagosDia = (f.pagamentos || []).filter(p => p.data === d);
     const abatDia = r2f(pagosDia.filter(p => p.tipo === 'abatimento').reduce((s, p) => s + p.valor, 0));
-    const pagoDia = r2f(pagosDia.filter(p => p.tipo !== 'abatimento').reduce((s, p) => s + p.valor, 0));
-    celulas.push(`<button type="button" class="cal-dia${pecas || pagoDia || abatDia ? ' tem' : ''}${d === hoje ? ' hoje' : ''}" data-acao="abrir-dia" data-dia="${d}" title="${formatDate(d)}${pecas ? ` — ${pecas} ${pecas === 1 ? 'peça' : 'peças'} · ${fmt(valor)}` : ' — sem pedido'}${rasc ? ' · tem rascunho não confirmado' : ''}">
+    const devolDia = r2f(pagosDia.filter(p => p.tipo === 'devolucao').reduce((s, p) => s + p.valor, 0));
+    const pagoDia = r2f(pagosDia.filter(p => !p.tipo).reduce((s, p) => s + p.valor, 0));
+    celulas.push(`<button type="button" class="cal-dia${pecas || pagoDia || abatDia || devolDia ? ' tem' : ''}${d === hoje ? ' hoje' : ''}${d === diaFechSel ? ' sel' : ''}" data-acao="ver-dia-fech" data-dia="${d}" title="${formatDate(d)}${pecas ? ` — ${pecas} ${pecas === 1 ? 'peça' : 'peças'} · ${fmt(valor)}` : ' — sem pedido'}${rasc ? ' · tem rascunho não confirmado' : ''}">
       <span class="cal-n">${n}${rasc ? ' <i>📝</i>' : ''}</span>
       ${pecas ? `<span class="cal-p">${pecas} pç</span><span class="cal-v">${fmtCurto(valor)}</span>` : ''}
       ${pagoDia ? `<span class="cal-pg" title="Pago neste dia">💸−${fmtCurto(pagoDia)}</span>` : ''}
+      ${devolDia ? `<span class="cal-dv" title="Devolvido neste dia">↩️−${fmtCurto(devolDia)}</span>` : ''}
       ${abatDia ? `<span class="cal-ab" title="Abatido neste dia: ${escapeHtml(pagosDia.filter(p => p.tipo === 'abatimento').map(p => p.obs).join(' · '))}">✂️−${fmtCurto(abatDia)}</span>` : ''}
     </button>`);
   }
@@ -4701,7 +4823,8 @@ function htmlCalendarioMes(f, ym){
 }
 
 // Aba aberta dentro da página Fornecedores ('pedidos' | 'fechamento').
-let fornAba = 'pedidos';
+// Abre em Fechamento e pagamentos (o uso principal); "Fazer pedido" fica do lado.
+let fornAba = 'fechamento';
 function renderFornAba(){
   document.querySelectorAll('#fornAbas .tab').forEach(t => t.classList.toggle('active', t.dataset.aba === fornAba));
   document.getElementById('pedConteudo').hidden = fornAba !== 'pedidos';
@@ -5098,7 +5221,7 @@ function abrirSomaRapida(f){
           <input type="number" class="soma-preco" min="0" step="0.01" value="${p.preco}" aria-label="Preço de ${escapeHtml(p.nome)}">
           <div class="sub"></div>
         </div>`).join('')
-    : `<p class="field-hint">Esse fornecedor ainda não tem produtos cadastrados — use "+ Item fora do cadastro" ou cadastre os produtos em Pedidos do dia.</p>`;
+    : `<p class="field-hint">Esse fornecedor ainda não tem produtos cadastrados — use "+ Item fora do cadastro" ou cadastre os produtos em Fazer pedido.</p>`;
   document.getElementById('somaAvulsos').innerHTML = '';
   let inicio = diaInicialSoma(f);
   if(document.getElementById('somaPularFds').checked && ehFimDeSemana(inicio)) inicio = proximoDiaSoma(inicio);
@@ -5550,10 +5673,81 @@ document.getElementById('formFornPagamento').addEventListener('submit', e => {
   else mostrarToastForn(`${abater ? `✂️ Abatido ${fmt(valor)}` : `✅ Pagamento de ${fmt(valor)} registrado`}. Faltam ${fmt(faltaMes)} de ${nomeMes(ref)}.`);
 });
 
+// ---- Devolução: escolhe modelos e quantidades; o valor sai do que falta ----
+// Fica em f.pagamentos com tipo 'devolucao' e itens [{ produtoId, nome, qtd, preco }],
+// então abate do mês igual a um pagamento/abatimento e nunca vai pra Contas.
+function abrirModalDevolucao(f, ymSugerido){
+  const lista = document.getElementById('devolLista');
+  lista.innerHTML = (f.produtos || []).length
+    ? (f.produtos || []).map(p => `
+      <div class="soma-linha" data-prod="${p.id}">
+        ${p.foto ? `<img src="${p.foto}" alt="">` : `<div class="ph">${escapeHtml((p.nome || '?').trim().charAt(0).toUpperCase())}</div>`}
+        <div class="nome">${escapeHtml(p.nome)}</div>
+        <div class="soma-qtd-wrap"><button type="button" class="soma-menos" tabindex="-1" aria-label="Menos">−</button><input type="number" class="soma-qtd" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Peças devolvidas de ${escapeHtml(p.nome)}"><button type="button" class="soma-mais" tabindex="-1" aria-label="Mais">+</button></div>
+        <input type="number" class="soma-preco" min="0" step="0.01" value="${p.preco}" aria-label="Preço de ${escapeHtml(p.nome)}">
+        <div class="sub"></div>
+      </div>`).join('')
+    : '<p class="field-hint">Esse fornecedor não tem produtos cadastrados — use "✂️ Abater valor".</p>';
+  const meses = mesesForn(f);
+  const ref = ymSugerido || hojeLocal().slice(0, 7);
+  document.getElementById('devolRef').innerHTML = meses.map(m => `<option value="${m}"${m === ref ? ' selected' : ''}>${nomeMes(m)}</option>`).join('');
+  document.getElementById('devolData').value = hojeLocal();
+  document.getElementById('devolObs').value = '';
+  recalcularDevolucao();
+  abrirOverlay('overlayDevolucao');
+}
+function itensDevolucaoDoForm(f){
+  return [...document.querySelectorAll('#devolLista .soma-linha')].map(row => {
+    const p = produtoDoForn(f, row.dataset.prod);
+    return { produtoId: row.dataset.prod, nome: p ? p.nome : '', qtd: Math.max(0, Math.round(parseFloat(row.querySelector('.soma-qtd').value) || 0)), preco: r2f(Math.max(0, parseFloat(row.querySelector('.soma-preco').value) || 0)), row };
+  });
+}
+function recalcularDevolucao(){
+  const f = fornecedorAtivo();
+  if(!f) return;
+  let pecas = 0, total = 0;
+  itensDevolucaoDoForm(f).forEach(i => {
+    i.row.classList.toggle('tem', i.qtd > 0);
+    i.row.querySelector('.sub').textContent = i.qtd > 0 ? fmt(r2f(i.qtd * i.preco)) : '';
+    pecas += i.qtd;
+    total = r2f(total + i.qtd * i.preco);
+  });
+  document.getElementById('devolPecas').textContent = `${pecas} ${pecas === 1 ? 'peça' : 'peças'}`;
+  document.getElementById('devolTotal').textContent = fmt(total);
+  const btn = document.getElementById('devolSubmit');
+  btn.disabled = !(total > 0);
+  btn.style.opacity = btn.disabled ? '.5' : '';
+}
+document.getElementById('overlayDevolucao').addEventListener('input', recalcularDevolucao);
+document.getElementById('overlayDevolucao').addEventListener('click', e => {
+  const b = e.target.closest('.soma-mais, .soma-menos');
+  if(!b) return;
+  const input = b.parentElement.querySelector('.soma-qtd');
+  const novo = Math.max(0, (Math.round(parseFloat(input.value) || 0)) + (b.classList.contains('soma-mais') ? 1 : -1));
+  input.value = novo || '';
+  recalcularDevolucao();
+});
+document.getElementById('formDevolucao').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = fornecedorAtivo();
+  if(!f) return;
+  const itens = itensDevolucaoDoForm(f).filter(i => i.qtd > 0).map(({ row, ...i }) => i);
+  const valor = r2f(itens.reduce((s, i) => s + i.qtd * i.preco, 0));
+  const dataDev = document.getElementById('devolData').value;
+  const ref = document.getElementById('devolRef').value || dataDev.slice(0, 7);
+  if(!(valor > 0) || !dataDev) return;
+  f.pagamentos = f.pagamentos || [];
+  f.pagamentos.push({ id: uid(), data: dataDev, ref, valor, obs: document.getElementById('devolObs').value.trim(), contaId: null, tipo: 'devolucao', itens });
+  saveFornecedores(true);
+  fecharOverlay('overlayDevolucao');
+  renderTelaFornAtual();
+  mostrarToastForn(`↩️ Devolução de ${fmt(valor)} registrada. Faltam ${fmt(Math.max(0, faltaMesForn(f, ref)))} de ${nomeMes(ref)}.`);
+});
+
 // ---- Interações das duas telas (delegadas) ----
 function cliqueTelaForn(e){
   const chip = e.target.closest('.forn-chip');
-  if(chip){ fornAtivoId = chip.dataset.forn; relMesesSel = null; renderTelaFornAtual(); return; }
+  if(chip){ fornAtivoId = chip.dataset.forn; relMesesSel = null; diaFechSel = null; renderTelaFornAtual(); return; }
   const btn = e.target.closest('[data-acao]');
   if(!btn || btn.disabled) return;
   const f = fornecedorAtivo();
@@ -5565,11 +5759,21 @@ function cliqueTelaForn(e){
   if(acao === 'editar-produto') return abrirModalFornProduto((f.produtos || []).find(p => p.id === btn.dataset.prod));
   if(acao === 'pagar') return abrirModalPagamentoForn(faltaMesForn(f, fornMes) > 0.004 ? fornMes : null);
   if(acao === 'abater') return abrirModalAbatimentoForn(fornMes);
+  if(acao === 'devolucao') return abrirModalDevolucao(f, fornMes);
   if(acao === 'pagar-mes') return abrirModalPagamentoForn(fornMes);
   if(acao === 'soma-rapida') return abrirSomaRapida(f);
   if(acao === 'ir-pedidos'){ fornDia = hojeLocal(); return abrirAbaForn('pedidos'); }
   if(acao === 'ir-fornecedores'){ fornMes = fornDia.slice(0, 7); return abrirAbaForn('fechamento'); }
   if(acao === 'abrir-dia'){ fornDia = btn.dataset.dia; return abrirAbaForn('pedidos'); }
+  if(acao === 'ver-dia-fech'){
+    diaFechSel = diaFechSel === btn.dataset.dia ? null : btn.dataset.dia;
+    renderFornecedores();
+    const resumo = document.getElementById('diaFechResumo');
+    if(resumo) resumo.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+  if(acao === 'fechar-dia-fech'){ diaFechSel = null; return renderFornecedores(); }
+  if(acao === 'print-dia-fech') return abrirPrintDiaFech(f, btn.dataset.dia);
   if(acao === 'dia-anterior'){ fornDia = somarDias(fornDia, -1); return renderPedidos(); }
   if(acao === 'dia-seguinte'){ fornDia = somarDias(fornDia, 1); return renderPedidos(); }
   if(acao === 'dia-hoje'){ fornDia = hojeLocal(); return renderPedidos(); }
@@ -5932,6 +6136,7 @@ async function afterLogin(user){
   document.getElementById('loginMsg').textContent = '';
   document.getElementById('formLogin').reset();
   fornAtivoId = null;
+  fornAba = 'fechamento';
   fornDia = hojeLocal();
   fornMes = fornDia.slice(0, 7);
   await carregarDados(user.id);
