@@ -1900,13 +1900,16 @@ let fornecedores = [];
 let colunaFornecedoresOk = false;
 // Vendas e lucro (ver "VENDAS E LUCRO" mais abaixo). Coluna nova "vendas",
 // com a mesma trava da coluna de fornecedores.
-const vendasVazio = () => ({ lojas: [{ id: 'principal', nome: 'Estelar' }], produtos: [], dias: {}, meses: {} });
+// Nome genérico de propósito: cada login renomeia as próprias lojas.
+const vendasVazio = () => ({ lojas: [{ id: 'principal', nome: 'Empresa 1' }], produtos: [], dias: {}, meses: {} });
 function normalizarVendas(v){
   v = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  // Versão anterior gravava 'Estelar' como nome padrão em qualquer login.
+  if(Array.isArray(v.lojas)) v.lojas.forEach(l => { if(l.id === 'principal' && l.nome === 'Estelar') l.nome = 'Empresa 1'; });
   return {
     // Lojas (mesmo login, lucro separado). A principal sempre existe e é a
     // dona de tudo que foi lançado antes das lojas existirem.
-    lojas: Array.isArray(v.lojas) && v.lojas.some(l => l.id === 'principal') ? v.lojas : [{ id: 'principal', nome: 'Estelar' }, ...(Array.isArray(v.lojas) ? v.lojas : [])],
+    lojas: Array.isArray(v.lojas) && v.lojas.some(l => l.id === 'principal') ? v.lojas : [{ id: 'principal', nome: 'Empresa 1' }, ...(Array.isArray(v.lojas) ? v.lojas : [])],
     produtos: Array.isArray(v.produtos) ? v.produtos : [],
     dias: v.dias && typeof v.dias === 'object' ? v.dias : {},
     meses: v.meses && typeof v.meses === 'object' ? v.meses : {}
@@ -6503,7 +6506,7 @@ function lojaTemLancamentos(id){
   return temDia || Object.keys(vendas.meses).some(ym => { const c = cfgBrutaMesLoja(ym, id); return (+c.devolucoes || 0) > 0 || Object.values(c.ads || {}).some(v => +v > 0); });
 }
 function novaLojaVenda(){
-  const nome = (prompt('Nome da nova loja (ex: Conta CPF):') || '').trim();
+  const nome = (prompt('Nome da nova loja (pode mudar depois no ✏️):', `Empresa ${(vendas.lojas || []).length + 1}`) || '').trim();
   if(!nome) return;
   const loja = { id: uid(), nome };
   vendas.lojas.push(loja);
