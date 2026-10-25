@@ -488,6 +488,81 @@
   .todos-mkt-lucro.valor-negativo{color:var(--red);}
   @media (max-width:480px){ .todos-mkt-linha{grid-template-columns:1fr auto;} .todos-mkt-rec{grid-column:1 / -1;order:3;} }
 
+  /* ===== Vendas e lucro ===== */
+  main:has(#page-vendas.active){max-width:1640px;}
+  .vend-dia{gap:14px;}
+  .vend-rotulo{font-size:14px;margin-left:4px;}
+  .vend-totais{display:flex;gap:18px;flex-wrap:wrap;}
+  .vend-totais div{display:flex;flex-direction:column;align-items:flex-end;}
+  .vend-totais span{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);}
+  .vend-totais strong{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);}
+  .vend-totais .lucro strong{font-size:24px;color:var(--green);}
+  .vend-totais strong.neg,.vend-un b.neg,.neg{color:var(--red) !important;}
+  .pos{color:var(--green);}
+  .vend-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .vend-acoes input[type=search]{flex:1;min-width:180px;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font:inherit;background:var(--surface);}
+  .vend-avulsos{margin-bottom:14px;}
+  .vend-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start;}
+  @media (max-width:1279px){ .vend-grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+  @media (max-width:999px){ .vend-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  @media (max-width:640px){ .vend-grid{grid-template-columns:1fr;} }
+  .vend-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;gap:8px;}
+  .vend-card.tem{border-color:var(--green);background:linear-gradient(180deg,var(--green-bg),var(--surface) 50%);}
+  .vend-card[hidden]{display:none;}
+  .vend-card-topo{display:flex;align-items:center;gap:10px;}
+  .vend-foto{width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--bg);}
+  .vend-foto.placeholder{display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);font-size:18px;}
+  .vend-card-nome{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:14px;line-height:1.25;}
+  .vend-tag-calc{font-size:10.5px;font-weight:800;color:var(--accent);}
+  .vend-edit{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px;}
+  .vend-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:10px;background:var(--bg);}
+  .vend-linha.tem{background:#d1fae5;}
+  .vend-linha-info{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;}
+  .vend-linha-info .badge{align-self:flex-start;}
+  .vend-un{font-size:11.5px;color:var(--muted);font-weight:700;line-height:1.3;}
+  .vend-un b{white-space:nowrap;}
+  .vend-un b{color:var(--green);}
+  .vend-qtd{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+  .vend-qtd button{width:34px;height:34px;border-radius:10px;border:none;font-size:19px;font-weight:800;cursor:pointer;}
+  .vend-qtd .menos{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+  .vend-qtd .mais{background:var(--green);color:#fff;}
+  .vend-qtd button:active{transform:scale(.9);}
+  .vend-qtd input{width:44px;height:34px;text-align:center;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:16px;font-weight:800;}
+  .vend-card-total{font-size:12.5px;font-weight:700;color:var(--muted);min-height:16px;}
+  .vend-card-total b{color:var(--green);}
+  .vend-sem-plat{font-size:12.5px;color:var(--muted);}
+  .vend-resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px;}
+  .vend-res{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:2px;}
+  .vend-res span{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);}
+  .vend-res strong{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(19px,2.4vw,24px);font-weight:800;color:var(--navy);}
+  .vend-res small{font-size:12px;color:var(--muted);}
+  .vend-res.liquido{background:linear-gradient(135deg,#059669,#10b981);border-color:#059669;}
+  .vend-res.liquido span,.vend-res.liquido small{color:#d1fae5;}
+  .vend-res.liquido strong{color:#fff;}
+  .vend-res.liquido.negativo{background:linear-gradient(135deg,#dc2626,#ef4444);border-color:#dc2626;}
+  .vend-ads-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .vend-ads-campo{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:var(--muted);}
+  .vend-ads-campo input{border:1px solid var(--border);border-radius:8px;padding:8px 10px;font:inherit;font-weight:700;color:var(--text);}
+  .vend-tabela td .sub{font-size:11.5px;color:var(--muted);}
+  .cal-v.neg{color:var(--red);}
+  .vend-plats{display:flex;flex-direction:column;gap:6px;}
+  .vend-plat-row{display:grid;grid-template-columns:minmax(140px,1.2fr) 1fr 1fr;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
+  .vend-plat-row .vend-plat-calc{grid-column:2 / -1;}
+  @media (max-width:480px){ .vend-plat-row{grid-template-columns:1fr 1fr;} .vend-plat-check{grid-column:1 / -1;} }
+  .vend-plat-check{display:flex;align-items:center;gap:8px;min-width:150px;cursor:pointer;}
+  .vend-plat-campo{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted);}
+  .vend-plat-campo input{width:100%;min-width:0;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font:inherit;}
+  .vend-plat-calc{font-size:12.5px;color:var(--muted);font-weight:700;}
+  .vend-plat-calc b{color:var(--green);}
+  .vend-foto-prev img{width:70px;height:70px;object-fit:cover;border-radius:10px;margin-top:8px;}
+  .vend-puxar-lista{max-height:55vh;overflow:auto;display:flex;flex-direction:column;gap:6px;}
+  .vend-puxar-item{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer;}
+  .vend-puxar-item span{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}
+  .vend-puxar-item small{font-size:11.5px;color:var(--muted);}
+  .rel-vendas{margin-top:14px;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media (max-width:480px){ .form-row{grid-template-columns:1fr;} }
+
   /* ===== Fornecedores ===== */
   .forn-aviso{background:var(--amber-bg);border:1px solid #fcd34d;border-radius:var(--radius);padding:18px 20px;line-height:1.5;}
   .forn-aviso h3{font-size:16px;margin-bottom:8px;}
@@ -979,6 +1054,7 @@
     </div>
     <nav class="side-nav" id="sideNav">
       <button data-page="relatorio" class="active">📊 Relatório mensal</button>
+      <button data-page="vendas">📈 Vendas e lucro</button>
       <button data-page="precificacao">🧮 Calculadora de precificação</button>
       <button data-page="fornecedores">🚚 Fornecedores</button>
     </nav>
@@ -1099,6 +1175,7 @@
             </div>
           </div>
 
+          <div id="relVendasBox"></div>
           <div class="chart-card">
             <h3>Faturamento por mês (últimos 12 meses)</h3>
             <div class="chart-bars" id="faturamentoChart"></div>
@@ -1131,6 +1208,7 @@
             </div>
           </div>
 
+          <div id="relAnoVendasBox"></div>
           <div class="chart-card">
             <h3>Faturamento por mês (ano selecionado)</h3>
             <div class="chart-bars" id="faturamentoChartAnual"></div>
@@ -1180,6 +1258,15 @@
         </div>
         <div id="pedConteudo" hidden></div>
         <div id="fornConteudo"></div>
+      </section>
+
+      <!-- PÁGINA: VENDAS E LUCRO -->
+      <section class="page" id="page-vendas">
+        <div class="tabs forn-abas" id="vendAbas">
+          <button type="button" class="tab active" data-aba="dia">🛒 Lançar vendas do dia</button>
+          <button type="button" class="tab" data-aba="mes">📅 Fechamento do mês</button>
+        </div>
+        <div id="vendConteudo"></div>
       </section>
 
       <!-- PÁGINA: PRECIFICAÇÃO DE PRODUTOS -->
@@ -1410,6 +1497,102 @@
 </div>
 
 <!-- Modal: pagamento ao fornecedor -->
+<div class="overlay" id="overlayVendProduto">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="vpTitulo">Novo produto de venda</h2>
+      <button type="button" class="modal-close-x" data-fechar="overlayVendProduto" aria-label="Fechar">✕</button>
+    </div>
+    <form id="formVendProduto">
+      <div class="field">
+        <label>Nome do produto</label>
+        <input type="text" id="vpNome" placeholder="Ex: Bota 1020" required>
+      </div>
+      <div class="field" id="vpCalcWrap">
+        <label>Preço e lucro</label>
+        <select id="vpCalc"></select>
+      </div>
+      <p class="field-hint" id="vpCalcHint" style="margin:-6px 0 10px;"></p>
+      <div id="vpPlataformas" class="vend-plats"></div>
+      <div class="field" style="margin-top:12px;">
+        <label>Foto (opcional)</label>
+        <input type="file" id="vpFoto" accept="image/*">
+        <div class="vend-foto-prev" id="vpFotoPreview"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger-text" id="btnExcluirVendProduto">Excluir</button>
+        <button type="button" class="btn btn-outline" data-fechar="overlayVendProduto">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="overlayVendPuxar">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⬇️ Puxar da calculadora</h2>
+      <button type="button" class="modal-close-x" data-fechar="overlayVendPuxar" aria-label="Fechar">✕</button>
+    </div>
+    <p class="field-hint" style="margin:0 0 12px;">Os produtos de "Meus produtos" vêm com o preço e o lucro de cada plataforma já calculados.</p>
+    <div id="vpxLista" class="vend-puxar-lista"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" data-fechar="overlayVendPuxar">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btnVpxTrazer">Trazer selecionados</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayVendAvulsa">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚡ Venda avulsa / total do dia</h2>
+      <button type="button" class="modal-close-x" data-fechar="overlayVendAvulsa" aria-label="Fechar">✕</button>
+    </div>
+    <form id="formVendAvulsa">
+      <p class="field-hint" style="margin:0 0 12px;"><strong id="vaDiaLabel"></strong><br>Vendeu algo que não está cadastrado, ou quer passar só o total de um dia da planilha? Preencha os totais.</p>
+      <div class="field">
+        <label>Descrição (opcional)</label>
+        <input type="text" id="vaNome" placeholder="Ex: Total do dia, Chinelo Magali...">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Plataforma (opcional)</label>
+          <select id="vaPlat">
+            <option value="">—</option>
+            <option value="shopee">Shopee</option>
+            <option value="ml">Mercado Livre</option>
+            <option value="shein">Shein</option>
+            <option value="tiktok">TikTok Shop</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Peças (opcional)</label>
+          <input type="number" id="vaQtd" min="0" step="1" inputmode="numeric" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Valor vendido total (R$)</label>
+          <input type="number" id="vaValor" step="0.01" min="0" placeholder="0,00">
+        </div>
+        <div class="field">
+          <label>Lucro total (R$)</label>
+          <input type="number" id="vaLucro" step="0.01" placeholder="0,00">
+        </div>
+      </div>
+      <label class="forn-check">
+        <input type="checkbox" id="vaSalvarProduto">
+        <span>Salvar como produto (das próximas vezes é só tocar no +)</span>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-fechar="overlayVendAvulsa">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Lançar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="overlay" id="overlayFornPagamento">
   <div class="modal">
     <div class="modal-header">
@@ -1708,6 +1891,19 @@ let fornecedores = [];
 // e mandar ela no upsert faria TODO o salvamento falhar. Só entra no upsert
 // depois de confirmar que a coluna existe.
 let colunaFornecedoresOk = false;
+// Vendas e lucro (ver "VENDAS E LUCRO" mais abaixo). Coluna nova "vendas",
+// com a mesma trava da coluna de fornecedores.
+const vendasVazio = () => ({ produtos: [], dias: {}, meses: {} });
+function normalizarVendas(v){
+  v = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  return {
+    produtos: Array.isArray(v.produtos) ? v.produtos : [],
+    dias: v.dias && typeof v.dias === 'object' ? v.dias : {},
+    meses: v.meses && typeof v.meses === 'object' ? v.meses : {}
+  };
+}
+let vendas = vendasVazio();
+let colunaVendasOk = false;
 // Custos que a empresa já sabe de antemão (imposto, embalagem, custo fixo,
 // comissão de afiliado e % de gerenciamento cobrado do cliente) — preenchidos
 // uma vez e usados direto por toda calculadora/produto, sem campo próprio
@@ -1748,6 +1944,7 @@ async function persist(){
     produtos: produtos,
     config_precificacao: configPrecificacao,
     ...(colunaFornecedoresOk ? { fornecedores: fornecedores } : {}),
+    ...(colunaVendasOk ? { vendas: vendas } : {}),
     updated_at: new Date().toISOString()
   });
   setSyncStatus(error ? 'error' : 'ok');
@@ -1793,9 +1990,14 @@ async function carregarDados(userId){
     });
     const { error: erroColuna } = await sb.from('financeiro_dados').select('fornecedores').eq('user_id', userId).maybeSingle();
     colunaFornecedoresOk = !erroColuna;
+    vendas = vendasVazio();
+    const { error: erroColunaVendas } = await sb.from('financeiro_dados').select('vendas').eq('user_id', userId).maybeSingle();
+    colunaVendasOk = !erroColunaVendas;
   } else {
     colunaFornecedoresOk = Object.prototype.hasOwnProperty.call(row, 'fornecedores');
     fornecedores = Array.isArray(row.fornecedores) ? row.fornecedores : [];
+    colunaVendasOk = Object.prototype.hasOwnProperty.call(row, 'vendas');
+    vendas = normalizarVendas(row.vendas);
     data = row.contas || [];
     faturamento = row.faturamento || {};
     lembretes = (row.lembretes && row.lembretes.length) ? row.lembretes : lembretesPadrao();
@@ -1848,6 +2050,7 @@ const pageTitles = {
   lembretes: 'Lembretes',
   custofixo: 'Custo fixo por pedido',
   precificacao: 'Calculadora de precificação',
+  vendas: 'Vendas e lucro',
   fornecedores: 'Fornecedores'
 };
 
@@ -1881,7 +2084,7 @@ document.getElementById('sidebarBackdrop').addEventListener('click', closeSideba
 // de sair do site. Re-render da mesma tela não cria entrada nova.
 let aplicandoHistorico = false;
 function estadoNavegacao(){
-  return { nexus: 1, pagina: paginaAtual, fornAba, fornAtivoId, fornDia, fornMes, diaFechSel };
+  return { nexus: 1, pagina: paginaAtual, vendAba, vendDia, vendMes, fornAba, fornAtivoId, fornDia, fornMes, diaFechSel };
 }
 const urlSemHash = () => location.pathname + location.search;
 // Atualiza a entrada atual com o estado mais recente da tela (antes de sair dela).
@@ -1902,6 +2105,9 @@ window.addEventListener('popstate', ev => {
   aplicandoHistorico = true;
   try{
     if(e.fornAba) fornAba = e.fornAba;
+    if(e.vendAba) vendAba = e.vendAba;
+    if(e.vendDia) vendDia = e.vendDia;
+    if(e.vendMes) vendMes = e.vendMes;
     if(e.fornAtivoId) fornAtivoId = e.fornAtivoId;
     if(e.fornDia) fornDia = e.fornDia;
     if(e.fornMes) fornMes = e.fornMes;
@@ -1934,6 +2140,7 @@ function showPage(name){
   else if(name === 'custofixo') renderCustoFixo();
   else if(name === 'precificacao'){ renderConfigPrecificacao(); renderProdutos(); }
   else if(name === 'fornecedores') renderFornAba();
+  else if(name === 'vendas') renderVendas();
   empilharEstado();
 }
 
@@ -2197,6 +2404,7 @@ function renderRelatorio(){
   document.getElementById('fatEditRow').style.display = 'none';
 
   renderFaturamentoChart(ym);
+  renderQuadroVendasMensal(ym);
 }
 
 function renderFaturamentoChart(mesSelecionado){
@@ -2269,6 +2477,7 @@ document.getElementById('anoPickerNext').addEventListener('click', () => { relat
 
 function renderRelatorioAnual(){
   document.getElementById('anoPickerLabel').textContent = relatorioAno;
+  renderQuadroVendasAnual(relatorioAno);
 
   const mesesValores = [];
   let fatAno = 0;
@@ -5000,7 +5209,9 @@ function quebrarTexto(ctx, texto, larguraMax){
   if(atual) linhas.push(atual);
   return linhas;
 }
-async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario }){
+async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos = {} }){
+  // rotulos: textos do print de Vendas e lucro (o padrão é o do pedido).
+  const rot = { total: 'TOTAL DO PEDIDO', calendario: 'Pedidos por dia', prefixoCor: 'COR: ', preco: null, ...rotulos };
   // Layout pensado pra quem recebe: um bloco por modelo/cor, com a cor numa
   // etiqueta e a numeração numa grade (Nº em cima, quantidade grande embaixo).
   try{ await document.fonts.ready; } catch(e){}
@@ -5088,7 +5299,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     let px = tx;
     if(l.cor){
       ctx.font = fonte(800, 24);
-      const txt = `COR: ${String(l.cor).toUpperCase()}`;
+      const txt = `${rot.prefixoCor}${String(l.cor).toUpperCase()}`;
       const w = ctx.measureText(txt).width + 32;
       ctx.fillStyle = '#e0e7ff';
       retArred(px, ty, w, 44, 22);
@@ -5099,7 +5310,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     }
     ctx.fillStyle = '#6b7794';
     ctx.font = fonte(700, 24);
-    ctx.fillText(`${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`, px, ty + 31);
+    ctx.fillText(rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`, px, ty + 31);
     // Total do bloco (direita)
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f1b3d';
@@ -5143,7 +5354,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     let cy = y + 40;
     ctx.fillStyle = '#0f1b3d';
     ctx.font = fonte(800, 30);
-    ctx.fillText('Pedidos por dia', PAD, cy + 30);
+    ctx.fillText(rot.calendario, PAD, cy + 30);
     cy += 56;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#6b7794';
@@ -5168,7 +5379,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
       if(info){
         ctx.fillStyle = '#0f1b3d';
         ctx.font = fonte(800, 20);
-        ctx.fillText(`${info.pecas} pç`, cx + CAL_W / 2, by + 54);
+        if(info.pecas) ctx.fillText(`${info.pecas} pç`, cx + CAL_W / 2, by + 54);
         ctx.fillStyle = '#059669';
         ctx.font = fonte(800, 18);
         ctx.fillText(fmtCurto(info.valor), cx + CAL_W / 2, by + 78);
@@ -5183,7 +5394,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   ctx.fillRect(0, y + 18, W, FOOTER - 18);
   ctx.fillStyle = '#6b7794';
   ctx.font = fonte(800, 26);
-  ctx.fillText('TOTAL DO PEDIDO', PAD, y + 76);
+  ctx.fillText(rot.total, PAD, y + 76);
   ctx.fillStyle = '#0f1b3d';
   ctx.font = fonte(800, 34);
   ctx.fillText(`${totalPecas} ${unTotal(totalPecas)}`, PAD, y + 122);
@@ -5225,19 +5436,19 @@ function linkWhatsForn(f, texto){
 }
 
 let printAtual = null;   // { blob, url, nomeArquivo }
-async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nomeArquivo, f, calendario }){
+async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nomeArquivo, f, calendario, rotulos }){
   const totalPecas = linhas.reduce((s, l) => s + l.qtd, 0);
   const totalValor = r2f(linhas.reduce((s, l) => s + l.valor, 0));
   document.getElementById('printTitulo').textContent = tituloModal;
   const prev = document.getElementById('printPreview');
   prev.textContent = 'Gerando imagem...';
   abrirOverlay('overlayPrint');
-  const whats = linkWhatsForn(f, textoWhatsPedido(f, `${titulo} — ${subtitulo}`, linhas, totalPecas, totalValor));
+  const whats = f ? linkWhatsForn(f, textoWhatsPedido(f, `${titulo} — ${subtitulo}`, linhas, totalPecas, totalValor)) : null;
   const btnW = document.getElementById('btnPrintWhats');
   btnW.style.display = whats ? '' : 'none';
   if(whats) btnW.href = whats;
   if(printAtual) URL.revokeObjectURL(printAtual.url);
-  const blob = await gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario });
+  const blob = await gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos });
   if(!blob){ prev.textContent = 'Não foi possível gerar a imagem neste navegador.'; return; }
   printAtual = { blob, url: URL.createObjectURL(blob), nomeArquivo };
   prev.innerHTML = `<img src="${printAtual.url}" alt="${escapeHtml(titulo)}">`;
@@ -6126,10 +6337,593 @@ document.getElementById('fornAbas').addEventListener('click', e => {
   if(t){ salvarEstadoAtual(); fornAba = t.dataset.aba; renderFornAba(); empilharEstado(); }
 });
 
+// ================= VENDAS E LUCRO =================
+// Quanto vendeu e lucrou por dia e por mês, por plataforma. Fica na coluna
+// "vendas" (mesma linha do usuário, mesma RLS):
+//   produtos: [{ id, nome, foto, calcId, plataformas: { shopee?: { preco, lucro }, ml?, shein?, tiktok? } }]
+//     — calcId liga a um produto da Calculadora (preço/lucro vêm de lá ao vivo);
+//       sem calcId, preço e lucro por unidade são digitados à mão. A chave da
+//       plataforma existir = o produto é vendido nela.
+//   dias: { 'YYYY-MM-DD': { itens: { 'prodId|plat': { qtd, preco, lucro, nome, plat, prodId } },
+//                           avulsos: [{ id, nome, plat, qtd, valor, lucro }] } }
+//     — itens guardam preço/lucro do dia (mudar o produto depois não reescreve
+//       o passado); avulsos guardam TOTAIS (valor e lucro), não unitários.
+//   meses: { 'YYYY-MM': { ads: { tiktok, shopee, ml, shein }, devolucoes } }
+const PLATAFORMAS_VENDA = [
+  { id: 'shopee', label: 'Shopee' },
+  { id: 'ml',     label: 'Mercado Livre' },
+  { id: 'shein',  label: 'Shein' },
+  { id: 'tiktok', label: 'TikTok Shop' }
+];
+function labelPlataforma(id){ return (PLATAFORMAS_VENDA.find(p => p.id === id) || {}).label || ''; }
+let vendAba = 'dia';            // 'dia' | 'mes'
+let vendDia = null;             // 'YYYY-MM-DD' sendo lançado
+let vendMes = null;             // 'YYYY-MM' do fechamento
+let editingVendProdutoId = null;
+let fotoVendProduto = null;
+
+function avisoColunaVendas(){
+  return `
+    <div class="forn-aviso">
+      <h3>Falta um passo único no banco de dados</h3>
+      <p>Pra Vendas e lucro salvar na nuvem, rode esta linha uma vez no Supabase → <strong>SQL Editor</strong> → <strong>Run</strong>:</p>
+      <code>alter table financeiro_dados add column if not exists vendas jsonb not null default '{}'::jsonb;</code>
+      <p>Depois é só recarregar esta página. O resto do app continua funcionando normalmente.</p>
+    </div>`;
+}
+
+function vendProduto(id){ return vendas.produtos.find(p => p.id === id); }
+function calcDoVendProduto(vp){ return vp && vp.calcId ? produtos.find(p => p.id === vp.calcId) : null; }
+// Preço (o que o cliente paga) e lucro por unidade de hoje, numa plataforma.
+// Ligado à calculadora: vem do comparativo dela (na Shein, o preço final com
+// desconto); se lá não tiver preço, cai no valor digitado.
+function valoresPlataforma(vp, plat){
+  const calc = calcDoVendProduto(vp);
+  if(calc){
+    const r = calcularComparativo(calc).find(x => x.chave === plat);
+    if(r && r.preco > 0 && r.valido) return { preco: r2f(r.precoFinal || r.preco), lucro: r2f(r.lucro) };
+  }
+  const v = (vp.plataformas || {})[plat] || {};
+  return { preco: +v.preco || 0, lucro: +v.lucro || 0 };
+}
+function platsDoProduto(vp){ return PLATAFORMAS_VENDA.filter(p => (vp.plataformas || {})[p.id]); }
+
+function diaVendas(d){ return vendas.dias[d] || { itens: {}, avulsos: [] }; }
+function garantirDiaVendas(d){
+  if(!vendas.dias[d]) vendas.dias[d] = { itens: {}, avulsos: [] };
+  const dia = vendas.dias[d];
+  dia.itens = dia.itens || {};
+  dia.avulsos = dia.avulsos || [];
+  return dia;
+}
+function limparDiaVendasVazio(d){
+  const dia = vendas.dias[d];
+  if(dia && !Object.keys(dia.itens || {}).length && !(dia.avulsos || []).length) delete vendas.dias[d];
+}
+// Linhas de venda de um dia (itens + avulsos), já com totais.
+function linhasVendaDia(d){
+  const dia = diaVendas(d);
+  const itens = Object.values(dia.itens || {}).map(i => ({ prodId: i.prodId, nome: i.nome, plat: i.plat, qtd: i.qtd, vendido: r2f(i.qtd * i.preco), lucro: r2f(i.qtd * i.lucro), unPreco: i.preco, unLucro: i.lucro }));
+  const avulsos = (dia.avulsos || []).map(a => ({ avulsoId: a.id, nome: a.nome || 'Venda avulsa', plat: a.plat || '', qtd: a.qtd || 0, vendido: r2f(a.valor || 0), lucro: r2f(a.lucro || 0) }));
+  return [...itens, ...avulsos];
+}
+function resumoLinhas(linhas){
+  return {
+    pecas: linhas.reduce((s, l) => s + (l.qtd || 0), 0),
+    vendido: r2f(linhas.reduce((s, l) => s + l.vendido, 0)),
+    lucro: r2f(linhas.reduce((s, l) => s + l.lucro, 0))
+  };
+}
+function resumoDiaVendas(d){ return resumoLinhas(linhasVendaDia(d)); }
+function diasVendaDoMes(ym){ return Object.keys(vendas.dias).filter(d => d.startsWith(ym)).sort(); }
+function linhasVendaMes(ym){ return diasVendaDoMes(ym).flatMap(d => linhasVendaDia(d)); }
+function configMesVendas(ym){
+  const m = vendas.meses[ym] || {};
+  return { ads: { tiktok: 0, shopee: 0, ml: 0, shein: 0, ...(m.ads || {}) }, devolucoes: +m.devolucoes || 0 };
+}
+// Mês inteiro: vendido, lucro bruto, ads, devoluções e lucro líquido.
+function resumoMesVendas(ym){
+  const base = resumoLinhas(linhasVendaMes(ym));
+  const cfg = configMesVendas(ym);
+  const ads = r2f(Object.values(cfg.ads).reduce((s, v) => s + (+v || 0), 0));
+  const liquido = r2f(base.lucro - ads - cfg.devolucoes);
+  return { ...base, ads, devolucoes: cfg.devolucoes, liquido, custos: r2f(base.vendido - liquido), dias: diasVendaDoMes(ym).filter(d => resumoDiaVendas(d).pecas > 0 || resumoDiaVendas(d).lucro !== 0).length };
+}
+function mesTemVendas(ym){ const r = resumoMesVendas(ym); return r.vendido > 0 || r.lucro !== 0 || r.ads > 0 || r.devolucoes > 0; }
+
+let timerSalvarVendas = null;
+function saveVendas(imediato = false){
+  clearTimeout(timerSalvarVendas);
+  timerSalvarVendas = null;
+  if(imediato) return persist();
+  setSyncStatus('saving');
+  timerSalvarVendas = setTimeout(() => { timerSalvarVendas = null; persist(); }, 700);
+}
+
+// Quantidade de um produto numa plataforma no dia. Primeira peça grava o
+// preço/lucro de hoje; zerar remove o item.
+function definirQtdVenda(prodId, plat, qtd){
+  const vp = vendProduto(prodId);
+  if(!vp) return;
+  qtd = Math.max(0, Math.round(+qtd || 0));
+  const dia = garantirDiaVendas(vendDia);
+  const chave = `${prodId}|${plat}`;
+  if(qtd === 0) delete dia.itens[chave];
+  else if(dia.itens[chave]) dia.itens[chave].qtd = qtd;
+  else dia.itens[chave] = { qtd, ...valoresPlataforma(vp, plat), nome: vp.nome, plat, prodId };
+  limparDiaVendasVazio(vendDia);
+  saveVendas();
+}
+
+// ---------- Tela ----------
+function renderVendas(){
+  document.querySelectorAll('#vendAbas .tab').forEach(t => t.classList.toggle('active', t.dataset.aba === vendAba));
+  const el = document.getElementById('vendConteudo');
+  if(!colunaVendasOk){ el.innerHTML = avisoColunaVendas(); return; }
+  if(!vendDia) vendDia = hojeLocal();
+  if(!vendMes) vendMes = hojeLocal().slice(0, 7);
+  el.innerHTML = vendAba === 'mes' ? htmlVendasMes() : htmlVendasDia();
+  if(vendAba === 'dia') aplicarBuscaVendas();
+}
+
+function htmlFotoVend(vp, classe = 'vend-foto'){
+  const ini = escapeHtml((vp.nome || '?').trim().charAt(0).toUpperCase() || '?');
+  return vp.foto ? `<img class="${classe}" src="${vp.foto}" alt="">` : `<div class="${classe} placeholder">${ini}</div>`;
+}
+
+function htmlCardVenda(vp, dia){
+  const plats = platsDoProduto(vp);
+  let pecas = 0, lucro = 0;
+  const linhas = plats.map(pl => {
+    const item = (dia.itens || {})[`${vp.id}|${pl.id}`];
+    const qtd = item ? item.qtd : 0;
+    const v = item ? { preco: item.preco, lucro: item.lucro } : valoresPlataforma(vp, pl.id);
+    pecas += qtd; lucro += qtd * v.lucro;
+    return `<div class="vend-linha${qtd ? ' tem' : ''}">
+      <div class="vend-linha-info">
+        <span class="badge ${marketplaceBadgeClass(pl.id)}">${pl.id === 'tiktok' ? 'TikTok' : pl.id === 'ml' ? 'ML' : pl.label}</span>
+        <span class="vend-un">${fmt(v.preco)} · <b class="${v.lucro < 0 ? 'neg' : ''}">lucro ${fmt(v.lucro)}</b></span>
+      </div>
+      <div class="vend-qtd">
+        <button type="button" class="menos" data-acao="menos" data-prod="${vp.id}" data-plat="${pl.id}" aria-label="Menos">−</button>
+        <input type="number" min="0" step="1" inputmode="numeric" class="vend-qtd-input" data-prod="${vp.id}" data-plat="${pl.id}" value="${qtd || ''}" placeholder="0">
+        <button type="button" class="mais" data-acao="mais" data-prod="${vp.id}" data-plat="${pl.id}" aria-label="Mais">+</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="vend-card${pecas ? ' tem' : ''}" data-busca="${escapeHtml((vp.nome || '').toLowerCase())}">
+    <div class="vend-card-topo">
+      ${htmlFotoVend(vp)}
+      <div class="vend-card-nome"><strong>${escapeHtml(vp.nome)}</strong>${vp.calcId ? `<span class="vend-tag-calc" title="Preço e lucro vêm da Calculadora de precificação">🔗 calculadora</span>` : ''}</div>
+      <button type="button" class="vend-edit" data-acao="editar-produto" data-prod="${vp.id}" title="Editar produto">✏️</button>
+    </div>
+    ${linhas || `<p class="vend-sem-plat">Nenhuma plataforma marcada — toque no ✏️.</p>`}
+    <div class="vend-card-total">${pecas ? `${pecas} ${pecas === 1 ? 'peça' : 'peças'} · lucro <b>${fmt(lucro)}</b>` : ''}</div>
+  </div>`;
+}
+
+function htmlVendasDia(){
+  const dia = diaVendas(vendDia);
+  const r = resumoDiaVendas(vendDia);
+  const avulsos = dia.avulsos || [];
+  return `
+    <div class="forn-dia vend-dia">
+      <div class="forn-dia-nav">
+        <button type="button" class="btn-icon" data-acao="dia-ant" aria-label="Dia anterior">‹</button>
+        <input type="date" id="vendDiaInput" value="${vendDia}">
+        <button type="button" class="btn-icon" data-acao="dia-prox" aria-label="Próximo dia">›</button>
+        <strong class="vend-rotulo">${rotuloDia(vendDia)}</strong>
+      </div>
+      <div class="vend-totais">
+        <div><span>Peças</span><strong>${r.pecas}</strong></div>
+        <div><span>Vendido</span><strong>${fmt(r.vendido)}</strong></div>
+        <div class="lucro"><span>Lucro do dia</span><strong class="${r.lucro < 0 ? 'neg' : ''}">${fmt(r.lucro)}</strong></div>
+      </div>
+    </div>
+    <div class="vend-acoes">
+      <input type="search" id="vendBusca" placeholder="🔎 Buscar produto..." autocomplete="off">
+      <button type="button" class="btn btn-outline btn-sm" data-acao="avulsa">⚡ Venda avulsa / total do dia</button>
+      <button type="button" class="btn btn-outline btn-sm" data-acao="puxar-calc">⬇️ Puxar da calculadora</button>
+      <button type="button" class="btn btn-primary btn-sm" data-acao="novo-produto">＋ Produto</button>
+    </div>
+    ${avulsos.length ? `<div class="chart-card vend-avulsos">
+      <h3>⚡ Lançado direto neste dia</h3>
+      ${avulsos.map(a => `<div class="forn-hist-linha">
+        <div><div>${escapeHtml(a.nome || 'Venda avulsa')}${a.plat ? ` <span class="badge ${marketplaceBadgeClass(a.plat)}">${labelPlataforma(a.plat)}</span>` : ''}</div>
+          <div class="sub">${[a.qtd ? `${a.qtd} ${a.qtd === 1 ? 'peça' : 'peças'}` : '', a.valor ? `vendido ${fmt(a.valor)}` : ''].filter(Boolean).join(' · ')}</div></div>
+        <div style="display:flex;align-items:center;gap:8px;"><strong class="${a.lucro < 0 ? 'neg' : 'pos'}">lucro ${fmt(a.lucro)}</strong>
+          <button type="button" class="btn btn-danger-text btn-sm" data-acao="apagar-avulsa" data-id="${a.id}" title="Apagar">✕</button></div>
+      </div>`).join('')}
+    </div>` : ''}
+    ${vendas.produtos.length ? `<div class="vend-grid">${vendas.produtos.map(vp => htmlCardVenda(vp, dia)).join('')}</div>
+      <p class="forn-hist-vazio" id="vendBuscaVazio" hidden>Nenhum produto com esse nome.</p>` : `
+      <div class="empty-state">
+        <h3>Nenhum produto de venda ainda</h3>
+        <p>Toque em <strong>＋ Produto</strong> pra cadastrar na hora (nome, preço e lucro por plataforma), ou <strong>⬇️ Puxar da calculadora</strong> pra trazer os que já estão lá. Pra passar a planilha antiga, use <strong>⚡ Venda avulsa / total do dia</strong>.</p>
+      </div>`}`;
+}
+
+function aplicarBuscaVendas(){
+  const inp = document.getElementById('vendBusca');
+  if(!inp) return;
+  const q = inp.value.trim().toLowerCase();
+  let vis = 0;
+  document.querySelectorAll('#vendConteudo .vend-card').forEach(c => {
+    const ok = !q || c.dataset.busca.includes(q);
+    c.hidden = !ok;
+    if(ok) vis++;
+  });
+  const vazio = document.getElementById('vendBuscaVazio');
+  if(vazio) vazio.hidden = vis > 0;
+}
+
+// Agrupa as linhas do mês por produto (ranking) e por plataforma.
+function rankingVendasMes(ym){
+  const mapa = {};
+  // "Total do dia" (sem produto e sem peças) entra nos totais, não no ranking.
+  linhasVendaMes(ym).filter(l => l.prodId || l.qtd > 0).forEach(l => {
+    const k = l.prodId || ('avulso:' + (l.nome || '').toLowerCase());
+    const g = mapa[k] = mapa[k] || { nome: l.nome, prodId: l.prodId, pecas: 0, vendido: 0, lucro: 0, plats: {} };
+    g.pecas += l.qtd || 0; g.vendido += l.vendido; g.lucro += l.lucro;
+    if(l.plat) g.plats[l.plat] = (g.plats[l.plat] || 0) + (l.qtd || 0);
+  });
+  return Object.values(mapa).map(g => ({ ...g, vendido: r2f(g.vendido), lucro: r2f(g.lucro) })).sort((a, b) => b.lucro - a.lucro);
+}
+function porPlataformaMes(ym){
+  const cfg = configMesVendas(ym);
+  const linhas = linhasVendaMes(ym);
+  const lista = PLATAFORMAS_VENDA.map(p => {
+    const ls = linhas.filter(l => l.plat === p.id);
+    const r = resumoLinhas(ls);
+    const ads = +cfg.ads[p.id] || 0;
+    return { ...p, ...r, ads, liquido: r2f(r.lucro - ads) };
+  });
+  const sem = resumoLinhas(linhas.filter(l => !l.plat));
+  if(sem.vendido || sem.lucro) lista.push({ id: '', label: 'Sem plataforma', ...sem, ads: 0, liquido: sem.lucro });
+  return lista;
+}
+
+function htmlCalendarioVendas(ym){
+  const { primeiroSemana, total, dia } = diasDoMesCalendario(ym);
+  const hoje = hojeLocal();
+  const cel = [];
+  for(let i = 0; i < primeiroSemana; i++) cel.push('<div class="cal-dia vazio"></div>');
+  for(let n = 1; n <= total; n++){
+    const d = dia(n);
+    const r = resumoDiaVendas(d);
+    const tem = r.pecas > 0 || r.lucro !== 0;
+    cel.push(`<button type="button" class="cal-dia${tem ? ' tem' : ''}${d === hoje ? ' hoje' : ''}" data-acao="ir-dia" data-dia="${d}" title="${formatDate(d)}${tem ? ` — ${r.pecas} peças · vendido ${fmt(r.vendido)} · lucro ${fmt(r.lucro)}` : ' — sem venda'}">
+      <span class="cal-n">${n}</span>
+      ${tem ? `${r.pecas ? `<span class="cal-p">${r.pecas} pç</span>` : ''}<span class="cal-v${r.lucro < 0 ? ' neg' : ''}">${fmtCurto(r.lucro)}</span>` : ''}
+    </button>`);
+  }
+  return `<div class="cal-mes">${DIAS_SEMANA_CURTOS.map(s => `<div class="cal-sem">${s}</div>`).join('')}${cel.join('')}</div>`;
+}
+
+function htmlVendasMes(){
+  const ym = vendMes;
+  const r = resumoMesVendas(ym);
+  const cfg = configMesVendas(ym);
+  const ranking = rankingVendasMes(ym);
+  const plats = porPlataformaMes(ym);
+  const nome = nomeMes(ym).replace(/^./, c => c.toUpperCase());
+  const campoAds = (id, label) => `<label class="vend-ads-campo"><span>${label}</span><input type="number" step="0.01" min="0" class="vend-ads" data-plat="${id}" value="${cfg.ads[id] || ''}" placeholder="0,00"></label>`;
+  return `
+    <div class="forn-mes-nav">
+      <button type="button" class="btn-icon" data-acao="mes-ant" aria-label="Mês anterior">‹</button>
+      <h3>${nome}</h3>
+      <button type="button" class="btn-icon" data-acao="mes-prox" aria-label="Próximo mês">›</button>
+    </div>
+    <div class="vend-resumo">
+      <div class="vend-res"><span>Vendido no mês</span><strong>${fmt(r.vendido)}</strong><small>${r.pecas} peças · ${r.dias} ${r.dias === 1 ? 'dia' : 'dias'} com venda</small></div>
+      <div class="vend-res"><span>Lucro bruto</span><strong class="pos">${fmt(r.lucro)}</strong><small>${r.dias ? `média ${fmt(r.lucro / r.dias)} por dia` : 'soma dos dias'}</small></div>
+      <div class="vend-res"><span>Ads + devoluções</span><strong class="neg">− ${fmt(r.ads + r.devolucoes)}</strong><small>ads ${fmt(r.ads)}${r.devolucoes ? ` · devoluções ${fmt(r.devolucoes)}` : ''}</small></div>
+      <div class="vend-res liquido${r.liquido < 0 ? ' negativo' : ''}"><span>Lucro líquido</span><strong>${fmt(r.liquido)}</strong><small>lucro bruto − ads − devoluções</small></div>
+    </div>
+    <div class="chart-card">
+      <h3>📣 Ads e devoluções de ${NOMES_MES[+ym.slice(5, 7) - 1]}</h3>
+      <p class="field-hint" style="margin:0 0 10px;">Lance no fim do mês quanto gastou em anúncio em cada plataforma. Devoluções é opcional.</p>
+      <div class="vend-ads-grid">
+        ${campoAds('tiktok', 'TikTok')}${campoAds('shopee', 'Shopee')}${campoAds('ml', 'Mercado Livre')}${campoAds('shein', 'Shein')}
+        <label class="vend-ads-campo"><span>↩️ Devoluções (R$)</span><input type="number" step="0.01" min="0" class="vend-devol" value="${cfg.devolucoes || ''}" placeholder="0,00"></label>
+      </div>
+    </div>
+    <div class="forn-hist">
+      <div class="forn-hist-col">
+        <div class="chart-card">
+          <h3>Por plataforma</h3>
+          <div class="tabela-scroll"><table class="forn-resumo-prod vend-tabela">
+            <thead><tr><th>Plataforma</th><th>Peças</th><th>Vendido</th><th>Lucro</th><th>Ads</th><th>Líquido</th></tr></thead>
+            <tbody>${plats.map(p => `<tr><td>${p.id ? `<span class="badge ${marketplaceBadgeClass(p.id)}">${p.label}</span>` : p.label}</td><td>${p.pecas}</td><td>${fmt(p.vendido)}</td><td>${fmt(p.lucro)}</td><td>${p.ads ? '− ' + fmt(p.ads) : '—'}</td><td class="${p.liquido < 0 ? 'neg' : 'pos'}"><b>${fmt(p.liquido)}</b></td></tr>`).join('')}</tbody>
+          </table></div>
+        </div>
+        <div class="chart-card">
+          <h3>🏆 Produtos que mais deram lucro</h3>
+          ${ranking.length ? `<div class="tabela-scroll"><table class="forn-resumo-prod vend-tabela">
+            <thead><tr><th>#</th><th>Produto</th><th>Peças</th><th>Vendido</th><th>Lucro</th></tr></thead>
+            <tbody>${ranking.map((g, i) => `<tr><td>${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</td><td>${escapeHtml(g.nome || '')}<div class="sub">${Object.entries(g.plats).map(([pl, q]) => `${pl === 'tiktok' ? 'TikTok' : pl === 'ml' ? 'ML' : labelPlataforma(pl)} ${q}`).join(' · ')}</div></td><td>${g.pecas}</td><td>${fmt(g.vendido)}</td><td class="${g.lucro < 0 ? 'neg' : 'pos'}"><b>${fmt(g.lucro)}</b></td></tr>`).join('')}</tbody>
+          </table></div>` : `<p class="forn-hist-vazio">Nenhuma venda lançada neste mês.</p>`}
+        </div>
+      </div>
+      <div class="forn-hist-col">
+        <div class="chart-card">
+          <div class="rel-cab"><h3>📅 Lucro por dia</h3>
+            <button type="button" class="btn btn-outline btn-sm" data-acao="print-mes"${r.dias ? '' : ' disabled'}>📸 Print do mês</button></div>
+          ${htmlCalendarioVendas(ym)}
+          <p class="field-hint" style="margin:8px 0 0;">Toque num dia pra ver e lançar as vendas dele.</p>
+        </div>
+      </div>
+    </div>`;
+}
+
+function abrirPrintVendasMes(ym){
+  const ranking = rankingVendasMes(ym);
+  const r = resumoMesVendas(ym);
+  if(!r.dias) return;
+  const linhas = ranking.map(g => {
+    const vp = g.prodId ? vendProduto(g.prodId) : null;
+    return { nome: g.nome || 'Venda avulsa', cor: Object.keys(g.plats).map(pl => pl === 'tiktok' ? 'TikTok' : pl === 'ml' ? 'ML' : labelPlataforma(pl)).join(' · '), foto: vp ? vp.foto : null, preco: g.vendido, qtd: g.pecas, valor: g.lucro, tamanhos: [] };
+  });
+  const diasCal = Object.fromEntries(diasVendaDoMes(ym).map(d => [d, resumoDiaVendas(d)]).filter(([, x]) => x.pecas > 0 || x.lucro !== 0).map(([d, x]) => [d, { pecas: x.pecas, valor: x.lucro }]));
+  abrirPrint({
+    f: null, tituloModal: 'Print do mês — vendas e lucro',
+    titulo: 'Vendas e lucro',
+    subtitulo: nomeMes(ym).replace(/^./, c => c.toUpperCase()) + ` · ${r.dias} dias com venda`,
+    linhas, nomeArquivo: `vendas-${ym}.png`,
+    calendario: { ym, dias: diasCal },
+    rotulos: { total: 'LUCRO BRUTO DO MÊS', calendario: 'Lucro por dia', prefixoCor: '', preco: 'vendido' },
+    rodape: `Vendido ${fmt(r.vendido)}  ·  Ads −${fmt(r.ads)}${r.devolucoes ? `  ·  Devol. −${fmt(r.devolucoes)}` : ''}  ·  Líquido ${fmt(r.liquido)}`
+  });
+}
+
+// ---------- Modal: produto de venda ----------
+function htmlPlataformasModalVenda(vp){
+  const calc = calcDoVendProduto(vp);
+  return PLATAFORMAS_VENDA.map(pl => {
+    const v = (vp && vp.plataformas || {})[pl.id];
+    const daCalc = calc ? valoresPlataforma({ ...vp, calcId: calc.id, plataformas: {} }, pl.id) : null;
+    return `<div class="vend-plat-row" data-plat="${pl.id}">
+      <label class="vend-plat-check"><input type="checkbox" class="vpAtivo" ${v || (!vp && !calc) ? 'checked' : ''}> <span class="badge ${marketplaceBadgeClass(pl.id)}">${pl.label}</span></label>
+      ${calc
+        ? `<span class="vend-plat-calc">${daCalc.preco > 0 ? `${fmt(daCalc.preco)} · lucro <b>${fmt(daCalc.lucro)}</b>` : 'sem preço na calculadora'}</span>`
+        : `<label class="vend-plat-campo">Preço <input type="number" step="0.01" min="0" class="vpPreco" value="${v && v.preco ? v.preco : ''}" placeholder="0,00"></label>
+           <label class="vend-plat-campo">Lucro/un <input type="number" step="0.01" class="vpLucro" value="${v && (v.lucro || v.lucro === 0) && v.preco ? v.lucro : ''}" placeholder="0,00"></label>`}
+    </div>`;
+  }).join('');
+}
+function preencherPlataformasModalVenda(){
+  const vp = editingVendProdutoId ? vendProduto(editingVendProdutoId) : null;
+  const calcId = document.getElementById('vpCalc').value || null;
+  const base = vp ? { ...vp, calcId } : (calcId ? { calcId, plataformas: {} } : null);
+  // Ao ligar/desligar a calculadora num produto novo, marca as plataformas com preço lá.
+  if(base && calcId && !vp) PLATAFORMAS_VENDA.forEach(pl => { if(valoresPlataforma(base, pl.id).preco > 0) base.plataformas[pl.id] = {}; });
+  document.getElementById('vpPlataformas').innerHTML = htmlPlataformasModalVenda(base);
+  document.getElementById('vpCalcHint').textContent = calcId
+    ? 'Preço e lucro vêm da Calculadora (mudou lá, muda aqui nas próximas vendas). Marque onde você vende.'
+    : 'Marque onde você vende e digite o preço e o lucro por unidade em cada plataforma.';
+}
+function abrirModalVendProduto(vp = null){
+  editingVendProdutoId = vp ? vp.id : null;
+  fotoVendProduto = vp ? vp.foto || null : null;
+  document.getElementById('vpTitulo').textContent = vp ? 'Editar produto' : 'Novo produto de venda';
+  document.getElementById('vpNome').value = vp ? vp.nome : '';
+  document.getElementById('vpCalc').innerHTML = `<option value="">— Digitar preço e lucro à mão —</option>` +
+    produtos.map(p => `<option value="${p.id}"${vp && vp.calcId === p.id ? ' selected' : ''}>${escapeHtml(p.nome || 'Sem nome')}</option>`).join('');
+  document.getElementById('vpCalcWrap').style.display = produtos.length ? '' : 'none';
+  document.getElementById('vpFotoPreview').innerHTML = fotoVendProduto ? `<img src="${fotoVendProduto}" alt="">` : '';
+  document.getElementById('vpFoto').value = '';
+  document.getElementById('btnExcluirVendProduto').style.display = vp ? '' : 'none';
+  preencherPlataformasModalVenda();
+  abrirOverlay('overlayVendProduto');
+  setTimeout(() => document.getElementById('vpNome').focus(), 50);
+}
+document.getElementById('vpCalc').addEventListener('change', () => {
+  const sel = document.getElementById('vpCalc');
+  const nomeEl = document.getElementById('vpNome');
+  const calc = produtos.find(p => p.id === sel.value);
+  if(calc && !nomeEl.value.trim()) nomeEl.value = calc.nome || '';
+  if(calc && !fotoVendProduto && calc.foto){ fotoVendProduto = calc.foto; document.getElementById('vpFotoPreview').innerHTML = `<img src="${calc.foto}" alt="">`; }
+  preencherPlataformasModalVenda();
+});
+document.getElementById('vpFoto').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  fotoVendProduto = await lerImagemComoDataUrlRedimensionada(file);
+  document.getElementById('vpFotoPreview').innerHTML = `<img src="${fotoVendProduto}" alt="">`;
+});
+document.getElementById('formVendProduto').addEventListener('submit', e => {
+  e.preventDefault();
+  const nome = document.getElementById('vpNome').value.trim();
+  if(!nome) return;
+  const calcId = document.getElementById('vpCalc').value || null;
+  const plataformas = {};
+  document.querySelectorAll('#vpPlataformas .vend-plat-row').forEach(row => {
+    if(!row.querySelector('.vpAtivo').checked) return;
+    const preco = row.querySelector('.vpPreco');
+    const lucro = row.querySelector('.vpLucro');
+    plataformas[row.dataset.plat] = calcId ? {} : { preco: r2f(parseFloat(preco.value) || 0), lucro: r2f(parseFloat(lucro.value) || 0) };
+  });
+  if(editingVendProdutoId){
+    const vp = vendProduto(editingVendProdutoId);
+    // Ligado à calculadora, guarda os valores digitados antes como reserva.
+    if(calcId) Object.keys(plataformas).forEach(pl => { if((vp.plataformas || {})[pl] && vp.plataformas[pl].preco) plataformas[pl] = vp.plataformas[pl]; });
+    Object.assign(vp, { nome, foto: fotoVendProduto, calcId, plataformas });
+  } else {
+    vendas.produtos.push({ id: uid(), nome, foto: fotoVendProduto, calcId, plataformas });
+  }
+  saveVendas(true);
+  fecharOverlay('overlayVendProduto');
+  renderVendas();
+});
+document.getElementById('btnExcluirVendProduto').addEventListener('click', () => {
+  const vp = vendProduto(editingVendProdutoId);
+  if(!vp || !confirm(`Excluir "${vp.nome}" da lista? As vendas já lançadas continuam no histórico.`)) return;
+  vendas.produtos = vendas.produtos.filter(p => p.id !== vp.id);
+  saveVendas(true);
+  fecharOverlay('overlayVendProduto');
+  renderVendas();
+});
+
+// ---------- Modal: puxar da calculadora ----------
+function abrirModalPuxarCalc(){
+  const ligados = new Set(vendas.produtos.map(p => p.calcId).filter(Boolean));
+  const lista = produtos.filter(p => !ligados.has(p.id));
+  document.getElementById('vpxLista').innerHTML = !produtos.length
+    ? `<p class="forn-hist-vazio">A calculadora ainda não tem produtos em "Meus produtos". Use ＋ Produto pra cadastrar à mão.</p>`
+    : !lista.length ? `<p class="forn-hist-vazio">Todos os produtos da calculadora já estão aqui. ✅</p>`
+    : `<label class="forn-check" style="margin-bottom:8px;"><input type="checkbox" id="vpxTodos" checked> <span><strong>Marcar todos</strong></span></label>` +
+      lista.map(p => {
+        const r = calcularComparativo(p).filter(x => x.chave !== 'custom' && x.preco > 0 && x.valido);
+        return `<label class="vend-puxar-item"><input type="checkbox" class="vpxItem" value="${p.id}" checked>
+          <span><strong>${escapeHtml(p.nome || 'Sem nome')}</strong><small>${r.length ? r.map(x => `${x.chave === 'tiktok' ? 'TikTok' : x.chave === 'ml' ? 'ML' : x.label} lucro ${fmt(x.lucro)}`).join(' · ') : 'sem preço definido'}</small></span></label>`;
+      }).join('');
+  document.getElementById('btnVpxTrazer').style.display = lista.length ? '' : 'none';
+  abrirOverlay('overlayVendPuxar');
+}
+document.getElementById('vpxLista').addEventListener('change', e => {
+  if(e.target.id === 'vpxTodos') document.querySelectorAll('#vpxLista .vpxItem').forEach(c => { c.checked = e.target.checked; });
+});
+document.getElementById('btnVpxTrazer').addEventListener('click', () => {
+  const ids = [...document.querySelectorAll('#vpxLista .vpxItem:checked')].map(c => c.value);
+  ids.forEach(id => {
+    const calc = produtos.find(p => p.id === id);
+    if(!calc) return;
+    const plataformas = {};
+    calcularComparativo(calc).forEach(x => { if(x.chave !== 'custom' && x.preco > 0 && x.valido) plataformas[x.chave] = {}; });
+    if(!Object.keys(plataformas).length) PLATAFORMAS_VENDA.forEach(pl => { plataformas[pl.id] = {}; });
+    vendas.produtos.push({ id: uid(), nome: calc.nome || 'Sem nome', foto: calc.foto || null, calcId: calc.id, plataformas });
+  });
+  if(ids.length) saveVendas(true);
+  fecharOverlay('overlayVendPuxar');
+  renderVendas();
+  if(ids.length) mostrarToastForn(`⬇️ ${ids.length} ${ids.length === 1 ? 'produto trazido' : 'produtos trazidos'} da calculadora.`);
+});
+
+// ---------- Modal: venda avulsa / total do dia ----------
+function abrirModalAvulsa(){
+  document.getElementById('vaDiaLabel').textContent = `${rotuloDia(vendDia)} · ${formatDate(vendDia)}`;
+  ['vaNome', 'vaQtd', 'vaValor', 'vaLucro'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('vaPlat').value = '';
+  document.getElementById('vaSalvarProduto').checked = false;
+  abrirOverlay('overlayVendAvulsa');
+  setTimeout(() => document.getElementById('vaNome').focus(), 50);
+}
+document.getElementById('formVendAvulsa').addEventListener('submit', e => {
+  e.preventDefault();
+  const nome = document.getElementById('vaNome').value.trim();
+  const plat = document.getElementById('vaPlat').value;
+  const qtd = Math.max(0, Math.round(parseFloat(document.getElementById('vaQtd').value) || 0));
+  const valor = r2f(parseFloat(document.getElementById('vaValor').value) || 0);
+  const lucro = r2f(parseFloat(document.getElementById('vaLucro').value) || 0);
+  if(!valor && !lucro) return alert('Preencha pelo menos o valor vendido ou o lucro.');
+  const salvarProduto = document.getElementById('vaSalvarProduto').checked;
+  if(salvarProduto){
+    if(!nome || !plat || !qtd) return alert('Pra salvar como produto, preencha o nome, a plataforma e as peças.');
+    const existente = vendas.produtos.find(p => !p.calcId && p.nome.trim().toLowerCase() === nome.toLowerCase());
+    const vp = existente || { id: uid(), nome, foto: null, calcId: null, plataformas: {} };
+    vp.plataformas[plat] = { preco: r2f(valor / qtd), lucro: r2f(lucro / qtd) };
+    if(!existente) vendas.produtos.push(vp);
+    const dia = garantirDiaVendas(vendDia);
+    const chave = `${vp.id}|${plat}`;
+    const atual = dia.itens[chave];
+    dia.itens[chave] = { qtd: (atual ? atual.qtd : 0) + qtd, preco: r2f(valor / qtd), lucro: r2f(lucro / qtd), nome: vp.nome, plat, prodId: vp.id };
+  } else {
+    garantirDiaVendas(vendDia).avulsos.push({ id: uid(), nome: nome || (qtd ? 'Venda avulsa' : 'Total do dia'), plat, qtd, valor, lucro });
+  }
+  saveVendas(true);
+  fecharOverlay('overlayVendAvulsa');
+  renderVendas();
+  mostrarToastForn(`⚡ Lançado: lucro ${fmt(lucro)}.`);
+});
+
+// ---------- Eventos da página ----------
+document.getElementById('vendAbas').addEventListener('click', e => {
+  const t = e.target.closest('.tab[data-aba]');
+  if(t){ salvarEstadoAtual(); vendAba = t.dataset.aba; renderVendas(); empilharEstado(); }
+});
+const paginaVendas = document.getElementById('page-vendas');
+paginaVendas.addEventListener('click', e => {
+  const btn = e.target.closest('[data-acao]');
+  if(!btn || !paginaVendas.contains(btn) || btn.closest('#vendAbas')) return;
+  const acao = btn.dataset.acao;
+  if(acao === 'mais' || acao === 'menos'){
+    const item = diaVendas(vendDia).itens[`${btn.dataset.prod}|${btn.dataset.plat}`];
+    definirQtdVenda(btn.dataset.prod, btn.dataset.plat, (item ? item.qtd : 0) + (acao === 'mais' ? 1 : -1));
+    const busca = (document.getElementById('vendBusca') || {}).value || '';
+    renderVendas();
+    if(busca){ document.getElementById('vendBusca').value = busca; aplicarBuscaVendas(); }
+    return;
+  }
+  if(acao === 'dia-ant' || acao === 'dia-prox'){ vendDia = somarDias(vendDia, acao === 'dia-ant' ? -1 : 1); return renderVendas(); }
+  if(acao === 'mes-ant' || acao === 'mes-prox'){ vendMes = somarMeses(vendMes, acao === 'mes-ant' ? -1 : 1); return renderVendas(); }
+  if(acao === 'novo-produto') return abrirModalVendProduto();
+  if(acao === 'editar-produto') return abrirModalVendProduto(vendProduto(btn.dataset.prod));
+  if(acao === 'puxar-calc') return abrirModalPuxarCalc();
+  if(acao === 'avulsa') return abrirModalAvulsa();
+  if(acao === 'apagar-avulsa'){
+    const dia = garantirDiaVendas(vendDia);
+    dia.avulsos = dia.avulsos.filter(a => a.id !== btn.dataset.id);
+    limparDiaVendasVazio(vendDia);
+    saveVendas(true);
+    return renderVendas();
+  }
+  if(acao === 'ir-dia'){ salvarEstadoAtual(); vendDia = btn.dataset.dia; vendAba = 'dia'; renderVendas(); empilharEstado(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  if(acao === 'print-mes') return abrirPrintVendasMes(vendMes);
+});
+paginaVendas.addEventListener('change', e => {
+  const t = e.target;
+  if(t.id === 'vendDiaInput' && t.value){ vendDia = t.value; return renderVendas(); }
+  if(t.classList.contains('vend-qtd-input')){ definirQtdVenda(t.dataset.prod, t.dataset.plat, t.value); return renderVendas(); }
+  if(t.classList.contains('vend-ads') || t.classList.contains('vend-devol')){
+    const m = vendas.meses[vendMes] = vendas.meses[vendMes] || {};
+    if(t.classList.contains('vend-ads')) m.ads = { ...(m.ads || {}), [t.dataset.plat]: r2f(parseFloat(t.value) || 0) };
+    else m.devolucoes = r2f(parseFloat(t.value) || 0);
+    saveVendas(true);
+    return renderVendas();
+  }
+});
+paginaVendas.addEventListener('input', e => { if(e.target.id === 'vendBusca') aplicarBuscaVendas(); });
+// Enter no campo de quantidade confirma sem precisar sair dele.
+paginaVendas.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.classList.contains('vend-qtd-input')) e.target.blur(); });
+
+// ---------- Relatório mensal / anual: quadro de vendas e lucro ----------
+function htmlQuadroVendasRel(r, titulo){
+  if(!colunaVendasOk) return '';
+  const vazio = !(r.vendido || r.lucro || r.ads || r.devolucoes);
+  return `<div class="chart-card rel-vendas">
+    <div class="rel-cab"><h3>📈 ${titulo}</h3><button type="button" class="btn btn-outline btn-sm" data-ir-vendas>Abrir Vendas e lucro</button></div>
+    ${vazio ? `<p class="forn-hist-vazio">Nenhuma venda lançada ainda em Vendas e lucro.</p>` : `
+    <div class="vend-resumo">
+      <div class="vend-res"><span>Faturamento das vendas</span><strong>${fmt(r.vendido)}</strong><small>${r.pecas} peças vendidas</small></div>
+      <div class="vend-res"><span>Custos totais</span><strong class="neg">${fmt(r.custos)}</strong><small>produto, taxas, imposto, ads e devoluções</small></div>
+      <div class="vend-res liquido${r.liquido < 0 ? ' negativo' : ''}"><span>Lucro líquido</span><strong>${fmt(r.liquido)}</strong><small>lucro bruto ${fmt(r.lucro)} − ads ${fmt(r.ads)}${r.devolucoes ? ` − devol. ${fmt(r.devolucoes)}` : ''}</small></div>
+    </div>`}
+  </div>`;
+}
+function somarResumosVendas(lista){
+  const t = { vendido: 0, lucro: 0, pecas: 0, ads: 0, devolucoes: 0, liquido: 0, custos: 0 };
+  lista.forEach(r => Object.keys(t).forEach(k => { t[k] += r[k] || 0; }));
+  Object.keys(t).forEach(k => { if(k !== 'pecas') t[k] = r2f(t[k]); });
+  return t;
+}
+function renderQuadroVendasMensal(ym){
+  const box = document.getElementById('relVendasBox');
+  if(!colunaVendasOk){ box.innerHTML = ''; return; }   // (o relatório também desenha no carregamento da página, antes do login)
+  document.getElementById('relVendasBox').innerHTML = htmlQuadroVendasRel(resumoMesVendas(ym), `Vendas e lucro de ${nomeMes(ym)}`);
+}
+function renderQuadroVendasAnual(ano){
+  if(!colunaVendasOk){ document.getElementById('relAnoVendasBox').innerHTML = ''; return; }
+  const meses = Array.from({ length: 12 }, (_, i) => `${ano}-${String(i + 1).padStart(2, '0')}`);
+  document.getElementById('relAnoVendasBox').innerHTML = htmlQuadroVendasRel(somarResumosVendas(meses.map(resumoMesVendas)), `Vendas e lucro de ${ano}`);
+}
+document.getElementById('page-relatorio').addEventListener('click', e => {
+  if(e.target.closest('[data-ir-vendas]')){ vendAba = 'mes'; vendMes = relatorioView === 'anual' ? vendMes : (relatorioMesInput.value || currentYm()); showPage('vendas'); }
+});
+
 // ================= BACKUP / RESTAURAR =================
 document.getElementById('btnExport').addEventListener('click', () => {
   const backup = {
-    version: 6,
+    version: 7,
     contas: data,
     faturamento: faturamento,
     lembretes: lembretes,
@@ -6137,7 +6931,8 @@ document.getElementById('btnExport').addEventListener('click', () => {
     custoFixoConfig: custoFixoConfig,
     produtos: produtos,
     configPrecificacao: configPrecificacao,
-    fornecedores: fornecedores
+    fornecedores: fornecedores,
+    vendas: vendas
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -6172,6 +6967,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
           produtos = imported.produtos || produtos;
           configPrecificacao = imported.configPrecificacao || configPrecificacao;
           if(Array.isArray(imported.fornecedores)) fornecedores = imported.fornecedores;
+          if(imported.vendas) vendas = normalizarVendas(imported.vendas);
           persist();
         }
       } else {
@@ -6293,10 +7089,12 @@ async function afterLogin(user){
 document.getElementById('btnLogout').addEventListener('click', async () => {
   // Salva o que ainda estava esperando o debounce dos fornecedores antes de sair.
   if(timerSalvarFornecedores) await saveFornecedores(true);
+  if(timerSalvarVendas) await saveVendas(true);
   await sb.auth.signOut();
   currentUserId = null;
   data = []; faturamento = {}; lembretes = []; lembretesStatus = {};
   fornecedores = []; colunaFornecedoresOk = false; fornAtivoId = null;
+  vendas = vendasVazio(); colunaVendasOk = false;
   showScreen('login');
 });
 
