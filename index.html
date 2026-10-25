@@ -171,6 +171,13 @@
   .qc-teste .field{margin-bottom:0;}
   .qc-lucro{padding:8px 12px;}
   .qc-lucro .card-value{font-size:20px;margin-top:2px;}
+  .qc-passo-teste{border:2px solid var(--accent);background:linear-gradient(180deg,#eef4ff,var(--surface) 75%);box-shadow:0 6px 18px rgba(37,99,235,.14);}
+  .qc-passo-teste .qc-passo-tit{color:var(--accent);}
+  .qc-passo-teste .qc-num{background:var(--accent);}
+  .qc-passo-teste .field label{color:var(--accent);font-weight:800;}
+  .calc-card .qc-passo-teste .field input{font-size:22px;font-weight:800;padding:10px 12px;border:2px solid var(--accent);background:#fff;color:var(--navy);}
+  .qc-passo-teste .qc-lucro{border-width:2px;}
+  .qc-passo-teste .qc-lucro .card-value{font-size:26px;}
   .qc-lucro-info{font-size:11.5px;font-weight:700;color:var(--muted);margin-top:2px;}
   .qc-lucro{transition:background .2s,border-color .2s;}
   .qc-lucro.lucro-neg{background:var(--red-bg);border-color:#fca5a5;}
@@ -539,6 +546,23 @@
   .forn-prod-novo{border:2px dashed var(--border);background:transparent;border-radius:var(--radius);min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-weight:800;cursor:pointer;font-size:14px;}
   .forn-prod-novo span{font-size:30px;}
   .forn-prod-novo:hover{border-color:var(--accent);color:var(--accent);}
+  .cal-mes{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;}
+  .cal-sem{font-size:10.5px;font-weight:800;color:var(--muted);text-align:center;padding:2px 0;text-transform:uppercase;}
+  .cal-dia{min-height:46px;border:1px solid var(--border);border-radius:7px;background:var(--surface);padding:3px 2px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;font:inherit;cursor:pointer;min-width:0;}
+  .cal-dia.vazio{border:none;background:transparent;cursor:default;}
+  .cal-dia:not(.tem):not(.vazio){background:var(--bg);color:var(--muted);}
+  .cal-dia.tem{background:var(--green-bg);border-color:#a7f3d0;}
+  .cal-dia.hoje{outline:2px solid var(--accent);outline-offset:-1px;}
+  .cal-dia:hover:not(.vazio){border-color:var(--accent);}
+  .cal-n{font-size:11px;font-weight:800;line-height:1.1;}
+  .cal-n i{font-style:normal;font-size:9px;}
+  .cal-p{font-size:10.5px;font-weight:800;color:var(--text);line-height:1.1;}
+  .cal-pg{font-size:9px;font-weight:800;color:var(--green);line-height:1.1;white-space:nowrap;}
+  .cal-ab{font-size:9px;font-weight:800;color:var(--accent);line-height:1.1;white-space:nowrap;}
+  .forn-tag-abat,.forn-tag-pag{font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 7px;margin-left:4px;}
+  .forn-tag-abat{background:#eef2ff;color:var(--accent);}
+  .forn-tag-pag{background:var(--green-bg);color:var(--green);}
+  .cal-v{font-size:9.5px;font-weight:800;color:var(--green);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
   .forn-hist{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin-top:18px;align-items:start;}
   .forn-hist-col{display:flex;flex-direction:column;gap:12px;}
   @media (max-width:760px){ .forn-hist{grid-template-columns:1fr;} }
@@ -1349,36 +1373,35 @@
 <div class="overlay" id="overlayFornPagamento">
   <div class="modal">
     <div class="modal-header">
-      <h2>Registrar pagamento</h2>
+      <h2 id="fornPagTitulo">Registrar pagamento</h2>
       <button type="button" class="modal-close-x" data-fechar="overlayFornPagamento" aria-label="Fechar">✕</button>
     </div>
     <form id="formFornPagamento">
       <p class="field-hint" id="fornPagSaldo" style="font-size:14px;margin:0 0 14px;"></p>
       <div class="field">
-        <label>Quanto você pagou (R$)</label>
+        <label id="fornPagValorLabel">Quanto você pagou (R$)</label>
         <input type="number" id="fornPagValor" step="0.01" min="0.01" placeholder="0,00" required>
         <div class="forn-rapidos" id="fornPagRapidos"></div>
       </div>
       <div class="field">
-        <label>Data do pagamento</label>
+        <label id="fornPagDataLabel">Data do pagamento</label>
         <input type="date" id="fornPagData" required>
       </div>
       <div class="field">
         <label>Referente ao mês</label>
         <select id="fornPagRef"></select>
-        <div class="field-hint">Abate do fechamento desse mês (o total em aberto do fornecedor cai do mesmo jeito).</div>
       </div>
       <div class="field">
-        <label>Observação (opcional)</label>
+        <label id="fornPagObsLabel">Observação (opcional)</label>
         <input type="text" id="fornPagObs" placeholder="Ex: Pix, parte do mês de outubro">
       </div>
-      <label class="forn-check">
+      <label class="forn-check" id="fornPagContaWrap">
         <input type="checkbox" id="fornPagLancarConta" checked>
-        <span>Lançar também em <strong>Contas</strong> como despesa paga (categoria Fornecedores), pra entrar no Relatório mensal.</span>
+        <span>Lançar também em <strong>Contas</strong> (despesa paga)</span>
       </label>
       <div class="modal-actions">
         <button type="button" class="btn btn-outline" data-fechar="overlayFornPagamento">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Registrar pagamento</button>
+        <button type="submit" class="btn btn-primary" id="fornPagSubmit">Registrar pagamento</button>
       </div>
     </form>
   </div>
@@ -3677,11 +3700,11 @@ function gerarPainelQuickCalc(prefix, ehTiktok, ehMl, ehShopee, ehShein){
           <div class="produto-preview-faixa" id="${prefix}Faixa" style="display:none;"></div>
         </div>
 
-        <div class="qc-passo">
-          ${passo(5, 'Testar um preço')}
+        <div class="qc-passo qc-passo-teste">
+          ${passo(5, '💰 Preço de venda e lucro')}
           <div class="qc-teste">
             <div class="field">
-              <label>Preço de venda (R$)</label>
+              <label>Vendendo a (R$)</label>
               <input type="number" id="${prefix}PrecoVenda" step="0.01" min="0" placeholder="0,00">
             </div>
             <div class="summary-card qc-lucro">
@@ -4049,6 +4072,10 @@ function totalCompradoForn(f, prefixo = ''){
 }
 // Mês a que um pagamento se refere: o escolhido no "Referente ao mês" ou,
 // se não tiver (pagamento antigo), o mês da data.
+// Há abatimento (desconto/devolução) entre os lançamentos de um mês?
+function temAbatimentoMes(f, ym){
+  return (f.pagamentos || []).some(p => p.tipo === 'abatimento' && refPagamento(p) === ym);
+}
 function refPagamento(p){
   return p.ref || (p.data || '').slice(0, 7);
 }
@@ -4456,6 +4483,7 @@ function renderFornecedores(){
         <div class="valor${saldo <= 0.004 ? ' quitado' : ''}">${saldo <= 0.004 && saldo > -0.005 ? '🎉 Tudo pago' : fmt(Math.abs(saldo))}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-sm" data-acao="pagar">💸 Registrar pagamento</button>
+          <button type="button" class="btn btn-sm" data-acao="abater" style="background:rgba(255,255,255,.15);color:#fff;" title="Desconto, devolução ou troca combinada — abate do que falta sem lançar em Contas">✂️ Abater valor</button>
           <button type="button" class="btn btn-sm" data-acao="soma-rapida" style="background:rgba(255,255,255,.15);color:#fff;" title="Lançar dia por dia os pedidos anotados no papel">🧮 Soma rápida</button>
         </div>
       </div>
@@ -4475,7 +4503,7 @@ function renderFornecedores(){
       ${alteradoDepois ? `<div class="forn-fech-alerta">⚠️ As compras mudaram depois do fechamento (era ${fmt(fech.total)}, agora ${fmt(comprado)}). Feche de novo pra atualizar.</div>` : ''}
       <div class="forn-fech-nums">
         <div><div class="label">Era pra pagar no mês</div><div class="valor">${fmt(comprado)}</div>${totalManualMes(f, ym) !== null ? `<div class="forn-manual-tag">✍️ valor informado à mão${totalPedidosMes(f, ym) > 0 ? ` · pedidos lançados: ${fmt(totalPedidosMes(f, ym))} (não somados)` : ''}</div>` : ''}</div>
-        <div><div class="label">Pago (referente ao mês)</div><div class="valor" style="color:var(--green);">${fmt(pago)}</div></div>
+        <div><div class="label">${temAbatimentoMes(f, ym) ? 'Pago + abatido' : 'Pago'} (referente ao mês)</div><div class="valor" style="color:var(--green);">${fmt(pago)}</div></div>
         <div class="falta${falta <= 0.004 ? ' zerado' : ''}"><div class="label">Falta pagar do mês</div><div class="valor">${falta <= 0.004 ? (comprado > 0 ? '✅ Pago' : fmt(0)) : fmt(falta)}</div></div>
       </div>
       <div class="forn-gamif" style="margin-bottom:12px;">
@@ -4500,23 +4528,18 @@ function renderFornecedores(){
       </div>
       <div class="forn-hist-col">
       <div class="chart-card">
-        <h3>Pedidos por dia</h3>
-        ${diasDoMes.length ? diasDoMes.map(d => {
-          const pecas = pecasDiaForn(f, d);
-          return `<div class="forn-hist-linha">
-            <div><button type="button" class="link" data-acao="abrir-dia" data-dia="${d}">${rotuloDia(d)} — ${formatDate(d)}</button><div class="sub">${pecas} ${pecas === 1 ? 'peça' : 'peças'}</div></div>
-            <strong>${fmt(totalDiaForn(f, d))}</strong>
-          </div>`;
-        }).join('') : `<p class="forn-hist-vazio">Nada lançado neste mês ainda.</p>`}
+        <h3>📅 Pedidos por dia</h3>
+        ${htmlCalendarioMes(f, ym)}
+        ${diasDoMes.length ? '' : `<p class="forn-hist-vazio" style="margin-top:8px;">Nada lançado neste mês ainda.</p>`}
       </div>
       <div class="chart-card">
-        <h3>Pagamentos referentes a ${NOMES_MES[+ym.slice(5, 7) - 1]}</h3>
+        <h3>Pagamentos e abatimentos — ${NOMES_MES[+ym.slice(5, 7) - 1]}</h3>
         ${pagamentosDoMes.length ? pagamentosDoMes.map(p => `
           <div class="forn-hist-linha">
-            <div><div>${formatDate(p.data)}</div>${p.obs ? `<div class="sub">${escapeHtml(p.obs)}</div>` : ''}</div>
-            <div style="display:flex;align-items:center;gap:8px;"><strong style="color:var(--green);">− ${fmt(p.valor)}</strong>
+            <div><div>${formatDate(p.data)} ${p.tipo === 'abatimento' ? '<span class="forn-tag-abat">✂️ abatimento</span>' : '<span class="forn-tag-pag">💸 pagamento</span>'}</div>${p.obs ? `<div class="sub">${escapeHtml(p.obs)}</div>` : ''}</div>
+            <div style="display:flex;align-items:center;gap:8px;"><strong style="color:${p.tipo === 'abatimento' ? 'var(--accent)' : 'var(--green)'};">− ${fmt(p.valor)}</strong>
               <button type="button" class="btn btn-danger-text btn-sm" data-acao="excluir-pagamento" data-pag="${p.id}" title="Excluir pagamento">✕</button></div>
-          </div>`).join('') : `<p class="forn-hist-vazio">Nenhum pagamento referente a este mês.</p>`}
+          </div>`).join('') : `<p class="forn-hist-vazio">Nenhum pagamento ou abatimento referente a este mês.</p>`}
       </div>
       </div>
     </div>`;
@@ -4545,7 +4568,7 @@ function htmlRelatorioMeses(f){
       <div class="rel-card-topo"><strong>${nomeMes(m).replace(/^./, c => c.toUpperCase())}</strong>
         <span class="rel-origem">${manual ? '✍️ informado' : (era > 0 ? `📦 ${diasComCompraNoMes(f, m)} dias de pedido` : 'sem pedidos')}</span></div>
       <div class="rel-linha"><span>Era pra pagar</span><strong>${fmt(era)}</strong></div>
-      <div class="rel-linha"><span>Pago</span><strong class="verde">${fmt(pago)}</strong></div>
+      <div class="rel-linha"><span>${temAbatimentoMes(f, m) ? 'Pago + abatido' : 'Pago'}</span><strong class="verde">${fmt(pago)}</strong></div>
       <div class="rel-barra"><span style="width:${pct.toFixed(1)}%"></span></div>
       <div class="rel-linha falta"><span>${falta < -0.004 ? 'Crédito' : 'Falta'}</span><strong>${falta <= 0.004 && falta >= -0.004 ? (era > 0 ? '✅ Quitado' : fmt(0)) : fmt(Math.abs(falta))}</strong></div>
       <div class="rel-acoes">
@@ -4641,6 +4664,42 @@ document.getElementById('btnValorMesRemover').addEventListener('click', () => {
   renderFornAba();
 });
 
+// ---------- Calendário do mês (peças e valor de cada dia, bem resumido) ----------
+const DIAS_SEMANA_CURTOS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+// Valor sem centavos pra caber no quadradinho do dia (R$ 1.426).
+const fmtCurto = v => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+function diasDoMesCalendario(ym){
+  const [y, m] = ym.split('-').map(Number);
+  const primeiroSemana = new Date(y, m - 1, 1).getDay();
+  const total = new Date(y, m, 0).getDate();
+  return { primeiroSemana, total, dia: n => `${ym}-${String(n).padStart(2, '0')}` };
+}
+function htmlCalendarioMes(f, ym){
+  const { primeiroSemana, total, dia } = diasDoMesCalendario(ym);
+  const hoje = hojeLocal();
+  const celulas = [];
+  for(let i = 0; i < primeiroSemana; i++) celulas.push('<div class="cal-dia vazio"></div>');
+  for(let n = 1; n <= total; n++){
+    const d = dia(n);
+    const pecas = pecasDiaForn(f, d);
+    const valor = totalDiaForn(f, d);
+    const rasc = !!(f.rascunhos || {})[d];
+    const pagosDia = (f.pagamentos || []).filter(p => p.data === d);
+    const abatDia = r2f(pagosDia.filter(p => p.tipo === 'abatimento').reduce((s, p) => s + p.valor, 0));
+    const pagoDia = r2f(pagosDia.filter(p => p.tipo !== 'abatimento').reduce((s, p) => s + p.valor, 0));
+    celulas.push(`<button type="button" class="cal-dia${pecas || pagoDia || abatDia ? ' tem' : ''}${d === hoje ? ' hoje' : ''}" data-acao="abrir-dia" data-dia="${d}" title="${formatDate(d)}${pecas ? ` — ${pecas} ${pecas === 1 ? 'peça' : 'peças'} · ${fmt(valor)}` : ' — sem pedido'}${rasc ? ' · tem rascunho não confirmado' : ''}">
+      <span class="cal-n">${n}${rasc ? ' <i>📝</i>' : ''}</span>
+      ${pecas ? `<span class="cal-p">${pecas} pç</span><span class="cal-v">${fmtCurto(valor)}</span>` : ''}
+      ${pagoDia ? `<span class="cal-pg" title="Pago neste dia">💸−${fmtCurto(pagoDia)}</span>` : ''}
+      ${abatDia ? `<span class="cal-ab" title="Abatido neste dia: ${escapeHtml(pagosDia.filter(p => p.tipo === 'abatimento').map(p => p.obs).join(' · '))}">✂️−${fmtCurto(abatDia)}</span>` : ''}
+    </button>`);
+  }
+  return `<div class="cal-mes">
+    ${DIAS_SEMANA_CURTOS.map(s => `<div class="cal-sem">${s}</div>`).join('')}
+    ${celulas.join('')}
+  </div>`;
+}
+
 // Aba aberta dentro da página Fornecedores ('pedidos' | 'fechamento').
 let fornAba = 'pedidos';
 function renderFornAba(){
@@ -4716,7 +4775,7 @@ function quebrarTexto(ctx, texto, larguraMax){
   if(atual) linhas.push(atual);
   return linhas;
 }
-async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape }){
+async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario }){
   // Layout pensado pra quem recebe: um bloco por modelo/cor, com a cor numa
   // etiqueta e a numeração numa grade (Nº em cima, quantidade grande embaixo).
   try{ await document.fonts.ready; } catch(e){}
@@ -4739,7 +4798,13 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     return { nome, topo, h: 30 + topo + grade + 34 };
   });
   const HEADER = 260, FOOTER = rodape ? 230 : 190;
-  const H = HEADER + layout.reduce((s, l) => s + l.h, 0) + FOOTER;
+  // Calendário do mês (opcional, só no print do fechamento): 7 colunas, uma
+  // linha por semana, cada dia com peças e valor bem pequenos.
+  const CAL_GAP = 8, CAL_W = (W - PAD * 2 - CAL_GAP * 6) / 7, CAL_H = 92;
+  const calInfo = calendario ? diasDoMesCalendario(calendario.ym) : null;
+  const calSemanas = calInfo ? Math.ceil((calInfo.primeiroSemana + calInfo.total) / 7) : 0;
+  const CALENDARIO = calInfo ? 40 + 56 + 34 + calSemanas * (CAL_H + CAL_GAP) : 0;
+  const H = HEADER + layout.reduce((s, l) => s + l.h, 0) + CALENDARIO + FOOTER;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -4849,6 +4914,45 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     ctx.fillRect(PAD, y - 2, W - PAD * 2, 2);
   });
 
+  if(calInfo){
+    let cy = y + 40;
+    ctx.fillStyle = '#0f1b3d';
+    ctx.font = fonte(800, 30);
+    ctx.fillText('Pedidos por dia', PAD, cy + 30);
+    cy += 56;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#6b7794';
+    ctx.font = fonte(800, 20);
+    DIAS_SEMANA_CURTOS.forEach((sem, i) => ctx.fillText(sem.toUpperCase(), PAD + i * (CAL_W + CAL_GAP) + CAL_W / 2, cy + 20));
+    cy += 34;
+    for(let n = 1; n <= calInfo.total; n++){
+      const pos = calInfo.primeiroSemana + n - 1;
+      const cx = PAD + (pos % 7) * (CAL_W + CAL_GAP);
+      const by = cy + Math.floor(pos / 7) * (CAL_H + CAL_GAP);
+      const info = calendario.dias[calInfo.dia(n)];
+      ctx.fillStyle = info ? '#ecfdf5' : '#f5f7fc';
+      retArred(cx, by, CAL_W, CAL_H, 12);
+      ctx.fill();
+      ctx.strokeStyle = info ? '#a7f3d0' : '#e2e8f5';
+      ctx.lineWidth = 2;
+      retArred(cx, by, CAL_W, CAL_H, 12);
+      ctx.stroke();
+      ctx.fillStyle = info ? '#0f1b3d' : '#9aa3b8';
+      ctx.font = fonte(800, 20);
+      ctx.fillText(String(n), cx + CAL_W / 2, by + 26);
+      if(info){
+        ctx.fillStyle = '#0f1b3d';
+        ctx.font = fonte(800, 20);
+        ctx.fillText(`${info.pecas} pç`, cx + CAL_W / 2, by + 54);
+        ctx.fillStyle = '#059669';
+        ctx.font = fonte(800, 18);
+        ctx.fillText(fmtCurto(info.valor), cx + CAL_W / 2, by + 78);
+      }
+    }
+    ctx.textAlign = 'left';
+    y += CALENDARIO;
+  }
+
   // Rodapé: total do pedido
   ctx.fillStyle = '#f0f4ff';
   ctx.fillRect(0, y + 18, W, FOOTER - 18);
@@ -4896,7 +5000,7 @@ function linkWhatsForn(f, texto){
 }
 
 let printAtual = null;   // { blob, url, nomeArquivo }
-async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nomeArquivo, f }){
+async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nomeArquivo, f, calendario }){
   const totalPecas = linhas.reduce((s, l) => s + l.qtd, 0);
   const totalValor = r2f(linhas.reduce((s, l) => s + l.valor, 0));
   document.getElementById('printTitulo').textContent = tituloModal;
@@ -4908,7 +5012,7 @@ async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nome
   btnW.style.display = whats ? '' : 'none';
   if(whats) btnW.href = whats;
   if(printAtual) URL.revokeObjectURL(printAtual.url);
-  const blob = await gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape });
+  const blob = await gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario });
   if(!blob){ prev.textContent = 'Não foi possível gerar a imagem neste navegador.'; return; }
   printAtual = { blob, url: URL.createObjectURL(blob), nomeArquivo };
   prev.innerHTML = `<img src="${printAtual.url}" alt="${escapeHtml(titulo)}">`;
@@ -4957,6 +5061,7 @@ function abrirPrintMes(f, ym){
     titulo: `Fechamento — ${f.nome}`,
     subtitulo: nomeMes(ym).replace(/^./, c => c.toUpperCase()) + ` · ${diasComCompraNoMes(f, ym)} dias de pedido`,
     linhas, nomeArquivo: `fechamento-${ym}.png`,
+    calendario: { ym, dias: Object.fromEntries(Object.keys(f.compras || {}).filter(d => d.startsWith(ym) && pecasDiaForn(f, d) > 0).map(d => [d, { pecas: pecasDiaForn(f, d), valor: totalDiaForn(f, d) }])) },
     // Mês com valor informado à mão: o print lista os pedidos, mas o rodapé
     // mostra o total que vale pro mês.
     rodape: [totalManualMes(f, ym) !== null ? `Total informado do mês: ${fmt(totalManualMes(f, ym))}` : '', pago > 0 ? `Já pago: ${fmt(pago)}  ·  Falta: ${fmt(Math.max(0, falta))}` : ''].filter(Boolean).join('  ·  ')
@@ -5355,9 +5460,28 @@ document.getElementById('btnExcluirFornProduto').addEventListener('click', () =>
 });
 
 // ---- Pagamento (pode ser parcial: abate só o valor pago) ----
-function abrirModalPagamentoForn(ymSugerido = null){
+// "Abater valor" usa o mesmo modal: vira um lançamento em f.pagamentos com
+// tipo 'abatimento' (desconto/devolução/troca combinada com o fornecedor) —
+// abate do que falta igual a um pagamento, mas exige o motivo e nunca vai pra
+// Contas, porque não saiu dinheiro.
+let modoPagamentoForn = 'pagamento';
+function abrirModalAbatimentoForn(ymSugerido = null){
+  abrirModalPagamentoForn(ymSugerido, 'abatimento');
+}
+function abrirModalPagamentoForn(ymSugerido = null, modo = 'pagamento'){
   const f = fornecedorAtivo();
   if(!f) return;
+  modoPagamentoForn = modo;
+  const abater = modo === 'abatimento';
+  document.getElementById('fornPagTitulo').textContent = abater ? '✂️ Abater valor' : 'Registrar pagamento';
+  document.getElementById('fornPagValorLabel').textContent = abater ? 'Quanto abater (R$)' : 'Quanto você pagou (R$)';
+  document.getElementById('fornPagDataLabel').textContent = abater ? 'Dia do abatimento' : 'Data do pagamento';
+  document.getElementById('fornPagObsLabel').textContent = abater ? 'Sobre o que é esse abatimento' : 'Observação (opcional)';
+  const obsEl = document.getElementById('fornPagObs');
+  obsEl.placeholder = abater ? 'Ex: devolução de 2 pares com defeito' : 'Ex: Pix, parte do mês de outubro';
+  obsEl.required = abater;
+  document.getElementById('fornPagContaWrap').style.display = abater ? 'none' : '';
+  document.getElementById('fornPagSubmit').textContent = abater ? 'Abater valor' : 'Registrar pagamento';
   // Mês sugerido: o pedido, senão o mais antigo ainda com valor a pagar.
   const meses = mesesForn(f);
   const pendentes = meses.filter(m => faltaMesForn(f, m) > 0.004).sort();
@@ -5372,18 +5496,21 @@ function abrirModalPagamentoForn(ymSugerido = null){
   document.getElementById('fornPagObs').value = '';
   document.getElementById('fornPagLancarConta').checked = true;
   abrirOverlay('overlayFornPagamento');
+  setTimeout(() => document.getElementById('fornPagValor').focus(), 50);
 }
 function preencherPagamentoPorMes(f){
+  // Enxuto de propósito: uma linha com o que falta e um único atalho
+  // "Pagar o total" — o valor começa vazio pra digitar quanto quiser.
   const ym = document.getElementById('fornPagRef').value;
   const falta = faltaMesForn(f, ym);
-  const saldo = saldoForn(f);
+  const mes = NOMES_MES[+ym.slice(5, 7) - 1];
   document.getElementById('fornPagSaldo').innerHTML = falta > 0.004
-    ? `Falta pagar de <strong>${nomeMes(ym)}</strong> para <strong>${escapeHtml(f.nome)}</strong>: <strong>${fmt(falta)}</strong>. Pode pagar só uma parte — o resto continua em aberto.${saldo - falta > 0.004 ? `<br>Total em aberto (todos os meses): ${fmt(saldo)}.` : ''}`
-    : `Nada a pagar de <strong>${nomeMes(ym)}</strong>. Um pagamento aqui fica como crédito (adiantamento) desse mês.`;
-  document.getElementById('fornPagValor').value = falta > 0.004 ? falta.toFixed(2) : '';
-  document.getElementById('fornPagRapidos').innerHTML = falta > 0.004
-    ? [['Tudo', 1], ['Metade', 0.5], ['1/4', 0.25]].map(([rot, frac]) =>
-        `<button type="button" class="btn btn-outline btn-sm" data-valor="${(falta * frac).toFixed(2)}">${rot} (${fmt(r2f(falta * frac))})</button>`).join('')
+    ? `Falta pagar de ${mes}: <strong>${fmt(falta)}</strong>`
+    : `Nada a pagar de ${mes}.`;
+  const abater = modoPagamentoForn === 'abatimento';
+  document.getElementById('fornPagValor').value = '';
+  document.getElementById('fornPagRapidos').innerHTML = !abater && falta > 0.004
+    ? `<button type="button" class="btn btn-outline btn-sm" data-valor="${falta.toFixed(2)}">Pagar o total (${fmt(falta)})</button>`
     : '';
 }
 document.getElementById('fornPagRef').addEventListener('change', () => { const f = fornecedorAtivo(); if(f) preencherPagamentoPorMes(f); });
@@ -5400,8 +5527,10 @@ document.getElementById('formFornPagamento').addEventListener('submit', e => {
   const ref = document.getElementById('fornPagRef').value || dataPag.slice(0, 7);
   if(!(valor > 0) || !dataPag) return;
   const obs = document.getElementById('fornPagObs').value.trim();
-  const pagamento = { id: uid(), data: dataPag, ref, valor, obs, contaId: null };
-  if(document.getElementById('fornPagLancarConta').checked){
+  const abater = modoPagamentoForn === 'abatimento';
+  if(abater && !obs) return;
+  const pagamento = { id: uid(), data: dataPag, ref, valor, obs, contaId: null, ...(abater ? { tipo: 'abatimento' } : {}) };
+  if(!abater && document.getElementById('fornPagLancarConta').checked){
     const conta = {
       id: uid(),
       descricao: `Fornecedor: ${f.nome} (${nomeMes(ref)})${obs ? ' — ' + obs : ''}`,
@@ -5418,7 +5547,7 @@ document.getElementById('formFornPagamento').addEventListener('submit', e => {
   renderTelaFornAtual();
   const faltaMes = faltaMesForn(f, ref);
   if(faltaMes <= 0.004) mostrarToastForn(`🎉 ${nomeMes(ref)} quitado com ${f.nome}!`, true);
-  else mostrarToastForn(`✅ Pagamento de ${fmt(valor)} registrado. Faltam ${fmt(faltaMes)} de ${nomeMes(ref)}.`);
+  else mostrarToastForn(`${abater ? `✂️ Abatido ${fmt(valor)}` : `✅ Pagamento de ${fmt(valor)} registrado`}. Faltam ${fmt(faltaMes)} de ${nomeMes(ref)}.`);
 });
 
 // ---- Interações das duas telas (delegadas) ----
@@ -5435,6 +5564,7 @@ function cliqueTelaForn(e){
   if(acao === 'novo-produto') return abrirModalFornProduto();
   if(acao === 'editar-produto') return abrirModalFornProduto((f.produtos || []).find(p => p.id === btn.dataset.prod));
   if(acao === 'pagar') return abrirModalPagamentoForn(faltaMesForn(f, fornMes) > 0.004 ? fornMes : null);
+  if(acao === 'abater') return abrirModalAbatimentoForn(fornMes);
   if(acao === 'pagar-mes') return abrirModalPagamentoForn(fornMes);
   if(acao === 'soma-rapida') return abrirSomaRapida(f);
   if(acao === 'ir-pedidos'){ fornDia = hojeLocal(); return abrirAbaForn('pedidos'); }
