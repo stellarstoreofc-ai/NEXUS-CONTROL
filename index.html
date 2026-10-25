@@ -560,6 +560,9 @@
   .vend-puxar-item span{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}
   .vend-puxar-item small{font-size:11.5px;color:var(--muted);}
   .rel-vendas{margin-top:14px;}
+  .vend-lojas{margin-bottom:12px;}
+  .vend-lojas-tit{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;}
+  .rel-vendas .tabela-scroll{margin-top:4px;}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   @media (max-width:480px){ .form-row{grid-template-columns:1fr;} }
 
@@ -1551,6 +1554,10 @@
     </div>
     <form id="formVendAvulsa">
       <p class="field-hint" style="margin:0 0 12px;"><strong id="vaDiaLabel"></strong><br>Vendeu algo que não está cadastrado, ou quer passar só o total de um dia da planilha? Preencha os totais.</p>
+      <div class="field" id="vaLojaWrap">
+        <label>🏪 Loja</label>
+        <select id="vaLoja"></select>
+      </div>
       <div class="field">
         <label>Descrição (opcional)</label>
         <input type="text" id="vaNome" placeholder="Ex: Total do dia, Chinelo Magali...">
@@ -1893,10 +1900,13 @@ let fornecedores = [];
 let colunaFornecedoresOk = false;
 // Vendas e lucro (ver "VENDAS E LUCRO" mais abaixo). Coluna nova "vendas",
 // com a mesma trava da coluna de fornecedores.
-const vendasVazio = () => ({ produtos: [], dias: {}, meses: {} });
+const vendasVazio = () => ({ lojas: [{ id: 'principal', nome: 'Estelar' }], produtos: [], dias: {}, meses: {} });
 function normalizarVendas(v){
   v = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
   return {
+    // Lojas (mesmo login, lucro separado). A principal sempre existe e é a
+    // dona de tudo que foi lançado antes das lojas existirem.
+    lojas: Array.isArray(v.lojas) && v.lojas.some(l => l.id === 'principal') ? v.lojas : [{ id: 'principal', nome: 'Estelar' }, ...(Array.isArray(v.lojas) ? v.lojas : [])],
     produtos: Array.isArray(v.produtos) ? v.produtos : [],
     dias: v.dias && typeof v.dias === 'object' ? v.dias : {},
     meses: v.meses && typeof v.meses === 'object' ? v.meses : {}
@@ -2084,7 +2094,7 @@ document.getElementById('sidebarBackdrop').addEventListener('click', closeSideba
 // de sair do site. Re-render da mesma tela não cria entrada nova.
 let aplicandoHistorico = false;
 function estadoNavegacao(){
-  return { nexus: 1, pagina: paginaAtual, vendAba, vendDia, vendMes, fornAba, fornAtivoId, fornDia, fornMes, diaFechSel };
+  return { nexus: 1, pagina: paginaAtual, vendAba, vendDia, vendMes, vendLoja, fornAba, fornAtivoId, fornDia, fornMes, diaFechSel };
 }
 const urlSemHash = () => location.pathname + location.search;
 // Atualiza a entrada atual com o estado mais recente da tela (antes de sair dela).
@@ -2108,6 +2118,7 @@ window.addEventListener('popstate', ev => {
     if(e.vendAba) vendAba = e.vendAba;
     if(e.vendDia) vendDia = e.vendDia;
     if(e.vendMes) vendMes = e.vendMes;
+    if(e.vendLoja) vendLoja = e.vendLoja;
     if(e.fornAtivoId) fornAtivoId = e.fornAtivoId;
     if(e.fornDia) fornDia = e.fornDia;
     if(e.fornMes) fornMes = e.fornMes;
@@ -6357,6 +6368,13 @@ const PLATAFORMAS_VENDA = [
 ];
 function labelPlataforma(id){ return (PLATAFORMAS_VENDA.find(p => p.id === id) || {}).label || ''; }
 let vendAba = 'dia';            // 'dia' | 'mes'
+// Loja vista/lançada: id de vendas.lojas, ou 'todas' (só no fechamento).
+let vendLoja = 'principal';
+const LOJA_PRINCIPAL = 'principal';
+function lojaDe(x){ return (x && x.loja) || LOJA_PRINCIPAL; }
+function nomeLoja(id){ return id === 'todas' ? 'Todas as lojas' : ((vendas.lojas || []).find(l => l.id === id) || {}).nome || 'Loja'; }
+// Item de produto no dia: a loja principal mantém a chave antiga "prod|plat".
+function chaveItemVenda(prodId, plat, loja = vendLoja){ return loja === LOJA_PRINCIPAL ? `${prodId}|${plat}` : `${prodId}|${plat}|${loja}`; }
 let vendDia = null;             // 'YYYY-MM-DD' sendo lançado
 let vendMes = null;             // 'YYYY-MM' do fechamento
 let editingVendProdutoId = null;
@@ -6401,10 +6419,11 @@ function limparDiaVendasVazio(d){
   if(dia && !Object.keys(dia.itens || {}).length && !(dia.avulsos || []).length) delete vendas.dias[d];
 }
 // Linhas de venda de um dia (itens + avulsos), já com totais.
-function linhasVendaDia(d){
+function linhasVendaDia(d, loja = vendLoja){
   const dia = diaVendas(d);
-  const itens = Object.values(dia.itens || {}).map(i => ({ prodId: i.prodId, nome: i.nome, plat: i.plat, qtd: i.qtd, vendido: r2f(i.qtd * i.preco), lucro: r2f(i.qtd * i.lucro), unPreco: i.preco, unLucro: i.lucro }));
-  const avulsos = (dia.avulsos || []).map(a => ({ avulsoId: a.id, nome: a.nome || 'Venda avulsa', plat: a.plat || '', qtd: a.qtd || 0, vendido: r2f(a.valor || 0), lucro: r2f(a.lucro || 0) }));
+  const daLoja = x => loja === 'todas' || lojaDe(x) === loja;
+  const itens = Object.values(dia.itens || {}).filter(daLoja).map(i => ({ prodId: i.prodId, nome: i.nome, plat: i.plat, qtd: i.qtd, vendido: r2f(i.qtd * i.preco), lucro: r2f(i.qtd * i.lucro), unPreco: i.preco, unLucro: i.lucro }));
+  const avulsos = (dia.avulsos || []).filter(daLoja).map(a => ({ avulsoId: a.id, nome: a.nome || 'Venda avulsa', plat: a.plat || '', qtd: a.qtd || 0, vendido: r2f(a.valor || 0), lucro: r2f(a.lucro || 0) }));
   return [...itens, ...avulsos];
 }
 function resumoLinhas(linhas){
@@ -6414,22 +6433,35 @@ function resumoLinhas(linhas){
     lucro: r2f(linhas.reduce((s, l) => s + l.lucro, 0))
   };
 }
-function resumoDiaVendas(d){ return resumoLinhas(linhasVendaDia(d)); }
+function resumoDiaVendas(d, loja = vendLoja){ return resumoLinhas(linhasVendaDia(d, loja)); }
 function diasVendaDoMes(ym){ return Object.keys(vendas.dias).filter(d => d.startsWith(ym)).sort(); }
-function linhasVendaMes(ym){ return diasVendaDoMes(ym).flatMap(d => linhasVendaDia(d)); }
-function configMesVendas(ym){
+function linhasVendaMes(ym, loja = vendLoja){ return diasVendaDoMes(ym).flatMap(d => linhasVendaDia(d, loja)); }
+// Ads/devoluções do mês: a loja principal fica em meses[ym].ads/devolucoes
+// (formato antigo); as outras em meses[ym].lojas[id]. 'todas' soma tudo.
+function cfgBrutaMesLoja(ym, loja){
   const m = vendas.meses[ym] || {};
-  return { ads: { tiktok: 0, shopee: 0, ml: 0, shein: 0, ...(m.ads || {}) }, devolucoes: +m.devolucoes || 0 };
+  return loja === LOJA_PRINCIPAL ? m : ((m.lojas || {})[loja] || {});
+}
+function configMesVendas(ym, loja = vendLoja){
+  const lojas = loja === 'todas' ? (vendas.lojas || []).map(l => l.id) : [loja];
+  const ads = { tiktok: 0, shopee: 0, ml: 0, shein: 0 };
+  let devolucoes = 0;
+  lojas.forEach(id => {
+    const c = cfgBrutaMesLoja(ym, id);
+    Object.keys(ads).forEach(k => { ads[k] = r2f(ads[k] + (+(c.ads || {})[k] || 0)); });
+    devolucoes = r2f(devolucoes + (+c.devolucoes || 0));
+  });
+  return { ads, devolucoes };
 }
 // Mês inteiro: vendido, lucro bruto, ads, devoluções e lucro líquido.
-function resumoMesVendas(ym){
-  const base = resumoLinhas(linhasVendaMes(ym));
-  const cfg = configMesVendas(ym);
+function resumoMesVendas(ym, loja = vendLoja){
+  const base = resumoLinhas(linhasVendaMes(ym, loja));
+  const cfg = configMesVendas(ym, loja);
   const ads = r2f(Object.values(cfg.ads).reduce((s, v) => s + (+v || 0), 0));
   const liquido = r2f(base.lucro - ads - cfg.devolucoes);
-  return { ...base, ads, devolucoes: cfg.devolucoes, liquido, custos: r2f(base.vendido - liquido), dias: diasVendaDoMes(ym).filter(d => resumoDiaVendas(d).pecas > 0 || resumoDiaVendas(d).lucro !== 0).length };
+  return { ...base, ads, devolucoes: cfg.devolucoes, liquido, custos: r2f(base.vendido - liquido), dias: diasVendaDoMes(ym).filter(d => { const x = resumoDiaVendas(d, loja); return x.pecas > 0 || x.lucro !== 0; }).length };
 }
-function mesTemVendas(ym){ const r = resumoMesVendas(ym); return r.vendido > 0 || r.lucro !== 0 || r.ads > 0 || r.devolucoes > 0; }
+function mesTemVendas(ym, loja = vendLoja){ const r = resumoMesVendas(ym, loja); return r.vendido > 0 || r.lucro !== 0 || r.ads > 0 || r.devolucoes > 0; }
 
 let timerSalvarVendas = null;
 function saveVendas(imediato = false){
@@ -6447,16 +6479,59 @@ function definirQtdVenda(prodId, plat, qtd){
   if(!vp) return;
   qtd = Math.max(0, Math.round(+qtd || 0));
   const dia = garantirDiaVendas(vendDia);
-  const chave = `${prodId}|${plat}`;
+  const chave = chaveItemVenda(prodId, plat);
   if(qtd === 0) delete dia.itens[chave];
   else if(dia.itens[chave]) dia.itens[chave].qtd = qtd;
-  else dia.itens[chave] = { qtd, ...valoresPlataforma(vp, plat), nome: vp.nome, plat, prodId };
+  else dia.itens[chave] = { qtd, ...valoresPlataforma(vp, plat), nome: vp.nome, plat, prodId, ...(vendLoja !== LOJA_PRINCIPAL ? { loja: vendLoja } : {}) };
   limparDiaVendasVazio(vendDia);
   saveVendas();
 }
 
+// ---------- Lojas ----------
+function htmlChipsLojas(comTodas){
+  const lojas = vendas.lojas || [];
+  return `<div class="forn-chips vend-lojas">
+    <span class="vend-lojas-tit">Loja:</span>
+    ${lojas.map(l => `<button type="button" class="forn-chip${l.id === vendLoja ? ' active' : ''}" data-acao="loja" data-loja="${l.id}">🏪 ${escapeHtml(l.nome)}</button>`).join('')}
+    ${comTodas && lojas.length > 1 ? `<button type="button" class="forn-chip${vendLoja === 'todas' ? ' active' : ''}" data-acao="loja" data-loja="todas">Σ Todas</button>` : ''}
+    ${vendLoja !== 'todas' ? `<button type="button" class="forn-add" data-acao="renomear-loja" title="Renomear ou excluir esta loja">✏️</button>` : ''}
+    <button type="button" class="forn-add" data-acao="nova-loja">＋ Loja</button>
+  </div>`;
+}
+function lojaTemLancamentos(id){
+  const temDia = Object.values(vendas.dias).some(d => Object.values(d.itens || {}).some(i => lojaDe(i) === id) || (d.avulsos || []).some(a => lojaDe(a) === id));
+  return temDia || Object.keys(vendas.meses).some(ym => { const c = cfgBrutaMesLoja(ym, id); return (+c.devolucoes || 0) > 0 || Object.values(c.ads || {}).some(v => +v > 0); });
+}
+function novaLojaVenda(){
+  const nome = (prompt('Nome da nova loja (ex: Conta CPF):') || '').trim();
+  if(!nome) return;
+  const loja = { id: uid(), nome };
+  vendas.lojas.push(loja);
+  vendLoja = loja.id;
+  saveVendas(true);
+  renderVendas();
+  mostrarToastForn(`🏪 Loja "${nome}" criada — o que você lançar agora vai pra ela.`);
+}
+function renomearLojaVenda(){
+  const loja = vendas.lojas.find(l => l.id === vendLoja);
+  if(!loja) return;
+  const podeExcluir = loja.id !== LOJA_PRINCIPAL && !lojaTemLancamentos(loja.id);
+  const nome = prompt(`Novo nome da loja "${loja.nome}"${podeExcluir ? ' (deixe vazio pra excluir — ela ainda não tem nada lançado)' : ''}:`, loja.nome);
+  if(nome === null) return;
+  if(!nome.trim()){
+    if(!podeExcluir) return alert(loja.id === LOJA_PRINCIPAL ? 'A loja principal não pode ser excluída — só renomeada.' : 'Essa loja já tem vendas ou ads lançados, então não dá pra excluir. Você pode só renomear.');
+    if(!confirm(`Excluir a loja "${loja.nome}"?`)) return;
+    vendas.lojas = vendas.lojas.filter(l => l.id !== loja.id);
+    vendLoja = LOJA_PRINCIPAL;
+  } else loja.nome = nome.trim();
+  saveVendas(true);
+  renderVendas();
+}
+
 // ---------- Tela ----------
 function renderVendas(){
+  if(vendLoja !== 'todas' && !(vendas.lojas || []).some(l => l.id === vendLoja)) vendLoja = LOJA_PRINCIPAL;
+  if(vendAba === 'dia' && vendLoja === 'todas') vendLoja = LOJA_PRINCIPAL;
   document.querySelectorAll('#vendAbas .tab').forEach(t => t.classList.toggle('active', t.dataset.aba === vendAba));
   const el = document.getElementById('vendConteudo');
   if(!colunaVendasOk){ el.innerHTML = avisoColunaVendas(); return; }
@@ -6475,7 +6550,7 @@ function htmlCardVenda(vp, dia){
   const plats = platsDoProduto(vp);
   let pecas = 0, lucro = 0;
   const linhas = plats.map(pl => {
-    const item = (dia.itens || {})[`${vp.id}|${pl.id}`];
+    const item = (dia.itens || {})[chaveItemVenda(vp.id, pl.id)];
     const qtd = item ? item.qtd : 0;
     const v = item ? { preco: item.preco, lucro: item.lucro } : valoresPlataforma(vp, pl.id);
     pecas += qtd; lucro += qtd * v.lucro;
@@ -6505,8 +6580,9 @@ function htmlCardVenda(vp, dia){
 function htmlVendasDia(){
   const dia = diaVendas(vendDia);
   const r = resumoDiaVendas(vendDia);
-  const avulsos = dia.avulsos || [];
+  const avulsos = (dia.avulsos || []).filter(a => lojaDe(a) === vendLoja);
   return `
+    ${htmlChipsLojas(false)}
     <div class="forn-dia vend-dia">
       <div class="forn-dia-nav">
         <button type="button" class="btn-icon" data-acao="dia-ant" aria-label="Dia anterior">‹</button>
@@ -6608,10 +6684,12 @@ function htmlVendasMes(){
   const plats = porPlataformaMes(ym);
   const nome = nomeMes(ym).replace(/^./, c => c.toUpperCase());
   const campoAds = (id, label) => `<label class="vend-ads-campo"><span>${label}</span><input type="number" step="0.01" min="0" class="vend-ads" data-plat="${id}" value="${cfg.ads[id] || ''}" placeholder="0,00"></label>`;
+  const todas = vendLoja === 'todas';
   return `
+    ${htmlChipsLojas(true)}
     <div class="forn-mes-nav">
       <button type="button" class="btn-icon" data-acao="mes-ant" aria-label="Mês anterior">‹</button>
-      <h3>${nome}</h3>
+      <h3>${nome}${(vendas.lojas || []).length > 1 ? ` · ${escapeHtml(nomeLoja(vendLoja))}` : ''}</h3>
       <button type="button" class="btn-icon" data-acao="mes-prox" aria-label="Próximo mês">›</button>
     </div>
     <div class="vend-resumo">
@@ -6621,12 +6699,13 @@ function htmlVendasMes(){
       <div class="vend-res liquido${r.liquido < 0 ? ' negativo' : ''}"><span>Lucro líquido</span><strong>${fmt(r.liquido)}</strong><small>lucro bruto − ads − devoluções</small></div>
     </div>
     <div class="chart-card">
-      <h3>📣 Ads e devoluções de ${NOMES_MES[+ym.slice(5, 7) - 1]}</h3>
+      <h3>📣 Ads e devoluções de ${NOMES_MES[+ym.slice(5, 7) - 1]}${(vendas.lojas || []).length > 1 && !todas ? ` — ${escapeHtml(nomeLoja(vendLoja))}` : ''}</h3>
+      ${todas ? `<p class="field-hint" style="margin:0;">Somando todas as lojas: ads ${fmt(r.ads)}${r.devolucoes ? ` · devoluções ${fmt(r.devolucoes)}` : ''}. Pra lançar ou mudar, escolha uma loja acima.</p>` : `
       <p class="field-hint" style="margin:0 0 10px;">Lance no fim do mês quanto gastou em anúncio em cada plataforma. Devoluções é opcional.</p>
       <div class="vend-ads-grid">
         ${campoAds('tiktok', 'TikTok')}${campoAds('shopee', 'Shopee')}${campoAds('ml', 'Mercado Livre')}${campoAds('shein', 'Shein')}
         <label class="vend-ads-campo"><span>↩️ Devoluções (R$)</span><input type="number" step="0.01" min="0" class="vend-devol" value="${cfg.devolucoes || ''}" placeholder="0,00"></label>
-      </div>
+      </div>`}
     </div>
     <div class="forn-hist">
       <div class="forn-hist-col">
@@ -6667,7 +6746,7 @@ function abrirPrintVendasMes(ym){
   const diasCal = Object.fromEntries(diasVendaDoMes(ym).map(d => [d, resumoDiaVendas(d)]).filter(([, x]) => x.pecas > 0 || x.lucro !== 0).map(([d, x]) => [d, { pecas: x.pecas, valor: x.lucro }]));
   abrirPrint({
     f: null, tituloModal: 'Print do mês — vendas e lucro',
-    titulo: 'Vendas e lucro',
+    titulo: (vendas.lojas || []).length > 1 ? `Vendas e lucro — ${nomeLoja(vendLoja)}` : 'Vendas e lucro',
     subtitulo: nomeMes(ym).replace(/^./, c => c.toUpperCase()) + ` · ${r.dias} dias com venda`,
     linhas, nomeArquivo: `vendas-${ym}.png`,
     calendario: { ym, dias: diasCal },
@@ -6805,6 +6884,9 @@ function abrirModalAvulsa(){
   ['vaNome', 'vaQtd', 'vaValor', 'vaLucro'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('vaPlat').value = '';
   document.getElementById('vaSalvarProduto').checked = false;
+  const lojas = vendas.lojas || [];
+  document.getElementById('vaLoja').innerHTML = lojas.map(l => `<option value="${l.id}"${l.id === vendLoja ? ' selected' : ''}>${escapeHtml(l.nome)}</option>`).join('');
+  document.getElementById('vaLojaWrap').style.display = lojas.length > 1 ? '' : 'none';
   abrirOverlay('overlayVendAvulsa');
   setTimeout(() => document.getElementById('vaNome').focus(), 50);
 }
@@ -6812,6 +6894,8 @@ document.getElementById('formVendAvulsa').addEventListener('submit', e => {
   e.preventDefault();
   const nome = document.getElementById('vaNome').value.trim();
   const plat = document.getElementById('vaPlat').value;
+  const loja = document.getElementById('vaLoja').value || vendLoja;
+  const comLoja = loja !== LOJA_PRINCIPAL ? { loja } : {};
   const qtd = Math.max(0, Math.round(parseFloat(document.getElementById('vaQtd').value) || 0));
   const valor = r2f(parseFloat(document.getElementById('vaValor').value) || 0);
   const lucro = r2f(parseFloat(document.getElementById('vaLucro').value) || 0);
@@ -6824,16 +6908,16 @@ document.getElementById('formVendAvulsa').addEventListener('submit', e => {
     vp.plataformas[plat] = { preco: r2f(valor / qtd), lucro: r2f(lucro / qtd) };
     if(!existente) vendas.produtos.push(vp);
     const dia = garantirDiaVendas(vendDia);
-    const chave = `${vp.id}|${plat}`;
+    const chave = chaveItemVenda(vp.id, plat, loja);
     const atual = dia.itens[chave];
-    dia.itens[chave] = { qtd: (atual ? atual.qtd : 0) + qtd, preco: r2f(valor / qtd), lucro: r2f(lucro / qtd), nome: vp.nome, plat, prodId: vp.id };
+    dia.itens[chave] = { qtd: (atual ? atual.qtd : 0) + qtd, preco: r2f(valor / qtd), lucro: r2f(lucro / qtd), nome: vp.nome, plat, prodId: vp.id, ...comLoja };
   } else {
-    garantirDiaVendas(vendDia).avulsos.push({ id: uid(), nome: nome || (qtd ? 'Venda avulsa' : 'Total do dia'), plat, qtd, valor, lucro });
+    garantirDiaVendas(vendDia).avulsos.push({ id: uid(), nome: nome || (qtd ? 'Venda avulsa' : 'Total do dia'), plat, qtd, valor, lucro, ...comLoja });
   }
   saveVendas(true);
   fecharOverlay('overlayVendAvulsa');
   renderVendas();
-  mostrarToastForn(`⚡ Lançado: lucro ${fmt(lucro)}.`);
+  mostrarToastForn(`⚡ Lançado${(vendas.lojas || []).length > 1 ? ` em ${nomeLoja(loja)}` : ''}: lucro ${fmt(lucro)}.`);
 });
 
 // ---------- Eventos da página ----------
@@ -6847,7 +6931,7 @@ paginaVendas.addEventListener('click', e => {
   if(!btn || !paginaVendas.contains(btn) || btn.closest('#vendAbas')) return;
   const acao = btn.dataset.acao;
   if(acao === 'mais' || acao === 'menos'){
-    const item = diaVendas(vendDia).itens[`${btn.dataset.prod}|${btn.dataset.plat}`];
+    const item = (diaVendas(vendDia).itens || {})[chaveItemVenda(btn.dataset.prod, btn.dataset.plat)];
     definirQtdVenda(btn.dataset.prod, btn.dataset.plat, (item ? item.qtd : 0) + (acao === 'mais' ? 1 : -1));
     const busca = (document.getElementById('vendBusca') || {}).value || '';
     renderVendas();
@@ -6860,6 +6944,9 @@ paginaVendas.addEventListener('click', e => {
   if(acao === 'editar-produto') return abrirModalVendProduto(vendProduto(btn.dataset.prod));
   if(acao === 'puxar-calc') return abrirModalPuxarCalc();
   if(acao === 'avulsa') return abrirModalAvulsa();
+  if(acao === 'loja'){ salvarEstadoAtual(); vendLoja = btn.dataset.loja; renderVendas(); empilharEstado(); return; }
+  if(acao === 'nova-loja') return novaLojaVenda();
+  if(acao === 'renomear-loja') return renomearLojaVenda();
   if(acao === 'apagar-avulsa'){
     const dia = garantirDiaVendas(vendDia);
     dia.avulsos = dia.avulsos.filter(a => a.id !== btn.dataset.id);
@@ -6875,7 +6962,13 @@ paginaVendas.addEventListener('change', e => {
   if(t.id === 'vendDiaInput' && t.value){ vendDia = t.value; return renderVendas(); }
   if(t.classList.contains('vend-qtd-input')){ definirQtdVenda(t.dataset.prod, t.dataset.plat, t.value); return renderVendas(); }
   if(t.classList.contains('vend-ads') || t.classList.contains('vend-devol')){
-    const m = vendas.meses[vendMes] = vendas.meses[vendMes] || {};
+    if(vendLoja === 'todas') return;
+    const mesTodo = vendas.meses[vendMes] = vendas.meses[vendMes] || {};
+    let m = mesTodo;
+    if(vendLoja !== LOJA_PRINCIPAL){
+      mesTodo.lojas = mesTodo.lojas || {};
+      m = mesTodo.lojas[vendLoja] = mesTodo.lojas[vendLoja] || {};
+    }
     if(t.classList.contains('vend-ads')) m.ads = { ...(m.ads || {}), [t.dataset.plat]: r2f(parseFloat(t.value) || 0) };
     else m.devolucoes = r2f(parseFloat(t.value) || 0);
     saveVendas(true);
@@ -6887,7 +6980,7 @@ paginaVendas.addEventListener('input', e => { if(e.target.id === 'vendBusca') ap
 paginaVendas.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.classList.contains('vend-qtd-input')) e.target.blur(); });
 
 // ---------- Relatório mensal / anual: quadro de vendas e lucro ----------
-function htmlQuadroVendasRel(r, titulo){
+function htmlQuadroVendasRel(r, titulo, porLoja = []){
   if(!colunaVendasOk) return '';
   const vazio = !(r.vendido || r.lucro || r.ads || r.devolucoes);
   return `<div class="chart-card rel-vendas">
@@ -6896,8 +6989,12 @@ function htmlQuadroVendasRel(r, titulo){
     <div class="vend-resumo">
       <div class="vend-res"><span>Faturamento das vendas</span><strong>${fmt(r.vendido)}</strong><small>${r.pecas} peças vendidas</small></div>
       <div class="vend-res"><span>Custos totais</span><strong class="neg">${fmt(r.custos)}</strong><small>produto, taxas, imposto, ads e devoluções</small></div>
-      <div class="vend-res liquido${r.liquido < 0 ? ' negativo' : ''}"><span>Lucro líquido</span><strong>${fmt(r.liquido)}</strong><small>lucro bruto ${fmt(r.lucro)} − ads ${fmt(r.ads)}${r.devolucoes ? ` − devol. ${fmt(r.devolucoes)}` : ''}</small></div>
-    </div>`}
+      <div class="vend-res liquido${r.liquido < 0 ? ' negativo' : ''}"><span>Lucro líquido${porLoja.length > 1 ? ' (todas as lojas)' : ''}</span><strong>${fmt(r.liquido)}</strong><small>lucro bruto ${fmt(r.lucro)} − ads ${fmt(r.ads)}${r.devolucoes ? ` − devol. ${fmt(r.devolucoes)}` : ''}</small></div>
+    </div>
+    ${porLoja.length > 1 ? `<div class="tabela-scroll"><table class="forn-resumo-prod vend-tabela">
+      <thead><tr><th>Loja</th><th>Vendido</th><th>Custos</th><th>Lucro líquido</th></tr></thead>
+      <tbody>${porLoja.map(x => `<tr><td>🏪 ${escapeHtml(x.nome)}</td><td>${fmt(x.r.vendido)}</td><td>${fmt(x.r.custos)}</td><td class="${x.r.liquido < 0 ? 'neg' : 'pos'}"><b>${fmt(x.r.liquido)}</b></td></tr>`).join('')}</tbody>
+    </table></div>` : ''}`}
   </div>`;
 }
 function somarResumosVendas(lista){
@@ -6909,15 +7006,17 @@ function somarResumosVendas(lista){
 function renderQuadroVendasMensal(ym){
   const box = document.getElementById('relVendasBox');
   if(!colunaVendasOk){ box.innerHTML = ''; return; }   // (o relatório também desenha no carregamento da página, antes do login)
-  document.getElementById('relVendasBox').innerHTML = htmlQuadroVendasRel(resumoMesVendas(ym), `Vendas e lucro de ${nomeMes(ym)}`);
+  const porLoja = (vendas.lojas || []).map(l => ({ nome: l.nome, r: resumoMesVendas(ym, l.id) }));
+  box.innerHTML = htmlQuadroVendasRel(resumoMesVendas(ym, 'todas'), `Vendas e lucro de ${nomeMes(ym)}`, porLoja);
 }
 function renderQuadroVendasAnual(ano){
   if(!colunaVendasOk){ document.getElementById('relAnoVendasBox').innerHTML = ''; return; }
   const meses = Array.from({ length: 12 }, (_, i) => `${ano}-${String(i + 1).padStart(2, '0')}`);
-  document.getElementById('relAnoVendasBox').innerHTML = htmlQuadroVendasRel(somarResumosVendas(meses.map(resumoMesVendas)), `Vendas e lucro de ${ano}`);
+  const porLoja = (vendas.lojas || []).map(l => ({ nome: l.nome, r: somarResumosVendas(meses.map(m => resumoMesVendas(m, l.id))) }));
+  document.getElementById('relAnoVendasBox').innerHTML = htmlQuadroVendasRel(somarResumosVendas(meses.map(m => resumoMesVendas(m, 'todas'))), `Vendas e lucro de ${ano}`, porLoja);
 }
 document.getElementById('page-relatorio').addEventListener('click', e => {
-  if(e.target.closest('[data-ir-vendas]')){ vendAba = 'mes'; vendMes = relatorioView === 'anual' ? vendMes : (relatorioMesInput.value || currentYm()); showPage('vendas'); }
+  if(e.target.closest('[data-ir-vendas]')){ vendAba = 'mes'; vendLoja = (vendas.lojas || []).length > 1 ? 'todas' : LOJA_PRINCIPAL; vendMes = relatorioView === 'anual' ? vendMes : (relatorioMesInput.value || currentYm()); showPage('vendas'); }
 });
 
 // ================= BACKUP / RESTAURAR =================
