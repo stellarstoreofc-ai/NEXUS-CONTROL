@@ -91,6 +91,7 @@
   .btn-menu{display:none;background:transparent;border:1px solid var(--border);color:var(--navy);font-size:18px;
     cursor:pointer;padding:6px 11px;border-radius:8px;line-height:1;}
 
+  .grupo-rel{margin-bottom:18px;flex-wrap:wrap;}
   main{max-width:1100px;width:100%;margin:0 auto;padding:24px clamp(16px,3vw,32px) 60px;}
   /* Calculadora de precificação usa a tela larga: calculadora fixa à esquerda */
   main:has(#page-precificacao.active){max-width:1760px;}
@@ -977,10 +978,7 @@
       <button class="btn-menu-close" id="btnMenuClose">✕</button>
     </div>
     <nav class="side-nav" id="sideNav">
-      <button data-page="relatorio">📊 Relatório mensal</button>
-      <button data-page="lembretes">✅ Lembretes</button>
-      <button data-page="contas" class="active">📋 Contas</button>
-      <button data-page="custofixo">🧮 Custo fixo por pedido</button>
+      <button data-page="relatorio" class="active">📊 Relatório mensal</button>
       <button data-page="precificacao">🧮 Calculadora de precificação</button>
       <button data-page="fornecedores">🚚 Fornecedores</button>
     </nav>
@@ -1005,6 +1003,13 @@
     </div>
 
     <main>
+      <!-- Abas do grupo "Relatório mensal" (Relatório, Contas, Lembretes, Custo fixo) -->
+      <div class="tabs grupo-rel" id="grupoRelTabs">
+        <button class="tab" data-page="relatorio">📊 Relatório</button>
+        <button class="tab" data-page="contas">📋 Contas</button>
+        <button class="tab" data-page="lembretes">✅ Lembretes</button>
+        <button class="tab" data-page="custofixo">🧮 Custo fixo por pedido</button>
+      </div>
       <!-- PÁGINA: CONTAS -->
       <section class="page active" id="page-contas">
         <div class="summary-grid">
@@ -1430,10 +1435,6 @@
         <label id="fornPagObsLabel">Observação (opcional)</label>
         <input type="text" id="fornPagObs" placeholder="Ex: Pix, parte do mês de outubro">
       </div>
-      <label class="forn-check" id="fornPagContaWrap">
-        <input type="checkbox" id="fornPagLancarConta" checked>
-        <span>Lançar também em <strong>Contas</strong> (despesa paga)</span>
-      </label>
       <div class="modal-actions">
         <button type="button" class="btn btn-outline" data-fechar="overlayFornPagamento">Cancelar</button>
         <button type="submit" class="btn btn-primary" id="fornPagSubmit">Registrar pagamento</button>
@@ -1502,10 +1503,6 @@
         <label>Data desse pagamento</label>
         <input type="date" id="valorMesData">
       </div>
-      <label class="forn-check">
-        <input type="checkbox" id="valorMesContas">
-        <span>Lançar esse pagamento também em <strong>Contas</strong> (deixe desmarcado se for um pagamento antigo que você já controlou por fora).</span>
-      </label>
       <div class="modal-actions" style="flex-wrap:wrap;">
         <button type="button" class="btn btn-danger-text" id="btnValorMesRemover" style="margin-right:auto;display:none;">Tirar valor informado</button>
         <button type="button" class="btn btn-outline" data-fechar="overlayValorMes">Cancelar</button>
@@ -1860,6 +1857,10 @@ document.getElementById('sideNav').addEventListener('click', e => {
   showPage(btn.dataset.page);
   closeSidebar();
 });
+document.getElementById('grupoRelTabs').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-page]');
+  if(btn) showPage(btn.dataset.page);
+});
 
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -1880,8 +1881,7 @@ document.getElementById('sidebarBackdrop').addEventListener('click', closeSideba
 // de sair do site. Re-render da mesma tela não cria entrada nova.
 let aplicandoHistorico = false;
 function estadoNavegacao(){
-  const ativa = document.querySelector('.side-nav button.active');
-  return { nexus: 1, pagina: ativa ? ativa.dataset.page : 'contas', fornAba, fornAtivoId, fornDia, fornMes, diaFechSel };
+  return { nexus: 1, pagina: paginaAtual, fornAba, fornAtivoId, fornDia, fornMes, diaFechSel };
 }
 const urlSemHash = () => location.pathname + location.search;
 // Atualiza a entrada atual com o estado mais recente da tela (antes de sair dela).
@@ -1913,9 +1913,16 @@ window.addEventListener('popstate', ev => {
   }
 });
 
+// Contas, Lembretes e Custo fixo moram dentro de "Relatório mensal" (abas no topo).
+const PAGINAS_GRUPO_REL = ['relatorio', 'contas', 'lembretes', 'custofixo'];
+let paginaAtual = 'relatorio';
 function showPage(name){
   salvarEstadoAtual();
-  document.querySelectorAll('.side-nav button').forEach(b => b.classList.toggle('active', b.dataset.page === name));
+  paginaAtual = name;
+  const noGrupo = PAGINAS_GRUPO_REL.includes(name);
+  document.querySelectorAll('.side-nav button').forEach(b => b.classList.toggle('active', b.dataset.page === (noGrupo ? 'relatorio' : name)));
+  document.getElementById('grupoRelTabs').style.display = noGrupo ? '' : 'none';
+  document.querySelectorAll('#grupoRelTabs .tab').forEach(b => b.classList.toggle('active', b.dataset.page === name));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.getElementById('pageTitle').textContent = pageTitles[name];
@@ -4779,7 +4786,6 @@ function abrirModalValorMes(f, ym){
   preencherModalValorMes(f);
   document.getElementById('valorMesPago').value = '';
   document.getElementById('valorMesData').value = hojeLocal();
-  document.getElementById('valorMesContas').checked = false;
   abrirOverlay('overlayValorMes');
   setTimeout(() => document.getElementById('valorMesValor').focus(), 50);
 }
@@ -4808,11 +4814,6 @@ document.getElementById('formValorMes').addEventListener('submit', e => {
   if(pagoAgora > 0){
     const dataPag = document.getElementById('valorMesData').value || hojeLocal();
     const pagamento = { id: uid(), data: dataPag, ref: ym, valor: pagoAgora, obs: 'Informado no relatório', contaId: null };
-    if(document.getElementById('valorMesContas').checked){
-      const conta = { id: uid(), descricao: `Fornecedor: ${f.nome} (${nomeMes(ym)})`, valor: pagoAgora, vencimento: dataPag, categoria: 'Fornecedores', status: 'pago', tipo: 'despesa', pagoEm: dataPag };
-      data.push(conta);
-      pagamento.contaId = conta.id;
-    }
     f.pagamentos = [...(f.pagamentos || []), pagamento];
   }
   if(relMesesSel) relMesesSel.add(ym);
@@ -4936,8 +4937,7 @@ function renderFornAba(){
 function abrirAbaForn(aba){
   salvarEstadoAtual();
   fornAba = aba;
-  const ativa = document.querySelector('.side-nav button.active');
-  if(ativa && ativa.dataset.page === 'fornecedores'){ renderFornAba(); empilharEstado(); }
+  if(paginaAtual === 'fornecedores'){ renderFornAba(); empilharEstado(); }
   else showPage('fornecedores');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -5717,7 +5717,6 @@ function abrirModalPagamentoForn(ymSugerido = null, modo = 'pagamento', editar =
   const obsEl = document.getElementById('fornPagObs');
   obsEl.placeholder = abater ? 'Ex: devolução de 2 pares com defeito' : 'Ex: Pix, parte do mês de outubro';
   obsEl.required = modo === 'abatimento';
-  document.getElementById('fornPagContaWrap').style.display = abater ? 'none' : '';
   document.getElementById('fornPagSubmit').textContent = editar ? 'Salvar alterações' : (abater ? 'Abater valor' : 'Registrar pagamento');
   // Saldo corrido: sem "referente ao mês" (vale pela data).
   document.getElementById('fornPagRefWrap').style.display = ehCorrido(f) ? 'none' : '';
@@ -5735,12 +5734,10 @@ function abrirModalPagamentoForn(ymSugerido = null, modo = 'pagamento', editar =
   preencherPagamentoPorMes(f);
   document.getElementById('fornPagData').value = hojeLocal();
   document.getElementById('fornPagObs').value = '';
-  document.getElementById('fornPagLancarConta').checked = true;
   if(editar){
     document.getElementById('fornPagValor').value = editar.valor.toFixed(2);
     document.getElementById('fornPagData').value = editar.data;
     document.getElementById('fornPagObs').value = editar.obs || '';
-    document.getElementById('fornPagLancarConta').checked = !!(editar.contaId && data.some(c => c.id === editar.contaId));
     document.getElementById('fornPagRapidos').innerHTML = '';
   }
   abrirOverlay('overlayFornPagamento');
@@ -5788,20 +5785,9 @@ document.getElementById('formFornPagamento').addEventListener('submit', e => {
     if(!p) return;
     p.data = dataPag; p.ref = ref; p.obs = obs;
     if(p.tipo !== 'devolucao') p.valor = valor;
-    if(!p.tipo){
-      const querConta = document.getElementById('fornPagLancarConta').checked;
-      const conta = p.contaId ? data.find(c => c.id === p.contaId) : null;
-      const descricao = `Fornecedor: ${f.nome} (${nomeMes(ref)})${obs ? ' — ' + obs : ''}`;
-      if(querConta && conta) Object.assign(conta, { descricao, valor: p.valor, vencimento: dataPag, pagoEm: dataPag });
-      else if(querConta){
-        const nova = { id: uid(), descricao, valor: p.valor, vencimento: dataPag, categoria: 'Fornecedores', status: 'pago', tipo: 'despesa', pagoEm: dataPag };
-        data.push(nova);
-        p.contaId = nova.id;
-      } else if(conta){
-        data = data.filter(c => c.id !== conta.id);
-        p.contaId = null;
-      }
-    }
+    // Pagamento antigo que ainda tem despesa ligada em Contas: mantém igual.
+    const conta = !p.tipo && p.contaId ? data.find(c => c.id === p.contaId) : null;
+    if(conta) Object.assign(conta, { valor: p.valor, vencimento: dataPag, pagoEm: dataPag });
     editingPagamentoId = null;
     saveFornecedores(true);
     fecharOverlay('overlayFornPagamento');
@@ -5809,21 +5795,12 @@ document.getElementById('formFornPagamento').addEventListener('submit', e => {
     return mostrarToastForn('✏️ Lançamento atualizado.');
   }
   const pagamento = { id: uid(), data: dataPag, ref, valor, obs, contaId: null, ...(abater ? { tipo: 'abatimento' } : {}) };
-  if(!abater && document.getElementById('fornPagLancarConta').checked){
-    const conta = {
-      id: uid(),
-      descricao: `Fornecedor: ${f.nome} (${nomeMes(ref)})${obs ? ' — ' + obs : ''}`,
-      valor, vencimento: dataPag, categoria: 'Fornecedores',
-      status: 'pago', tipo: 'despesa', pagoEm: dataPag
-    };
-    data.push(conta);
-    pagamento.contaId = conta.id;
-  }
   f.pagamentos = f.pagamentos || [];
   f.pagamentos.push(pagamento);
   saveFornecedores(true);
   fecharOverlay('overlayFornPagamento');
   renderTelaFornAtual();
+  if(ehCorrido(f)) return mostrarToastForn(`${abater ? `✂️ Abatido ${fmt(valor)}` : `✅ Pagamento de ${fmt(valor)} registrado`}. Em aberto: ${fmt(Math.max(0, saldoForn(f)))}.`);
   const faltaMes = faltaMesForn(f, ref);
   if(faltaMes <= 0.004) mostrarToastForn(`🎉 ${nomeMes(ref)} quitado com ${f.nome}!`, true);
   else mostrarToastForn(`${abater ? `✂️ Abatido ${fmt(valor)}` : `✅ Pagamento de ${fmt(valor)} registrado`}. Faltam ${fmt(faltaMes)} de ${nomeMes(ref)}.`);
@@ -6200,7 +6177,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
       } else {
         throw new Error('Formato inválido');
       }
-      showPage(document.querySelector('.side-nav button.active').dataset.page);
+      showPage(paginaAtual);
     } catch(err){
       alert('Arquivo de backup inválido.');
     }
@@ -6308,7 +6285,7 @@ async function afterLogin(user){
   showScreen('app');
   // Primeira tela do login substitui a entrada atual (não empilha).
   aplicandoHistorico = true;
-  showPage('contas');
+  showPage('relatorio');
   aplicandoHistorico = false;
   history.replaceState(estadoNavegacao(), '', urlSemHash());
 }
