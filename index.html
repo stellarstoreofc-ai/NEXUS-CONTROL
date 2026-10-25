@@ -514,6 +514,9 @@
   .vend-foto.placeholder{display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);font-size:18px;}
   .vend-card-nome{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:14px;line-height:1.25;}
   .vend-tag-calc{font-size:10.5px;font-weight:800;color:var(--accent);}
+  .vend-arrastar{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:2px 7px;font-size:15px;line-height:1.2;color:var(--muted);cursor:grab;touch-action:none;user-select:none;}
+  .vend-arrastar:active{cursor:grabbing;}
+  .vend-card.arrastando{opacity:.55;outline:2px dashed var(--accent);outline-offset:2px;}
   .vend-edit{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px;}
   .vend-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:10px;background:var(--bg);}
   .vend-linha.tem{background:#d1fae5;}
@@ -6272,15 +6275,14 @@ function mudancaTelaForn(e){
 // ponteiro anda pela grade e, ao soltar, salva a ordem em
 // f.produtos (que é a mesma ordem da Soma rápida). Pointer events cobrem
 // mouse e toque; a alça tem touch-action:none pra não rolar a página.
-document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
-  const alca = e.target.closest('[data-arrastar]');
-  if(!alca || e.button > 0) return;
-  const f = fornecedorAtivo();
-  const card = alca.closest('.forn-prod[data-prod]');
-  if(!f || !card) return;
+// Arrastar um cartão pela alça ⠿ dentro da grade (mouse e toque). seletor =
+// cartões que trocam de lugar (cada um com data-prod); fimSel = elemento do
+// fim da grade (ex: "+ Novo produto") que manda o cartão pro final.
+// aoSoltar(ordem) recebe os ids na nova ordem, só se mudou.
+function arrastarCartao(e, alca, card, seletor, fimSel, aoSoltar){
   e.preventDefault();
   const grade = card.parentElement;
-  const ordemAntes = [...grade.querySelectorAll('.forn-prod[data-prod]')].map(x => x.dataset.prod).join(',');
+  const ordemAntes = [...grade.querySelectorAll(seletor)].map(x => x.dataset.prod).join(',');
   card.classList.add('arrastando');
   document.body.classList.add('arrastando-produto');
   try{ alca.setPointerCapture(e.pointerId); } catch(err){}
@@ -6289,7 +6291,7 @@ document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
   // antes/depois sai do lado do centro desse cartão. Sobre o "+ Novo produto"
   // vai pro fim. Perto da borda da tela a página rola sozinha enquanto segura.
   let px = e.clientX, py = e.clientY, rolando = null;
-  const novo = grade.querySelector('.forn-prod-novo');
+  const novo = (fimSel ? grade.querySelector(fimSel) : null);
   const distancia = (rc, x, y) => Math.hypot(Math.max(rc.left - x, 0, x - rc.right), Math.max(rc.top - y, 0, y - rc.bottom));
   const reposicionar = () => {
     if(novo){
@@ -6299,7 +6301,7 @@ document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
         return;
       }
     }
-    const outros = [...grade.querySelectorAll('.forn-prod[data-prod]')].filter(c => c !== card);
+    const outros = [...grade.querySelectorAll(seletor)].filter(c => c !== card);
     if(!outros.length) return;
     let alvo = null, melhor = Infinity;
     outros.forEach(c => { const d = distancia(c.getBoundingClientRect(), px, py); if(d < melhor){ melhor = d; alvo = c; } });
@@ -6331,16 +6333,26 @@ document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
     alca.removeEventListener('pointercancel', soltar);
     card.classList.remove('arrastando');
     document.body.classList.remove('arrastando-produto');
-    const ordem = [...grade.querySelectorAll('.forn-prod[data-prod]')].map(x => x.dataset.prod);
+    const ordem = [...grade.querySelectorAll(seletor)].map(x => x.dataset.prod);
     if(ordem.join(',') === ordemAntes) return;
-    const pos = id => { const i = ordem.indexOf(id); return i < 0 ? Infinity : i; };
-    f.produtos = [...(f.produtos || [])].sort((a, b) => pos(a.id) - pos(b.id));
-    saveFornecedores(true);
-    renderPedidos();
+    aoSoltar(ordem);
   };
   alca.addEventListener('pointermove', mover);
   alca.addEventListener('pointerup', soltar);
   alca.addEventListener('pointercancel', soltar);
+}
+document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
+  const alca = e.target.closest('[data-arrastar]');
+  if(!alca || e.button > 0) return;
+  const f = fornecedorAtivo();
+  const card = alca.closest('.forn-prod[data-prod]');
+  if(!f || !card) return;
+  arrastarCartao(e, alca, card, '.forn-prod[data-prod]', '.forn-prod-novo', ordem => {
+    const pos = id => { const i = ordem.indexOf(id); return i < 0 ? Infinity : i; };
+    f.produtos = [...(f.produtos || [])].sort((a, b) => pos(a.id) - pos(b.id));
+    saveFornecedores(true);
+    renderPedidos();
+  });
 });
 
 const paginaFornecedores = document.getElementById('page-fornecedores');
@@ -6394,6 +6406,9 @@ function avisoColunaVendas(){
 }
 
 function vendProduto(id){ return vendas.produtos.find(p => p.id === id); }
+// Cada loja tem o próprio catálogo (produto sem "loja" = loja principal).
+function produtosDaLoja(loja = vendLoja){ return vendas.produtos.filter(p => lojaDe(p) === loja); }
+const campoLoja = loja => loja !== LOJA_PRINCIPAL ? { loja } : {};
 function calcDoVendProduto(vp){ return vp && vp.calcId ? produtos.find(p => p.id === vp.calcId) : null; }
 // Preço (o que o cliente paga) e lucro por unidade de hoje, numa plataforma.
 // Ligado à calculadora: vem do comparativo dela (na Shein, o preço final com
@@ -6525,6 +6540,7 @@ function renomearLojaVenda(){
     if(!podeExcluir) return alert(loja.id === LOJA_PRINCIPAL ? 'A loja principal não pode ser excluída — só renomeada.' : 'Essa loja já tem vendas ou ads lançados, então não dá pra excluir. Você pode só renomear.');
     if(!confirm(`Excluir a loja "${loja.nome}"?`)) return;
     vendas.lojas = vendas.lojas.filter(l => l.id !== loja.id);
+    vendas.produtos = vendas.produtos.filter(p => lojaDe(p) !== loja.id);
     vendLoja = LOJA_PRINCIPAL;
   } else loja.nome = nome.trim();
   saveVendas(true);
@@ -6569,10 +6585,11 @@ function htmlCardVenda(vp, dia){
       </div>
     </div>`;
   }).join('');
-  return `<div class="vend-card${pecas ? ' tem' : ''}" data-busca="${escapeHtml((vp.nome || '').toLowerCase())}">
+  return `<div class="vend-card${pecas ? ' tem' : ''}" data-prod="${vp.id}" data-busca="${escapeHtml((vp.nome || '').toLowerCase())}">
     <div class="vend-card-topo">
       ${htmlFotoVend(vp)}
       <div class="vend-card-nome"><strong>${escapeHtml(vp.nome)}</strong>${vp.calcId ? `<span class="vend-tag-calc" title="Preço e lucro vêm da Calculadora de precificação">🔗 calculadora</span>` : ''}</div>
+      <button type="button" class="vend-arrastar" data-arrastar-venda="${vp.id}" title="Segure e arraste pra mudar a ordem" aria-label="Arrastar ${escapeHtml(vp.nome)} pra mudar a ordem">⠿</button>
       <button type="button" class="vend-edit" data-acao="editar-produto" data-prod="${vp.id}" title="Editar produto">✏️</button>
     </div>
     ${linhas || `<p class="vend-sem-plat">Nenhuma plataforma marcada — toque no ✏️.</p>`}
@@ -6614,10 +6631,10 @@ function htmlVendasDia(){
           <button type="button" class="btn btn-danger-text btn-sm" data-acao="apagar-avulsa" data-id="${a.id}" title="Apagar">✕</button></div>
       </div>`).join('')}
     </div>` : ''}
-    ${vendas.produtos.length ? `<div class="vend-grid">${vendas.produtos.map(vp => htmlCardVenda(vp, dia)).join('')}</div>
+    ${produtosDaLoja().length ? `<div class="vend-grid">${produtosDaLoja().map(vp => htmlCardVenda(vp, dia)).join('')}</div>
       <p class="forn-hist-vazio" id="vendBuscaVazio" hidden>Nenhum produto com esse nome.</p>` : `
       <div class="empty-state">
-        <h3>Nenhum produto de venda ainda</h3>
+        <h3>Nenhum produto${(vendas.lojas || []).length > 1 ? ` em ${escapeHtml(nomeLoja(vendLoja))}` : ''} ainda</h3>
         <p>Toque em <strong>＋ Produto</strong> pra cadastrar na hora (nome, preço e lucro por plataforma), ou <strong>⬇️ Puxar da calculadora</strong> pra trazer os que já estão lá. Pra passar a planilha antiga, use <strong>⚡ Venda avulsa / total do dia</strong>.</p>
       </div>`}`;
 }
@@ -6831,7 +6848,7 @@ document.getElementById('formVendProduto').addEventListener('submit', e => {
     if(calcId) Object.keys(plataformas).forEach(pl => { if((vp.plataformas || {})[pl] && vp.plataformas[pl].preco) plataformas[pl] = vp.plataformas[pl]; });
     Object.assign(vp, { nome, foto: fotoVendProduto, calcId, plataformas });
   } else {
-    vendas.produtos.push({ id: uid(), nome, foto: fotoVendProduto, calcId, plataformas });
+    vendas.produtos.push({ id: uid(), nome, foto: fotoVendProduto, calcId, plataformas, ...campoLoja(vendLoja) });
   }
   saveVendas(true);
   fecharOverlay('overlayVendProduto');
@@ -6839,7 +6856,7 @@ document.getElementById('formVendProduto').addEventListener('submit', e => {
 });
 document.getElementById('btnExcluirVendProduto').addEventListener('click', () => {
   const vp = vendProduto(editingVendProdutoId);
-  if(!vp || !confirm(`Excluir "${vp.nome}" da lista? As vendas já lançadas continuam no histórico.`)) return;
+  if(!vp || !confirm(`Excluir "${vp.nome}" da lista de ${nomeLoja(lojaDe(vp))}? As vendas já lançadas continuam no histórico, e as outras empresas não mudam.`)) return;
   vendas.produtos = vendas.produtos.filter(p => p.id !== vp.id);
   saveVendas(true);
   fecharOverlay('overlayVendProduto');
@@ -6848,7 +6865,7 @@ document.getElementById('btnExcluirVendProduto').addEventListener('click', () =>
 
 // ---------- Modal: puxar da calculadora ----------
 function abrirModalPuxarCalc(){
-  const ligados = new Set(vendas.produtos.map(p => p.calcId).filter(Boolean));
+  const ligados = new Set(produtosDaLoja().map(p => p.calcId).filter(Boolean));
   const lista = produtos.filter(p => !ligados.has(p.id));
   document.getElementById('vpxLista').innerHTML = !produtos.length
     ? `<p class="forn-hist-vazio">A calculadora ainda não tem produtos em "Meus produtos". Use ＋ Produto pra cadastrar à mão.</p>`
@@ -6873,7 +6890,7 @@ document.getElementById('btnVpxTrazer').addEventListener('click', () => {
     const plataformas = {};
     calcularComparativo(calc).forEach(x => { if(x.chave !== 'custom' && x.preco > 0 && x.valido) plataformas[x.chave] = {}; });
     if(!Object.keys(plataformas).length) PLATAFORMAS_VENDA.forEach(pl => { plataformas[pl.id] = {}; });
-    vendas.produtos.push({ id: uid(), nome: calc.nome || 'Sem nome', foto: calc.foto || null, calcId: calc.id, plataformas });
+    vendas.produtos.push({ id: uid(), nome: calc.nome || 'Sem nome', foto: calc.foto || null, calcId: calc.id, plataformas, ...campoLoja(vendLoja) });
   });
   if(ids.length) saveVendas(true);
   fecharOverlay('overlayVendPuxar');
@@ -6906,8 +6923,8 @@ document.getElementById('formVendAvulsa').addEventListener('submit', e => {
   const salvarProduto = document.getElementById('vaSalvarProduto').checked;
   if(salvarProduto){
     if(!nome || !plat || !qtd) return alert('Pra salvar como produto, preencha o nome, a plataforma e as peças.');
-    const existente = vendas.produtos.find(p => !p.calcId && p.nome.trim().toLowerCase() === nome.toLowerCase());
-    const vp = existente || { id: uid(), nome, foto: null, calcId: null, plataformas: {} };
+    const existente = produtosDaLoja(loja).find(p => !p.calcId && p.nome.trim().toLowerCase() === nome.toLowerCase());
+    const vp = existente || { id: uid(), nome, foto: null, calcId: null, plataformas: {}, ...comLoja };
     vp.plataformas[plat] = { preco: r2f(valor / qtd), lucro: r2f(lucro / qtd) };
     if(!existente) vendas.produtos.push(vp);
     const dia = garantirDiaVendas(vendDia);
@@ -6977,6 +6994,21 @@ paginaVendas.addEventListener('change', e => {
     saveVendas(true);
     return renderVendas();
   }
+});
+paginaVendas.addEventListener('pointerdown', e => {
+  const alca = e.target.closest('[data-arrastar-venda]');
+  if(!alca || e.button > 0) return;
+  const card = alca.closest('.vend-card[data-prod]');
+  if(!card) return;
+  arrastarCartao(e, alca, card, '.vend-card[data-prod]', null, ordem => {
+    // Os produtos das outras lojas ficam onde estão; só os desta trocam de lugar.
+    const daLoja = new Set(produtosDaLoja().map(p => p.id));
+    const fila = ordem.map(vendProduto).filter(Boolean);
+    produtosDaLoja().forEach(p => { if(!ordem.includes(p.id)) fila.push(p); });
+    vendas.produtos = vendas.produtos.map(p => daLoja.has(p.id) ? fila.shift() : p);
+    saveVendas(true);
+    renderVendas();
+  });
 });
 paginaVendas.addEventListener('input', e => { if(e.target.id === 'vendBusca') aplicarBuscaVendas(); });
 // Enter no campo de quantidade confirma sem precisar sair dele.
