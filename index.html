@@ -621,6 +621,7 @@
   .forn-prod-foto{width:100%;aspect-ratio:1/1;max-width:100%;border-radius:10px;object-fit:cover;background:var(--bg);}
   .forn-prod-foto.placeholder{display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;}
   .forn-prod-nome{font-weight:800;font-size:14px;line-height:1.25;}
+  .forn-prod-sku{font-size:11px;font-weight:800;color:var(--muted);background:var(--bg);border-radius:6px;padding:1px 6px;white-space:nowrap;}
   .forn-prod-preco{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:700;}
   .forn-prod-preco input{width:84px;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font:inherit;font-weight:700;color:var(--text);}
   .forn-qtd{display:flex;align-items:center;gap:6px;}
@@ -1482,6 +1483,11 @@
       <div class="field">
         <label>Nome do produto</label>
         <input type="text" id="fornProdNome" placeholder="Ex: Tênis casual preto" required>
+      </div>
+      <div class="field">
+        <label>Código / SKU (opcional)</label>
+        <input type="text" id="fornProdSku" placeholder="Ex: 1020" autocomplete="off">
+        <div class="field-hint">Aparece no pedido que vai pro fornecedor, ao lado do nome.</div>
       </div>
       <div class="field">
         <label>Preço que você paga ao fornecedor (R$)</label>
@@ -4651,7 +4657,7 @@ function linhasDoItem(produto, item, nomeItem){
   const montar = (cor, g, qtd) => {
     const tamanhos = listaTam(g || {});
     const t = tamanhos.map(x => `${x.tam}: ${x.qtd}`).join(' · ');
-    return { foto: cor ? fotoDaCor(produto, cor) : (produto ? produto.foto : null), nome: nomeItem, cor, preco: item.preco,
+    return { foto: cor ? fotoDaCor(produto, cor) : (produto ? produto.foto : null), nome: nomeItem, sku: (produto && produto.sku) || '', cor, preco: item.preco,
              qtd, valor: r2f(qtd * item.preco), tamanhos,
              detalhe: (t ? `Tam. ${t}  ·  ` : '') + `${fmt(item.preco)}/un` };
   };
@@ -4751,7 +4757,7 @@ function htmlCardProdutoPedido(f, p, doDia){
     return `
       <div class="forn-prod com-var${qtd > 0 ? ' tem' : ''}" data-prod="${p.id}">
         ${editar}
-        <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}</div>${precoHtml}</div></div>
+        <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}${p.sku ? ` <span class="forn-prod-sku">SKU ${escapeHtml(p.sku)}</span>` : ''}</div>${precoHtml}</div></div>
         ${cores.map(c => {
           const q = qtdCor(c.nome);
           const fotoCor = fotoDaCor(p, c.nome);
@@ -4776,7 +4782,7 @@ function htmlCardProdutoPedido(f, p, doDia){
     return `
       <div class="forn-prod com-var${qtd > 0 ? ' tem' : ''}" data-prod="${p.id}">
         ${editar}
-        <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}</div>${precoHtml}</div></div>
+        <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}${p.sku ? ` <span class="forn-prod-sku">SKU ${escapeHtml(p.sku)}</span>` : ''}</div>${precoHtml}</div></div>
         ${linhaTamanhos('')}
         ${sub}
       </div>`;
@@ -4789,7 +4795,7 @@ function htmlCardProdutoPedido(f, p, doDia){
     return `
       <div class="forn-prod com-var${qtd > 0 ? ' tem' : ''}" data-prod="${p.id}">
         ${editar}
-        <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}</div>${precoHtml}</div></div>
+        <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}${p.sku ? ` <span class="forn-prod-sku">SKU ${escapeHtml(p.sku)}</span>` : ''}</div>${precoHtml}</div></div>
         <div class="forn-vars">${celulas}</div>
         ${sub}
       </div>`;
@@ -4797,7 +4803,7 @@ function htmlCardProdutoPedido(f, p, doDia){
   return `
     <div class="forn-prod${qtd > 0 ? ' tem' : ''}" data-prod="${p.id}">
       ${editar}
-      <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}</div>${precoHtml}</div></div>
+      <div class="forn-prod-topo">${foto}<div><div class="forn-prod-nome">${escapeHtml(p.nome)}${p.sku ? ` <span class="forn-prod-sku">SKU ${escapeHtml(p.sku)}</span>` : ''}</div>${precoHtml}</div></div>
       <div class="forn-qtd">
         <button type="button" class="menos" data-acao="menos" data-prod="${p.id}" aria-label="Diminuir">−</button>
         <input type="number" class="forn-qtd-input" data-prod="${p.id}" min="0" step="1" value="${qtd}" aria-label="Quantidade">
@@ -5355,7 +5361,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     }
     ctx.fillStyle = '#6b7794';
     ctx.font = fonte(700, 24);
-    ctx.fillText(rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`, px, ty + 37);
+    ctx.fillText((rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : ''), px, ty + 37);
     // Total do bloco (direita)
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f1b3d';
@@ -5474,15 +5480,31 @@ function linhasPedidoDia(f, dia){
 function textoWhatsPedido(f, titulo, linhas, totalPecas, totalValor){
   const tudoPar = linhas.every(l => l.tamanhos && l.tamanhos.length);
   const un = (n, par) => par ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
-  const blocos = linhas.map(l => {
-    const par = !!(l.tamanhos && l.tamanhos.length);
-    return [
-      `*${l.nome}*${l.cor ? ` — Cor: *${l.cor}*` : ''}`,
-      ...(par ? l.tamanhos.map(t => `   Nº ${t.tam}: ${t.qtd} ${un(t.qtd, true)}`) : []),
-      `   = ${l.qtd} ${un(l.qtd, par)} × ${fmt(l.preco)} = *${fmt(l.valor)}*`
-    ].join('\n');
+  // Enxuto pra quem recebe: um bloco por modelo (as cores dele juntas), cada
+  // cor numa linha com os números — "• PRETO: 34 (2) · 35 (1)".
+  const grupos = [];
+  linhas.forEach(l => {
+    const chave = [l.nome, l.sku || '', l.preco].join('|');
+    let g = grupos.find(x => x.chave === chave);
+    if(!g) grupos.push(g = { chave, nome: l.nome, sku: l.sku, preco: l.preco, linhas: [], qtd: 0, valor: 0, par: false });
+    g.linhas.push(l);
+    g.qtd += l.qtd;
+    g.valor = r2f(g.valor + l.valor);
+    if(l.tamanhos && l.tamanhos.length) g.par = true;
   });
-  return [`*${titulo}*`, '', blocos.join('\n\n'), '', `*TOTAL: ${totalPecas} ${un(totalPecas, tudoPar)} — ${fmt(totalValor)}*`].join('\n');
+  const blocos = grupos.map(g => [
+    `*${g.nome}*${g.sku ? ` · SKU ${g.sku}` : ''}`,
+    ...g.linhas.map(l => {
+      const nums = (l.tamanhos || []).map(t => `${t.tam} (${t.qtd})`).join(' · ');
+      if(l.cor) return `• ${l.cor}: ${nums || `${l.qtd} ${un(l.qtd, false)}`}`;
+      return nums ? `• ${nums}` : null;
+    }).filter(Boolean),
+    `${g.qtd} ${un(g.qtd, g.par)} × ${fmt(g.preco)} = ${fmt(g.valor)}`
+  ].join('\n'));
+  // "Pedido — Fornecedor — data" vira "*PEDIDO — data*" e o fornecedor embaixo.
+  const partes = String(titulo).split(' — ');
+  const cab = partes.length >= 3 ? [`*${partes[0].toUpperCase()} — ${partes.slice(2).join(' — ')}*`, partes[1]] : [`*${titulo}*`];
+  return [...cab, '', blocos.join('\n\n'), '', `*TOTAL: ${totalPecas} ${un(totalPecas, tudoPar)} — ${fmt(totalValor)}*`].join('\n');
 }
 function linkWhatsForn(f, texto){
   let num = String(f.whatsapp || '').replace(/\D/g, '');
@@ -5897,6 +5919,7 @@ function abrirModalFornProduto(produto = null){
   editingFornProdutoId = produto ? produto.id : null;
   document.getElementById('modalFornProdutoTitle').textContent = produto ? 'Editar produto' : 'Novo produto';
   document.getElementById('fornProdNome').value = produto ? produto.nome : '';
+  document.getElementById('fornProdSku').value = produto ? (produto.sku || '') : '';
   document.getElementById('fornProdPreco').value = produto ? produto.preco : '';
   document.getElementById('fornProdVariacoes').value = produto && produto.variacoes ? produto.variacoes.join(', ') : '';
   atualizarPreviewVariacoes();
@@ -5928,6 +5951,7 @@ document.getElementById('formFornProduto').addEventListener('submit', e => {
   if(!f) return;
   const nome = document.getElementById('fornProdNome').value.trim();
   const preco = parseFloat(document.getElementById('fornProdPreco').value);
+  const sku = document.getElementById('fornProdSku').value.trim();
   if(!nome || !(preco >= 0)) return;
   const variacoes = parseVariacoes(document.getElementById('fornProdVariacoes').value);
   const cores = lerCoresDoModal();
@@ -5935,12 +5959,13 @@ document.getElementById('formFornProduto').addEventListener('submit', e => {
   if(editingFornProdutoId){
     const p = f.produtos.find(x => x.id === editingFornProdutoId);
     p.nome = nome;
+    p.sku = sku;
     p.preco = r2f(preco);
     p.foto = fotoFornProduto;
     p.variacoes = variacoes;
     p.cores = cores;
   } else {
-    f.produtos.push({ id: uid(), nome, preco: r2f(preco), foto: fotoFornProduto, variacoes, cores });
+    f.produtos.push({ id: uid(), nome, sku, preco: r2f(preco), foto: fotoFornProduto, variacoes, cores });
   }
   saveFornecedores(true);
   fecharOverlay('overlayFornProduto');
