@@ -5557,11 +5557,12 @@ function textoWhatsPedido(f, titulo, linhas, totalPecas, totalValor){
   });
   const blocos = grupos.map(g => [
     `*${g.nome}*${g.sku ? ` · SKU ${g.sku}` : ''}`,
-    ...g.linhas.map(l => {
-      const nums = (l.tamanhos || []).map(t => `${t.tam} (${t.qtd})`).join(' · ');
-      if(l.cor) return `• ${l.cor}: ${nums || `${l.qtd} ${un(l.qtd, false)}`}`;
-      return nums ? `• ${nums}` : null;
-    }).filter(Boolean),
+    // Cor numa linha e cada numeração na sua própria linha embaixo dela.
+    ...g.linhas.flatMap(l => {
+      const nums = (l.tamanhos || []).map(t => `    ${t.tam} → ${t.qtd} ${un(t.qtd, true)}`);
+      if(l.cor) return nums.length ? [`• *${l.cor}*`, ...nums] : [`• *${l.cor}* → ${l.qtd} ${un(l.qtd, false)}`];
+      return nums;
+    }),
     `${g.qtd} ${un(g.qtd, g.par)} × ${fmt(g.preco)} = ${fmt(g.valor)}`
   ].join('\n'));
   // "Pedido — Fornecedor — data" vira "*PEDIDO — data*" e o fornecedor embaixo.
