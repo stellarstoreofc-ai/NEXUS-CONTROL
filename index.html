@@ -61,13 +61,14 @@
   .sidebar-top{display:flex;align-items:center;}
   .btn-menu-close{display:none;background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;padding:4px 8px;}
   .side-nav{display:flex;flex-direction:column;gap:4px;}
-  .side-nav button{
+  .side-nav a{text-decoration:none;}
+  .side-nav button,.side-nav a{
     display:flex;align-items:center;gap:10px;background:transparent;border:none;color:#c7d2fe;
     padding:11px 12px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;text-align:left;
     font-family:'Plus Jakarta Sans',sans-serif;width:100%;
   }
-  .side-nav button:hover{background:rgba(255,255,255,.08);color:#fff;}
-  .side-nav button.active{background:rgba(255,255,255,.16);color:#fff;}
+  .side-nav button:hover,.side-nav a:hover{background:rgba(255,255,255,.08);color:#fff;}
+  .side-nav button.active,.side-nav a.active{background:rgba(255,255,255,.16);color:#fff;}
 
   .sidebar-footer{margin-top:auto;}
   .btn-logout-side{
@@ -292,6 +293,7 @@
     border:none;background:transparent;padding:8px 14px;border-radius:8px;font-size:13.5px;font-weight:700;
     color:var(--muted);cursor:pointer;
   }
+  a.tab{text-decoration:none;display:inline-flex;align-items:center;}
   .tab.active{background:var(--navy);color:#fff;}
   .search-add{display:flex;gap:10px;flex-wrap:wrap;}
   .search-input{
@@ -1063,10 +1065,10 @@
       <button class="btn-menu-close" id="btnMenuClose">✕</button>
     </div>
     <nav class="side-nav" id="sideNav">
-      <button data-page="relatorio" class="active">📊 Relatório mensal</button>
-      <button data-page="vendas">📈 Vendas e lucro</button>
-      <button data-page="precificacao">🧮 Calculadora de precificação</button>
-      <button data-page="fornecedores">🚚 Fornecedores</button>
+      <a href="?pagina=relatorio" data-page="relatorio" class="active">📊 Relatório mensal</a>
+      <a href="?pagina=vendas" data-page="vendas">📈 Vendas e lucro</a>
+      <a href="?pagina=precificacao" data-page="precificacao">🧮 Calculadora de precificação</a>
+      <a href="?pagina=fornecedores" data-page="fornecedores">🚚 Fornecedores</a>
     </nav>
     <div class="sidebar-footer">
       <button class="btn-logout-side" id="btnLogout">🚪 Sair</button>
@@ -1091,10 +1093,10 @@
     <main>
       <!-- Abas do grupo "Relatório mensal" (Relatório, Contas, Lembretes, Custo fixo) -->
       <div class="tabs grupo-rel" id="grupoRelTabs">
-        <button class="tab" data-page="relatorio">📊 Relatório</button>
-        <button class="tab" data-page="contas">📋 Contas</button>
-        <button class="tab" data-page="lembretes">✅ Lembretes</button>
-        <button class="tab" data-page="custofixo">🧮 Custo fixo por pedido</button>
+        <a class="tab" href="?pagina=relatorio" data-page="relatorio">📊 Relatório</a>
+        <a class="tab" href="?pagina=contas" data-page="contas">📋 Contas</a>
+        <a class="tab" href="?pagina=lembretes" data-page="lembretes">✅ Lembretes</a>
+        <a class="tab" href="?pagina=custofixo" data-page="custofixo">🧮 Custo fixo por pedido</a>
       </div>
       <!-- PÁGINA: CONTAS -->
       <section class="page active" id="page-contas">
@@ -2076,16 +2078,19 @@ const pageTitles = {
   fornecedores: 'Fornecedores'
 };
 
-document.getElementById('sideNav').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-page]');
-  if(!btn) return;
-  showPage(btn.dataset.page);
-  closeSidebar();
-});
-document.getElementById('grupoRelTabs').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-page]');
-  if(btn) showPage(btn.dataset.page);
-});
+// Os itens do menu são links de verdade (?pagina=...): clique normal troca de
+// tela sem recarregar; Ctrl/Shift/Cmd+clique, rodinha e botão direito →
+// "abrir em nova guia" ficam com o navegador, e a guia nova abre nessa tela.
+function cliqueLinkPagina(e){
+  const link = e.target.closest('[data-page]');
+  if(!link) return null;
+  if(e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return null;
+  e.preventDefault();
+  showPage(link.dataset.page);
+  return link;
+}
+document.getElementById('sideNav').addEventListener('click', e => { if(cliqueLinkPagina(e)) closeSidebar(); });
+document.getElementById('grupoRelTabs').addEventListener('click', cliqueLinkPagina);
 
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -2108,7 +2113,8 @@ let aplicandoHistorico = false;
 function estadoNavegacao(){
   return { nexus: 1, pagina: paginaAtual, vendAba, vendDia, vendMes, vendLoja, fornAba, fornAtivoId, fornDia, fornMes, diaFechSel };
 }
-const urlSemHash = () => location.pathname + location.search;
+// Endereço da tela atual (?pagina=...) — recarregar ou abrir em outra guia volta nela.
+const urlSemHash = () => location.pathname + '?pagina=' + encodeURIComponent(paginaAtual);
 // Atualiza a entrada atual com o estado mais recente da tela (antes de sair dela).
 function salvarEstadoAtual(){
   if(aplicandoHistorico || !currentUserId) return;
@@ -2149,7 +2155,7 @@ function showPage(name){
   salvarEstadoAtual();
   paginaAtual = name;
   const noGrupo = PAGINAS_GRUPO_REL.includes(name);
-  document.querySelectorAll('.side-nav button').forEach(b => b.classList.toggle('active', b.dataset.page === (noGrupo ? 'relatorio' : name)));
+  document.querySelectorAll('.side-nav [data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === (noGrupo ? 'relatorio' : name)));
   document.getElementById('grupoRelTabs').style.display = noGrupo ? '' : 'none';
   document.querySelectorAll('#grupoRelTabs .tab').forEach(b => b.classList.toggle('active', b.dataset.page === name));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -7239,7 +7245,8 @@ async function afterLogin(user){
   showScreen('app');
   // Primeira tela do login substitui a entrada atual (não empilha).
   aplicandoHistorico = true;
-  showPage('relatorio');
+  const pedida = new URLSearchParams(location.search).get('pagina');
+  showPage(pageTitles[pedida] ? pedida : 'relatorio');
   aplicandoHistorico = false;
   history.replaceState(estadoNavegacao(), '', urlSemHash());
 }
