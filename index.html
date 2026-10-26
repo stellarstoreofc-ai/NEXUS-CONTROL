@@ -6303,35 +6303,26 @@ function arrastarCartao(e, alca, card, seletor, fimSel, aoSoltar){
   e.preventDefault();
   const grade = card.parentElement;
   const ordemAntes = [...grade.querySelectorAll(seletor)].map(x => x.dataset.prod).join(',');
-  card.classList.add('arrastando');
-  document.body.classList.add('arrastando-produto');
   try{ alca.setPointerCapture(e.pointerId); } catch(err){}
-  // O destino é o cartão mais perto do ponteiro (não precisa estar exatamente
-  // em cima — vãos entre cartões de alturas diferentes também contam), e
-  // antes/depois sai do lado do centro desse cartão. Sobre o "+ Novo produto"
-  // vai pro fim. Perto da borda da tela a página rola sozinha enquanto segura.
-  let px = e.clientX, py = e.clientY, rolando = null;
+  // Só vira arraste depois de mexer uns pixels — um clique (ou tremida) na
+  // alça não muda nada. O cartão só troca de lugar quando o ponteiro está EM
+  // CIMA de outro cartão: indo pra frente entra depois dele, voltando entra
+  // antes. Sobre o "+ Novo produto" vai pro fim. Perto da borda da tela a
+  // página rola sozinha enquanto segura.
+  const x0 = e.clientX, y0 = e.clientY;
+  let px = x0, py = y0, rolando = null, ativo = false;
   const novo = (fimSel ? grade.querySelector(fimSel) : null);
-  const distancia = (rc, x, y) => Math.hypot(Math.max(rc.left - x, 0, x - rc.right), Math.max(rc.top - y, 0, y - rc.bottom));
+  const dentro = (el, x, y) => { const rc = el.getBoundingClientRect(); return x >= rc.left && x <= rc.right && y >= rc.top && y <= rc.bottom; };
   const reposicionar = () => {
-    if(novo){
-      const rn = novo.getBoundingClientRect();
-      if(px >= rn.left && px <= rn.right && py >= rn.top && py <= rn.bottom){
-        if(card.nextElementSibling !== novo) grade.insertBefore(card, novo);
-        return;
-      }
+    if(novo && dentro(novo, px, py)){
+      if(card.nextElementSibling !== novo) grade.insertBefore(card, novo);
+      return;
     }
-    const outros = [...grade.querySelectorAll(seletor)].filter(c => c !== card);
-    if(!outros.length) return;
-    let alvo = null, melhor = Infinity;
-    outros.forEach(c => { const d = distancia(c.getBoundingClientRect(), px, py); if(d < melhor){ melhor = d; alvo = c; } });
+    const cartoes = [...grade.querySelectorAll(seletor)];
+    const alvo = cartoes.find(c => c !== card && !c.hidden && dentro(c, px, py));
     if(!alvo) return;
-    const rc = alvo.getBoundingClientRect();
-    // Uma coluna só (celular): decide por cima/baixo; senão, esquerda/direita.
-    const umaColuna = outros.every(c => Math.abs(c.getBoundingClientRect().left - rc.left) < 4);
-    const depois = umaColuna ? py > rc.top + rc.height / 2 : px > rc.left + rc.width / 2;
-    if(depois){ if(alvo.nextElementSibling !== card) grade.insertBefore(card, alvo.nextElementSibling); }
-    else { if(card.nextElementSibling !== alvo) grade.insertBefore(card, alvo); }
+    if(cartoes.indexOf(alvo) > cartoes.indexOf(card)) grade.insertBefore(card, alvo.nextElementSibling);
+    else grade.insertBefore(card, alvo);
   };
   const passoRolagem = () => {
     const borda = 90;
@@ -6341,9 +6332,15 @@ function arrastarCartao(e, alca, card, seletor, fimSel, aoSoltar){
     if(v){ window.scrollBy(0, v); reposicionar(); }
     rolando = requestAnimationFrame(passoRolagem);
   };
-  rolando = requestAnimationFrame(passoRolagem);
   const mover = ev => {
     px = ev.clientX; py = ev.clientY;
+    if(!ativo){
+      if(Math.hypot(px - x0, py - y0) < 8) return;
+      ativo = true;
+      card.classList.add('arrastando');
+      document.body.classList.add('arrastando-produto');
+      rolando = requestAnimationFrame(passoRolagem);
+    }
     reposicionar();
   };
   const soltar = () => {
