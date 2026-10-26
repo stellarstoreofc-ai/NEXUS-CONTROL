@@ -569,6 +569,13 @@
   .vend-puxar-item span{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}
   .vend-puxar-item small{font-size:11.5px;color:var(--muted);}
   .rel-vendas{margin-top:14px;}
+  .tags-box{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--border);border-radius:10px;padding:6px 8px;background:var(--surface);cursor:text;min-height:44px;}
+  .tags-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+  .tags-lista{display:contents;}
+  .tag-chip{display:inline-flex;align-items:center;gap:4px;background:#e0e7ff;color:var(--navy);font-weight:800;font-size:13.5px;border-radius:999px;padding:4px 6px 4px 11px;}
+  .tag-chip button{border:none;background:rgba(15,34,84,.1);color:var(--navy);border-radius:999px;width:20px;height:20px;font-size:11px;cursor:pointer;padding:0;line-height:1;}
+  .tag-chip button:hover{background:var(--red);color:#fff;}
+  .field .tags-box input.tags-entrada{flex:1;min-width:140px;border:none;outline:none;box-shadow:none;padding:6px 4px;background:transparent;font:inherit;}
   .p-dados-forn{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
   .p-dados-forn summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--navy);}
   .p-dados-forn[open] summary{margin-bottom:4px;}
@@ -1501,7 +1508,7 @@
       <div class="field">
         <label>Variações / tamanhos (opcional)</label>
         <input type="text" id="fornProdVariacoes" placeholder="Ex: 28-34  ou  P, M, G, GG">
-        <div class="field-hint">Use um intervalo (28-34) ou separe por vírgula. Deixe vazio se o produto não tem variação.</div>
+        <div class="field-hint">Digite cada número e aperte <strong>Enter</strong> (ou vírgula). Também dá pra digitar um intervalo, tipo 28-34. Deixe vazio se o produto não tem variação.</div>
         <div class="forn-var-preview" id="fornProdVarPreview"></div>
       </div>
       <div class="field">
@@ -1832,7 +1839,7 @@
         <div class="field">
           <label>Cores</label>
           <input type="text" id="pCores" placeholder="Ex: Preto, Branco, Rosa" autocomplete="off">
-          <div class="field-hint">Separe por vírgula. A foto de cada cor dá pra pôr depois, no fornecedor.</div>
+          <div class="field-hint">Digite cada cor e aperte <strong>Enter</strong>. A foto de cada cor dá pra pôr depois, no fornecedor.</div>
         </div>
       </details>
       <div class="field">
@@ -3793,6 +3800,8 @@ function openModalProduto(produto = null){
   document.getElementById('pSku').value = produto ? (produto.sku || '') : '';
   document.getElementById('pVariacoes').value = produto ? (produto.variacoes || []).join(', ') : '';
   document.getElementById('pCores').value = produto ? (produto.cores || []).map(c => c.nome).join(', ') : '';
+  atualizarCampoTags('pVariacoes');
+  atualizarCampoTags('pCores');
   document.getElementById('pDadosForn').open = !!(produto && (produto.sku || (produto.variacoes || []).length || (produto.cores || []).length));
   fotoAtualProduto = produto ? (produto.foto || null) : null;
   atualizarPreviewFotoProduto();
@@ -5911,9 +5920,9 @@ function atualizarPreviewFotoForn(){
   prev.innerHTML = fotoFornProduto ? `<img src="${fotoFornProduto}" alt="Foto do produto">` : 'Sem foto';
   document.getElementById('btnFornProdFotoRemover').style.display = fotoFornProduto ? '' : 'none';
 }
+// As próprias etiquetas do campo já mostram a numeração (o preview antigo fica vazio).
 function atualizarPreviewVariacoes(){
-  const vars = parseVariacoes(document.getElementById('fornProdVariacoes').value);
-  document.getElementById('fornProdVarPreview').innerHTML = vars.map(v => `<span>${escapeHtml(v)}</span>`).join('');
+  atualizarCampoTags('fornProdVariacoes');
 }
 // Linhas de cor do modal: o DOM é o estado enquanto o modal está aberto (a
 // foto de cada cor fica em row.dataset.foto), lidas de volta no salvar.
@@ -5949,7 +5958,60 @@ document.getElementById('fornProdCoresList').addEventListener('keydown', e => {
 });
 // Mesma ideia nos campos de SKU/tamanhos/cores do cadastro da calculadora:
 // Enter não salva o produto sem querer.
-['pSku', 'pVariacoes', 'pCores'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if(e.key === 'Enter') e.preventDefault(); }));
+document.getElementById('pSku').addEventListener('keydown', e => { if(e.key === 'Enter') e.preventDefault(); });
+
+// Campo de etiquetas: digita "34", Enter (ou vírgula) → vira etiqueta e o
+// campo fica livre pro próximo. O <input> original vira oculto e continua
+// sendo a fonte do valor ("34, 35, 36"), então quem lê/grava .value não muda —
+// só precisa chamar atualizarCampoTags(id) depois de gravar .value por código.
+// expandir: "28-34" vira 28…34 (parseVariacoes). Backspace no campo vazio
+// apaga a última; ✕ apaga uma; sair do campo confirma o que ficou digitado.
+const camposTags = {};
+function montarCampoTags(id, { expandir = false, placeholder = '' } = {}){
+  const orig = document.getElementById(id);
+  orig.type = 'hidden';
+  const box = document.createElement('div');
+  box.className = 'tags-box';
+  box.innerHTML = '<div class="tags-lista"></div><input type="text" class="tags-entrada" autocomplete="off">';
+  orig.after(box);
+  const entrada = box.querySelector('.tags-entrada');
+  entrada.placeholder = placeholder;
+  const lerLista = () => orig.value.split(/[,;]/).map(t => t.trim()).filter(Boolean);
+  const render = () => {
+    box.querySelector('.tags-lista').innerHTML = lerLista().map((t, i) =>
+      `<span class="tag-chip">${escapeHtml(t)}<button type="button" data-i="${i}" aria-label="Remover ${escapeHtml(t)}">✕</button></span>`).join('');
+  };
+  const gravar = lista => { orig.value = lista.join(', '); render(); orig.dispatchEvent(new Event('input', { bubbles: true })); };
+  const confirmar = () => {
+    const txt = entrada.value.trim();
+    entrada.value = '';
+    if(!txt) return;
+    const novos = expandir ? parseVariacoes(txt) : txt.split(/[,;]/).map(t => t.trim()).filter(Boolean);
+    const lista = lerLista();
+    novos.forEach(n => { if(!lista.includes(n)) lista.push(n); });
+    gravar(lista);
+  };
+  entrada.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ','){ e.preventDefault(); confirmar(); }
+    else if(e.key === 'Backspace' && !entrada.value){ const l = lerLista(); if(l.length){ l.pop(); gravar(l); } }
+  });
+  entrada.addEventListener('blur', confirmar);
+  // Salvar sem ter apertado Enter também leva o que ficou digitado (captura: roda antes do submit do formulário).
+  const form = orig.closest('form');
+  if(form) form.addEventListener('submit', confirmar, true);
+  entrada.addEventListener('paste', () => setTimeout(() => { if(/[,;]/.test(entrada.value)) confirmar(); }));
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button[data-i]');
+    if(b){ const l = lerLista(); l.splice(+b.dataset.i, 1); gravar(l); }
+    entrada.focus();
+  });
+  camposTags[id] = render;
+  render();
+}
+function atualizarCampoTags(id){ if(camposTags[id]) camposTags[id](); }
+montarCampoTags('fornProdVariacoes', { expandir: true, placeholder: 'Digite o número e aperte Enter (ex: 34)' });
+montarCampoTags('pVariacoes', { expandir: true, placeholder: 'Digite o número e aperte Enter (ex: 34)' });
+montarCampoTags('pCores', { placeholder: 'Digite a cor e aperte Enter (ex: Preto)' });
 document.getElementById('btnFornProdAddCor').addEventListener('click', () => {
   addLinhaCor().querySelector('.cor-nome').focus();
 });
