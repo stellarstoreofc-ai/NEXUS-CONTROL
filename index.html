@@ -5259,7 +5259,8 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   // etiqueta e a numeração numa grade (Nº em cima, quantidade grande embaixo).
   try{ await document.fonts.ready; } catch(e){}
   const W = 1080, PAD = 56, FOTO = 124;
-  const BOX_W = 108, BOX_H = 100, GAP = 12;
+  // Caixa de numeração: Nº grande em cima, quantidade numa faixa embaixo.
+  const BOX_W = 150, BOX_H = 136, GAP = 14;
   const porLinhaGrade = Math.floor((W - PAD * 2 + GAP) / (BOX_W + GAP));
   const fonte = (peso, tam) => `${peso} ${tam}px 'Plus Jakarta Sans', 'Nunito Sans', Arial, sans-serif`;
   const unidade = (l, n) => (l.tamanhos && l.tamanhos.length) ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
@@ -5271,7 +5272,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   const layout = linhas.map(l => {
     medidor.font = fonte(800, 38);
     const nome = quebrarTexto(medidor, l.nome, larguraNome).slice(0, 2);
-    const topo = Math.max(FOTO, 58 + (nome.length - 1) * 44 + 70);
+    const topo = Math.max(FOTO, 58 + (nome.length - 1) * 44 + 84);
     const linhasGrade = l.tamanhos && l.tamanhos.length ? Math.ceil(l.tamanhos.length / porLinhaGrade) : 0;
     const grade = linhasGrade ? 26 + linhasGrade * (BOX_H + GAP) - GAP : 0;
     return { nome, topo, h: 30 + topo + grade + 34 };
@@ -5341,19 +5342,20 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     // Etiqueta da cor + preço por par
     let px = tx;
     if(l.cor){
-      ctx.font = fonte(800, 24);
+      // Cor bem visível: etiqueta escura com letra branca grande.
+      ctx.font = fonte(800, 30);
       const txt = `${rot.prefixoCor}${String(l.cor).toUpperCase()}`;
-      const w = ctx.measureText(txt).width + 32;
-      ctx.fillStyle = '#e0e7ff';
-      retArred(px, ty, w, 44, 22);
-      ctx.fill();
+      const w = ctx.measureText(txt).width + 40;
       ctx.fillStyle = '#0f2254';
-      ctx.fillText(txt, px + 16, ty + 31);
+      retArred(px, ty, w, 56, 28);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(txt, px + 20, ty + 39);
       px += w + 16;
     }
     ctx.fillStyle = '#6b7794';
     ctx.font = fonte(700, 24);
-    ctx.fillText(rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`, px, ty + 31);
+    ctx.fillText(rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`, px, ty + 37);
     // Total do bloco (direita)
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f1b3d';
@@ -5380,11 +5382,22 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
         ctx.stroke();
         ctx.textAlign = 'center';
         ctx.fillStyle = '#6b7794';
-        ctx.font = fonte(800, 22);
-        ctx.fillText(`Nº ${t.tam}`, bx + BOX_W / 2, by + 32);
+        ctx.font = fonte(800, 18);
+        ctx.fillText('NÚMERO', bx + BOX_W / 2, by + 26);
         ctx.fillStyle = '#0f2254';
-        ctx.font = fonte(800, 44);
-        ctx.fillText(String(t.qtd), bx + BOX_W / 2, by + 80);
+        ctx.font = fonte(800, 52);
+        ctx.fillText(String(t.tam), bx + BOX_W / 2, by + 78);
+        // Faixa de baixo: quantidade daquele número
+        const fy = by + 92;
+        ctx.save();
+        retArred(bx, by, BOX_W, BOX_H, 16);
+        ctx.clip();
+        ctx.fillStyle = '#059669';
+        ctx.fillRect(bx, fy, BOX_W, BOX_H - 92);
+        ctx.restore();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = fonte(800, 28);
+        ctx.fillText(`${t.qtd} ${t.qtd === 1 ? 'par' : 'pares'}`, bx + BOX_W / 2, fy + 32);
         ctx.textAlign = 'left';
       });
     }
