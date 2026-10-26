@@ -740,6 +740,8 @@
   .forn-hist-linha strong{white-space:nowrap;}
   .forn-hist-vazio{font-size:13px;color:var(--muted);}
   .forn-rapidos{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .forn-calc-origem{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#eef4ff;border:1px solid #c7d2fe;border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:13px;color:var(--navy);}
+  .forn-calc-origem[hidden]{display:none;}
   .forn-check{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:14px;}
   .forn-check input{margin-top:2px;}
   .forn-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:14px 20px;border-radius:14px;font-weight:800;box-shadow:0 10px 30px rgba(15,34,84,.35);opacity:0;transition:opacity .25s,transform .25s;z-index:200;max-width:calc(100% - 32px);text-align:center;pointer-events:none;}
@@ -1480,6 +1482,10 @@
       <button type="button" class="modal-close-x" data-fechar="overlayFornProduto" aria-label="Fechar">✕</button>
     </div>
     <form id="formFornProduto">
+      <div class="forn-calc-origem" id="fornProdCalcBox" hidden>
+        <span>🔗 Da calculadora: <strong id="fornProdCalcNome"></strong></span>
+        <button type="button" class="btn btn-outline btn-sm" id="btnFornProdAtualizarCalc">🔄 Atualizar da calculadora</button>
+      </div>
       <div class="field">
         <label>Foto (opcional)</label>
         <div class="forn-foto-wrap">
@@ -6043,6 +6049,11 @@ document.getElementById('fornCorFotoInput').addEventListener('change', async e =
   }
 });
 
+let calcOrigemFornProduto = null;
+const normNome = t => String(t || '').trim().toLowerCase();
+function calcDeOrigemForn(fp){
+  return produtos.find(p => p.id === fp.calcId) || produtos.find(p => normNome(p.nome) && normNome(p.nome) === normNome(fp.nome)) || null;
+}
 function abrirModalFornProduto(produto = null){
   document.getElementById('fornProdCoresList').innerHTML = '';
   ((produto && produto.cores) || []).forEach(c => addLinhaCor(c.nome, c.foto));
@@ -6056,10 +6067,42 @@ function abrirModalFornProduto(produto = null){
   document.getElementById('btnExcluirFornProduto').style.display = produto ? '' : 'none';
   fotoFornProduto = produto ? (produto.foto || null) : null;
   atualizarPreviewFotoForn();
+  // Produto que veio da calculadora (ou com o mesmo nome de um de lá): botão
+  // pra puxar de novo o que mudou — só faz algo se clicar.
+  calcOrigemFornProduto = produto ? calcDeOrigemForn(produto) : null;
+  document.getElementById('fornProdCalcBox').hidden = !calcOrigemFornProduto;
+  if(calcOrigemFornProduto) document.getElementById('fornProdCalcNome').textContent = calcOrigemFornProduto.nome || 'Sem nome';
   abrirOverlay('overlayFornProduto');
   setTimeout(() => document.getElementById('fornProdNome').focus(), 50);
 }
 document.getElementById('fornProdVariacoes').addEventListener('input', atualizarPreviewVariacoes);
+// "Atualizar da calculadora": preenche nome, foto, custo (preço de compra),
+// SKU, tamanhos e cores com o que está na calculadora agora e já salva.
+// Cores: as da calculadora primeiro (mantendo a foto que a cor já tinha aqui)
+// e as que só existem aqui continuam no fim — nada com foto se perde.
+document.getElementById('btnFornProdAtualizarCalc').addEventListener('click', () => {
+  const calc = calcOrigemFornProduto;
+  if(!calc) return;
+  document.getElementById('fornProdNome').value = calc.nome || document.getElementById('fornProdNome').value;
+  if(calc.sku) document.getElementById('fornProdSku').value = calc.sku;
+  document.getElementById('fornProdPreco').value = r2f(+calc.custoProduto || 0);
+  if((calc.variacoes || []).length){
+    document.getElementById('fornProdVariacoes').value = calc.variacoes.join(', ');
+    atualizarPreviewVariacoes();
+  }
+  if(calc.foto){ fotoFornProduto = calc.foto; atualizarPreviewFotoForn(); }
+  const atuais = lerCoresDoModal();
+  const novas = (calc.cores || []).map(c => ({ nome: c.nome, foto: (atuais.find(a => normNome(a.nome) === normNome(c.nome)) || {}).foto || c.foto || null }));
+  const extras = atuais.filter(a => !novas.some(n => normNome(n.nome) === normNome(a.nome)));
+  if(novas.length){
+    document.getElementById('fornProdCoresList').innerHTML = '';
+    [...novas, ...extras].forEach(c => addLinhaCor(c.nome, c.foto));
+  }
+  vincularCalcAoSalvar = calc.id;
+  document.getElementById('formFornProduto').requestSubmit();
+  mostrarToastForn(`🔄 "${calc.nome}" atualizado com os dados da calculadora.`);
+});
+let vincularCalcAoSalvar = null;
 document.getElementById('btnFornProdFoto').addEventListener('click', () => document.getElementById('fornProdFotoInput').click());
 document.getElementById('fornProdFotoInput').addEventListener('change', async e => {
   const file = e.target.files[0];
@@ -6089,6 +6132,7 @@ document.getElementById('formFornProduto').addEventListener('submit', e => {
   if(editingFornProdutoId){
     const p = f.produtos.find(x => x.id === editingFornProdutoId);
     p.nome = nome;
+    if(vincularCalcAoSalvar) p.calcId = vincularCalcAoSalvar;
     p.sku = sku;
     p.preco = r2f(preco);
     p.foto = fotoFornProduto;
@@ -6097,6 +6141,7 @@ document.getElementById('formFornProduto').addEventListener('submit', e => {
   } else {
     f.produtos.push({ id: uid(), nome, sku, preco: r2f(preco), foto: fotoFornProduto, variacoes, cores });
   }
+  vincularCalcAoSalvar = null;
   saveFornecedores(true);
   fecharOverlay('overlayFornProduto');
   renderTelaFornAtual();
