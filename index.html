@@ -5937,6 +5937,19 @@ function lerCoresDoModal(){
     foto: row.dataset.foto || null
   })).filter(c => c.nome && !vistos.has(c.nome) && vistos.add(c.nome));
 }
+// Enter no nome de uma cor pula pra próxima (ou cria uma nova, se a última já
+// tem nome) em vez de enviar o formulário — só Salvar/Cancelar fecham a janela.
+document.getElementById('fornProdCoresList').addEventListener('keydown', e => {
+  if(e.key !== 'Enter' || !e.target.classList.contains('cor-nome')) return;
+  e.preventDefault();
+  const linhas = [...document.querySelectorAll('#fornProdCoresList .forn-cor-row')];
+  const i = linhas.indexOf(e.target.closest('.forn-cor-row'));
+  if(i < linhas.length - 1) return linhas[i + 1].querySelector('.cor-nome').focus();
+  if(e.target.value.trim()) addLinhaCor().querySelector('.cor-nome').focus();
+});
+// Mesma ideia nos campos de SKU/tamanhos/cores do cadastro da calculadora:
+// Enter não salva o produto sem querer.
+['pSku', 'pVariacoes', 'pCores'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if(e.key === 'Enter') e.preventDefault(); }));
 document.getElementById('btnFornProdAddCor').addEventListener('click', () => {
   addLinhaCor().querySelector('.cor-nome').focus();
 });
