@@ -6301,6 +6301,7 @@ function mudancaTelaForn(e){
 // aoSoltar(ordem) recebe os ids na nova ordem, só se mudou.
 function arrastarCartao(e, alca, card, seletor, fimSel, aoSoltar){
   e.preventDefault();
+  document.querySelectorAll('.arrastando').forEach(el => el.classList.remove('arrastando'));
   const grade = card.parentElement;
   const ordemAntes = [...grade.querySelectorAll(seletor)].map(x => x.dataset.prod).join(',');
   try{ alca.setPointerCapture(e.pointerId); } catch(err){}
@@ -6343,20 +6344,26 @@ function arrastarCartao(e, alca, card, seletor, fimSel, aoSoltar){
     }
     reposicionar();
   };
+  let terminou = false;
   const soltar = () => {
+    if(terminou) return;
+    terminou = true;
     cancelAnimationFrame(rolando);
-    alca.removeEventListener('pointermove', mover);
-    alca.removeEventListener('pointerup', soltar);
-    alca.removeEventListener('pointercancel', soltar);
+    window.removeEventListener('pointermove', mover);
+    window.removeEventListener('pointerup', soltar);
+    window.removeEventListener('pointercancel', soltar);
     card.classList.remove('arrastando');
     document.body.classList.remove('arrastando-produto');
     const ordem = [...grade.querySelectorAll(seletor)].map(x => x.dataset.prod);
     if(ordem.join(',') === ordemAntes) return;
     aoSoltar(ordem);
   };
-  alca.addEventListener('pointermove', mover);
-  alca.addEventListener('pointerup', soltar);
-  alca.addEventListener('pointercancel', soltar);
+  // Escuta na janela, não na alça: mover o cartão no DOM solta a captura do
+  // ponteiro, e aí o pointerup nunca chegava na alça (cartão ficava preso
+  // como "arrastando").
+  window.addEventListener('pointermove', mover);
+  window.addEventListener('pointerup', soltar);
+  window.addEventListener('pointercancel', soltar);
 }
 document.getElementById('pedConteudo').addEventListener('pointerdown', e => {
   const alca = e.target.closest('[data-arrastar]');
