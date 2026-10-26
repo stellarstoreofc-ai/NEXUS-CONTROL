@@ -5339,7 +5339,8 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   const layout = linhas.map(l => {
     medidor.font = fonte(800, 38);
     const nome = quebrarTexto(medidor, l.nome, larguraNome).slice(0, 2);
-    const topo = Math.max(FOTO, 58 + (nome.length - 1) * 44 + 84);
+    // nome + etiqueta da cor + linha de preço/SKU embaixo dela
+    const topo = Math.max(FOTO, 58 + (nome.length - 1) * 44 + 84 + (l.cor ? 40 : 0));
     const linhasGrade = l.tamanhos && l.tamanhos.length ? Math.ceil(l.tamanhos.length / porLinhaGrade) : 0;
     const grade = linhasGrade ? 26 + linhasGrade * (BOX_H + GAP) - GAP : 0;
     return { nome, topo, h: 30 + topo + grade + 34 };
@@ -5418,11 +5419,12 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
       ctx.fill();
       ctx.fillStyle = '#ffffff';
       ctx.fillText(txt, px + 20, ty + 39);
-      px += w + 16;
     }
+    // Preço e SKU numa linha própria (embaixo da cor), sem invadir a coluna do valor.
     ctx.fillStyle = '#6b7794';
     ctx.font = fonte(700, 24);
-    ctx.fillText((rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : ''), px, ty + 37);
+    const linhaPreco = (rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : '');
+    ctx.fillText(quebrarTexto(ctx, linhaPreco, W - PAD - 250 - px)[0], px, l.cor ? ty + 56 + 32 : ty + 37);
     // Total do bloco (direita)
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f1b3d';
