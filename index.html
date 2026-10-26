@@ -349,6 +349,24 @@
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     padding:16px 18px;box-shadow:var(--shadow);margin-bottom:10px;
   }
+  /* Cartão recolhido: uma linha — foto, nome, resumo das plataformas, ações */
+  .produto-item.compacto{display:grid;grid-template-columns:auto minmax(140px,1fr) minmax(0,3fr) auto;align-items:center;gap:14px;padding:10px 14px;margin-bottom:8px;cursor:pointer;}
+  .produto-item.compacto:hover{border-color:var(--accent);}
+  .produto-item.compacto .produto-thumb,.produto-item.compacto .produto-thumb-placeholder{width:64px;height:64px;font-size:22px;}
+  .prod-compacto-info{min-width:0;}
+  .prod-compacto-info .produto-nome{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .prod-compacto-acoes{display:flex;gap:6px;}
+  .prod-resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;}
+  .prod-resumo-cel{display:flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;line-height:1.25;background:var(--bg);}
+  .prod-resumo-cel .badge{align-self:flex-start;font-size:10px;padding:1px 6px;}
+  .prod-resumo-cel strong{font-size:14px;}
+  .prod-resumo-cel small{color:var(--muted);font-size:11px;}
+  .prod-resumo-cel.melhor{border-color:#6ee7b7;background:var(--green-bg);}
+  .prod-resumo-preco{color:var(--muted);font-weight:700;}
+  @media (max-width:900px){
+    .produto-item.compacto{grid-template-columns:auto 1fr auto;}
+    .produto-item.compacto .prod-resumo{grid-column:1 / -1;grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
   .busca-produtos{flex:1;min-width:160px;max-width:420px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font:inherit;background:var(--surface);}
   .produto-item[hidden]{display:none;}
   .produto-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px;}
@@ -1350,6 +1368,7 @@
         <div class="toolbar prec-toolbar">
           <h3 style="margin:0;">🏷️ Meus produtos</h3>
           <input type="search" id="buscaProdutos" class="busca-produtos" placeholder="🔎 Buscar produto..." autocomplete="off">
+          <button class="btn btn-outline btn-sm" id="btnAlternarTodosProdutos" type="button">▾ Abrir todos</button>
           <button class="btn btn-primary btn-sm" id="btnNovoProduto">+ Novo produto</button>
         </div>
         <div class="list" id="produtosList"></div>
@@ -3116,6 +3135,26 @@ function produtoDaGrade(el){
   return produto ? { grade, produto } : null;
 }
 
+// "Meus produtos" abre compacto (uma linha com o resumo das 4 plataformas);
+// tocar no cartão abre a grade completa. Quais ficam abertos é só uma
+// preferência deste navegador (localStorage), não vai pra nuvem.
+const CHAVE_PRODUTOS_ABERTOS = 'nexus.produtosAbertos';
+let produtosAbertos = new Set();
+try{ produtosAbertos = new Set(JSON.parse(localStorage.getItem(CHAVE_PRODUTOS_ABERTOS) || '[]')); } catch(e){}
+function salvarProdutosAbertos(){
+  try{ localStorage.setItem(CHAVE_PRODUTOS_ABERTOS, JSON.stringify([...produtosAbertos])); } catch(e){}
+}
+const rotuloCurtoMkt = { shopee: 'Shopee', ml: 'ML', shein: 'Shein', tiktok: 'TikTok', custom: 'Personal.' };
+function htmlResumoMarketplaces(p){
+  return `<div class="prod-resumo">${calcularComparativo(p).map(r => {
+    const tem = r.preco > 0 && r.valido;
+    return `<div class="prod-resumo-cel${r.melhor ? ' melhor' : ''}">
+      <span class="badge ${r.chave !== 'custom' ? marketplaceBadgeClass(r.chave) : ''}">${rotuloCurtoMkt[r.chave] || r.label}</span>
+      ${tem ? `<span class="prod-resumo-preco">${fmt(r.preco)}</span>
+        <strong class="${r.lucro < 0 ? 'neg' : 'pos'}">${fmt(r.lucro)}</strong><small>${r.margem.toFixed(1)}%</small>` : '<small>sem preço</small>'}
+    </div>`;
+  }).join('')}</div>`;
+}
 function renderProdutos(){
   const list = document.getElementById('produtosList');
   if(produtos.length === 0){
@@ -3126,6 +3165,22 @@ function renderProdutos(){
   list.innerHTML = produtos.map(p => {
     const pt = 'pt' + p.id;
     const mktSelecionado = (p.marketplace || '').startsWith('tiktok') ? 'tiktok' : (p.marketplace || '');
+    const aberto = produtosAbertos.has(p.id) || produtoTaxasAbertoId === p.id;
+    if(!aberto) return `
+      <div class="produto-item compacto" data-busca="${escapeHtml((p.nome || '').toLowerCase())}" data-abrir="${p.id}" title="Toque pra abrir a precificação completa">
+        ${p.foto
+          ? `<img class="produto-thumb" src="${p.foto}" alt="${escapeHtml(p.nome)}">`
+          : `<div class="produto-thumb-placeholder">${escapeHtml((p.nome || '?').trim().charAt(0).toUpperCase() || '?')}</div>`}
+        <div class="prod-compacto-info">
+          <div class="produto-nome">${escapeHtml(p.nome)}</div>
+          <div class="produto-meta">Custo ${fmt(+p.custoProduto || 0)}${p.sku ? ` · SKU ${escapeHtml(p.sku)}` : ''}</div>
+        </div>
+        ${htmlResumoMarketplaces(p)}
+        <div class="prod-compacto-acoes">
+          <button class="btn btn-outline btn-sm" data-action="editar-produto" data-id="${p.id}" title="Editar">✏️</button>
+          <button class="btn btn-outline btn-sm prod-abrir" data-action="alternar-produto" data-id="${p.id}" title="Abrir">▾</button>
+        </div>
+      </div>`;
     return `
       <div class="produto-item" data-busca="${escapeHtml((p.nome || '').toLowerCase())}">
         <div class="produto-top">
@@ -3139,6 +3194,7 @@ function renderProdutos(){
             </div>
           </div>
           <div class="item-actions">
+            <button class="btn btn-outline btn-sm" data-action="alternar-produto" data-id="${p.id}" title="Recolher">▴ Recolher</button>
             <button class="btn btn-outline btn-sm" data-action="ajustar-taxas" data-id="${p.id}">Ajustar taxas</button>
             <button class="btn btn-outline btn-sm" data-action="editar-produto" data-id="${p.id}">Editar</button>
             <button class="btn btn-danger-text btn-sm" data-action="excluir-produto" data-id="${p.id}">Excluir</button>
@@ -3192,6 +3248,7 @@ function renderProdutos(){
     if(produto) atualizarComparativoNoDom(grade, produto);
   });
   aplicarBuscaProdutos();
+  document.getElementById('btnAlternarTodosProdutos').textContent = produtos.some(p => produtosAbertos.has(p.id)) ? '▴ Recolher todos' : '▾ Abrir todos';
 }
 
 // Busca em "Meus produtos": só esconde os cartões (sem re-render, não perde o foco).
@@ -3206,6 +3263,13 @@ function aplicarBuscaProdutos(){
   document.getElementById('buscaProdutosVazio').hidden = !q || vis > 0;
 }
 document.getElementById('buscaProdutos').addEventListener('input', aplicarBuscaProdutos);
+document.getElementById('btnAlternarTodosProdutos').addEventListener('click', () => {
+  const algumAberto = produtos.some(p => produtosAbertos.has(p.id));
+  produtosAbertos = algumAberto ? new Set() : new Set(produtos.map(p => p.id));
+  if(algumAberto) produtoTaxasAbertoId = null;
+  salvarProdutosAbertos();
+  renderProdutos();
+});
 
 // Preço de venda por plataforma direto no card: recalcula enquanto digita e
 // só salva no "change" (sair do campo/Enter), pra não fazer um upsert por tecla.
@@ -3275,9 +3339,17 @@ document.getElementById('produtosList').addEventListener('click', e => {
   }
 
   const btn = e.target.closest('button[data-action]');
+  const cartaoCompacto = !btn && e.target.closest('.produto-item.compacto[data-abrir]');
+  if(cartaoCompacto){ produtosAbertos.add(cartaoCompacto.dataset.abrir); salvarProdutosAbertos(); return renderProdutos(); }
   if(!btn) return;
   const id = btn.dataset.id;
   const produto = produtos.find(p => p.id === id);
+  if(btn.dataset.action === 'alternar-produto'){
+    if(produtosAbertos.has(id) || produtoTaxasAbertoId === id){ produtosAbertos.delete(id); if(produtoTaxasAbertoId === id) produtoTaxasAbertoId = null; }
+    else produtosAbertos.add(id);
+    salvarProdutosAbertos();
+    return renderProdutos();
+  }
   if(btn.dataset.action === 'editar-produto'){
     openModalProduto(produto);
   } else if(btn.dataset.action === 'excluir-produto'){
