@@ -569,6 +569,9 @@
   .vend-puxar-item span{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}
   .vend-puxar-item small{font-size:11.5px;color:var(--muted);}
   .rel-vendas{margin-top:14px;}
+  .p-dados-forn{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
+  .p-dados-forn summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--navy);}
+  .p-dados-forn[open] summary{margin-bottom:4px;}
   .vend-lojas{margin-bottom:12px;}
   .vend-lojas-tit{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;}
   .rel-vendas .tabela-scroll{margin-top:4px;}
@@ -1555,7 +1558,7 @@
       <h2>⬇️ Puxar da calculadora</h2>
       <button type="button" class="modal-close-x" data-fechar="overlayFornPuxar" aria-label="Fechar">✕</button>
     </div>
-    <p class="field-hint" style="margin:0 0 12px;">Traz nome, foto e o <strong>custo do produto</strong> (vira o preço que você paga a <span id="fpxForn"></span>). Tamanhos, cores e SKU você coloca depois no ✏️ de cada um.</p>
+    <p class="field-hint" style="margin:0 0 12px;">Traz nome, foto e o <strong>custo do produto</strong> (vira o preço que você paga a <span id="fpxForn"></span>). Se o produto tiver SKU, tamanhos e cores na calculadora, vêm junto; senão, coloque depois no ✏️.</p>
     <div id="fpxLista" class="vend-puxar-lista"></div>
     <div class="modal-actions">
       <button type="button" class="btn btn-outline" data-fechar="overlayFornPuxar">Cancelar</button>
@@ -1815,6 +1818,23 @@
           </div>
         </div>
       </div>
+      <details class="p-dados-forn" id="pDadosForn">
+        <summary>📦 SKU, tamanhos e cores (opcional)</summary>
+        <p class="field-hint" style="margin:8px 0 10px;">Vão junto quando você puxar este produto pra um fornecedor — aí não precisa digitar de novo.</p>
+        <div class="field">
+          <label>Código / SKU</label>
+          <input type="text" id="pSku" placeholder="Ex: 1020" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Tamanhos / numeração</label>
+          <input type="text" id="pVariacoes" placeholder="Ex: 34-39  ou  P, M, G" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Cores</label>
+          <input type="text" id="pCores" placeholder="Ex: Preto, Branco, Rosa" autocomplete="off">
+          <div class="field-hint">Separe por vírgula. A foto de cada cor dá pra pôr depois, no fornecedor.</div>
+        </div>
+      </details>
       <div class="field">
         <label>Marketplace</label>
         <select id="pMarketplace">
@@ -3463,11 +3483,22 @@ function renderPassoShein(campos, prefixoSaida, rec){
   `;
 }
 
+// "Preto, Branco" → [{ nome, foto }] (mesmo formato das cores do fornecedor;
+// mantém a foto que uma cor já tinha, se houver).
+function lerCoresTextoProduto(){
+  const antes = ((editingProdutoId && produtos.find(p => p.id === editingProdutoId)) || {}).cores || [];
+  const vistos = new Set();
+  return document.getElementById('pCores').value.split(/[,;]/).map(t => t.trim().replace(/\|/g, '/')).filter(n => n && !vistos.has(n) && vistos.add(n))
+    .map(nome => ({ nome, foto: (antes.find(c => c.nome === nome) || {}).foto || null }));
+}
 function lerCamposProduto(){
   const campos = {
     nome: document.getElementById('pNome').value.trim(),
     marketplace: document.getElementById('pMarketplace').value,
     foto: fotoAtualProduto,
+    sku: document.getElementById('pSku').value.trim(),
+    variacoes: parseVariacoes(document.getElementById('pVariacoes').value),
+    cores: lerCoresTextoProduto(),
     ...lerCampos('p', 'outrosCustosList')
   };
   if(campos.marketplace === 'todos') zerarTaxasProprias(campos);
@@ -3759,6 +3790,10 @@ function openModalProduto(produto = null){
   editingProdutoId = produto ? produto.id : null;
   document.getElementById('modalProdutoTitle').textContent = produto ? 'Editar produto' : 'Novo produto';
   document.getElementById('pNome').value = produto ? produto.nome : '';
+  document.getElementById('pSku').value = produto ? (produto.sku || '') : '';
+  document.getElementById('pVariacoes').value = produto ? (produto.variacoes || []).join(', ') : '';
+  document.getElementById('pCores').value = produto ? (produto.cores || []).map(c => c.nome).join(', ') : '';
+  document.getElementById('pDadosForn').open = !!(produto && (produto.sku || (produto.variacoes || []).length || (produto.cores || []).length));
   fotoAtualProduto = produto ? (produto.foto || null) : null;
   atualizarPreviewFotoProduto();
   const mktSalvo = produto ? (produto.marketplace || '') : '';
@@ -6013,7 +6048,7 @@ function abrirModalPuxarCalcForn(){
     : `<label class="forn-check" style="margin-bottom:8px;"><input type="checkbox" id="fpxTodos"> <span><strong>Marcar todos</strong></span></label>` +
       lista.map(p => `<label class="vend-puxar-item"><input type="checkbox" class="fpxItem" value="${p.id}">
         ${p.foto ? `<img src="${p.foto}" alt="" class="fpx-foto">` : ''}
-        <span><strong>${escapeHtml(p.nome || 'Sem nome')}</strong><small>custo do produto ${fmt(+p.custoProduto || 0)}</small></span></label>`).join('');
+        <span><strong>${escapeHtml(p.nome || 'Sem nome')}</strong><small>${[`custo ${fmt(+p.custoProduto || 0)}`, p.sku ? `SKU ${escapeHtml(p.sku)}` : '', (p.variacoes || []).length ? `nº ${escapeHtml(p.variacoes[0])}–${escapeHtml(p.variacoes[p.variacoes.length - 1])}` : '', (p.cores || []).length ? `${p.cores.length} ${p.cores.length === 1 ? 'cor' : 'cores'}` : ''].filter(Boolean).join(' · ')}</small></span></label>`).join('');
   document.getElementById('btnFpxTrazer').style.display = lista.length ? '' : 'none';
   abrirOverlay('overlayFornPuxar');
 }
@@ -6028,7 +6063,8 @@ document.getElementById('btnFpxTrazer').addEventListener('click', () => {
   f.produtos = f.produtos || [];
   ids.forEach(id => {
     const calc = produtos.find(p => p.id === id);
-    if(calc) f.produtos.push({ id: uid(), nome: calc.nome || 'Sem nome', sku: '', preco: r2f(+calc.custoProduto || 0), foto: calc.foto || null, variacoes: [], cores: [], calcId: calc.id });
+    if(calc) f.produtos.push({ id: uid(), nome: calc.nome || 'Sem nome', sku: calc.sku || '', preco: r2f(+calc.custoProduto || 0), foto: calc.foto || null,
+      variacoes: [...(calc.variacoes || [])], cores: (calc.cores || []).map(c => ({ nome: c.nome, foto: c.foto || null })), calcId: calc.id });
   });
   saveFornecedores(true);
   fecharOverlay('overlayFornPuxar');
