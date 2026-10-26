@@ -634,6 +634,7 @@
   .forn-prod-edit{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:8px;padding:3px 7px;font-size:12px;cursor:pointer;}
   .forn-prod-novo{border:2px dashed var(--border);background:transparent;border-radius:var(--radius);min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-weight:800;cursor:pointer;font-size:14px;}
   .forn-prod-novo span{font-size:30px;}
+  .fpx-foto{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;}
   .forn-prod-novo:hover{border-color:var(--accent);color:var(--accent);}
   .cal-dia.sel{border:2px solid var(--navy);box-shadow:0 0 0 2px rgba(15,34,84,.15);}
   .dia-fech{border:2px solid var(--navy);}
@@ -1545,6 +1546,21 @@
         <button type="submit" class="btn btn-primary">Salvar</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="overlay" id="overlayFornPuxar">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⬇️ Puxar da calculadora</h2>
+      <button type="button" class="modal-close-x" data-fechar="overlayFornPuxar" aria-label="Fechar">✕</button>
+    </div>
+    <p class="field-hint" style="margin:0 0 12px;">Traz nome, foto e o <strong>custo do produto</strong> (vira o preço que você paga a <span id="fpxForn"></span>). Tamanhos, cores e SKU você coloca depois no ✏️ de cada um.</p>
+    <div id="fpxLista" class="vend-puxar-lista"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" data-fechar="overlayFornPuxar">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btnFpxTrazer">Trazer selecionados</button>
+    </div>
   </div>
 </div>
 
@@ -4857,6 +4873,7 @@ function renderPedidos(){
     <div class="forn-grid">
       ${(f.produtos || []).map(p => htmlCardProdutoPedido(f, p, doDia)).join('')}
       <button type="button" class="forn-prod-novo" data-acao="novo-produto"><span>＋</span>Novo produto</button>
+      ${produtos.length ? `<button type="button" class="forn-prod-novo forn-prod-puxar" data-acao="puxar-calc-forn"><span>⬇️</span>Puxar da calculadora</button>` : ''}
     </div>
     ${daSoma.length ? `<p class="field-hint" style="margin-top:10px;">🧮 Lançado pela soma rápida neste dia: ${daSoma.map(([, i]) => `${escapeHtml(i.nome || 'produto')} ${i.qtd} × ${fmt(i.preco)}`).join(' · ')} — pra mudar, abra a Soma rápida em Fornecedores ou zere abaixo.</p>
       <div class="ped-acoes" style="margin-top:6px;"><button type="button" class="btn btn-danger-text btn-sm" data-acao="apagar-soma-dia">Apagar o que foi lançado pela soma rápida neste dia</button></div>` : ''}
@@ -5982,6 +5999,43 @@ document.getElementById('btnExcluirFornProduto').addEventListener('click', () =>
   renderTelaFornAtual();
 });
 
+// ---- Puxar produtos da Calculadora pro catálogo do fornecedor ----
+// Cópia (não fica ligado): nome, foto e custo do produto → preço de compra.
+// calcId só serve pra não oferecer de novo o que já foi trazido.
+function abrirModalPuxarCalcForn(){
+  const f = fornecedorAtivo();
+  if(!f) return;
+  const ja = new Set((f.produtos || []).map(p => p.calcId).filter(Boolean));
+  const lista = produtos.filter(p => !ja.has(p.id));
+  document.getElementById('fpxForn').textContent = f.nome;
+  document.getElementById('fpxLista').innerHTML = !lista.length
+    ? `<p class="forn-hist-vazio">Todos os produtos da calculadora já estão neste fornecedor. ✅</p>`
+    : `<label class="forn-check" style="margin-bottom:8px;"><input type="checkbox" id="fpxTodos"> <span><strong>Marcar todos</strong></span></label>` +
+      lista.map(p => `<label class="vend-puxar-item"><input type="checkbox" class="fpxItem" value="${p.id}">
+        ${p.foto ? `<img src="${p.foto}" alt="" class="fpx-foto">` : ''}
+        <span><strong>${escapeHtml(p.nome || 'Sem nome')}</strong><small>custo do produto ${fmt(+p.custoProduto || 0)}</small></span></label>`).join('');
+  document.getElementById('btnFpxTrazer').style.display = lista.length ? '' : 'none';
+  abrirOverlay('overlayFornPuxar');
+}
+document.getElementById('fpxLista').addEventListener('change', e => {
+  if(e.target.id === 'fpxTodos') document.querySelectorAll('#fpxLista .fpxItem').forEach(c => { c.checked = e.target.checked; });
+});
+document.getElementById('btnFpxTrazer').addEventListener('click', () => {
+  const f = fornecedorAtivo();
+  if(!f) return;
+  const ids = [...document.querySelectorAll('#fpxLista .fpxItem:checked')].map(c => c.value);
+  if(!ids.length) return alert('Marque pelo menos um produto.');
+  f.produtos = f.produtos || [];
+  ids.forEach(id => {
+    const calc = produtos.find(p => p.id === id);
+    if(calc) f.produtos.push({ id: uid(), nome: calc.nome || 'Sem nome', sku: '', preco: r2f(+calc.custoProduto || 0), foto: calc.foto || null, variacoes: [], cores: [], calcId: calc.id });
+  });
+  saveFornecedores(true);
+  fecharOverlay('overlayFornPuxar');
+  renderTelaFornAtual();
+  mostrarToastForn(`⬇️ ${ids.length} ${ids.length === 1 ? 'produto trazido' : 'produtos trazidos'} pra ${f.nome}.`);
+});
+
 // ---- Pagamento (pode ser parcial: abate só o valor pago) ----
 // "Abater valor" usa o mesmo modal: vira um lançamento em f.pagamentos com
 // tipo 'abatimento' (desconto/devolução/troca combinada com o fornecedor) —
@@ -6184,6 +6238,7 @@ function cliqueTelaForn(e){
   if(!f) return;
   if(acao === 'editar-fornecedor') return abrirModalFornecedor(f);
   if(acao === 'novo-produto') return abrirModalFornProduto();
+  if(acao === 'puxar-calc-forn') return abrirModalPuxarCalcForn();
   if(acao === 'editar-produto') return abrirModalFornProduto((f.produtos || []).find(p => p.id === btn.dataset.prod));
   if(acao === 'pagar') return abrirModalPagamentoForn(faltaMesForn(f, fornMes) > 0.004 ? fornMes : null);
   if(acao === 'abater') return abrirModalAbatimentoForn(fornMes);
