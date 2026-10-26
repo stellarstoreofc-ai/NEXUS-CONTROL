@@ -371,6 +371,23 @@
   .prod-resumo-cel.melhor{background:var(--green-bg);box-shadow:inset 0 0 0 1px #6ee7b7;}
   .prod-resumo-preco{color:var(--muted);font-weight:700;}
   @media (max-width:520px){ #produtosList{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;} }
+  .prod-custo{display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:999px;padding:2px 9px;font-size:13px;font-weight:800;margin-top:3px;}
+  .mkt-filtro{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;}
+  .mkt-filtro > span{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-right:2px;}
+  .mkt-filtro-btn{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;}
+  .mkt-filtro-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  #produtosList[data-mkt="shopee"] [data-mkt]:not([data-mkt="shopee"]),
+  #produtosList[data-mkt="ml"] [data-mkt]:not([data-mkt="ml"]),
+  #produtosList[data-mkt="shein"] [data-mkt]:not([data-mkt="shein"]),
+  #produtosList[data-mkt="tiktok"] [data-mkt]:not([data-mkt="tiktok"]){display:none !important;}
+  /* Uma plataforma só: a célula do cartão fica maior e mostra a margem */
+  #produtosList[data-mkt] .prod-resumo-cel{grid-template-columns:1fr auto;grid-template-areas:"badge badge" "preco lucro" "preco margem";padding:8px 10px;row-gap:2px;}
+  #produtosList[data-mkt] .prod-resumo-cel .badge{grid-area:badge;font-size:11px;}
+  #produtosList[data-mkt] .prod-resumo-cel .prod-resumo-preco{grid-area:preco;font-size:17px;color:var(--navy);font-weight:800;align-self:center;}
+  #produtosList[data-mkt] .prod-resumo-cel strong{grid-area:lucro;font-size:17px;}
+  #produtosList[data-mkt] .prod-resumo-cel small{display:block;grid-area:margem;text-align:right;}
+  #produtosList[data-mkt] .prod-resumo-cel small.sem{grid-area:preco;text-align:left;}
+  #produtosList[data-mkt] .mkt-comparativo{grid-template-columns:minmax(0,420px);}
   .busca-produtos{flex:1;min-width:160px;max-width:420px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font:inherit;background:var(--surface);}
   .produto-item[hidden]{display:none;}
   .produto-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px;}
@@ -1402,6 +1419,14 @@
           <input type="search" id="buscaProdutos" class="busca-produtos" placeholder="🔎 Buscar produto..." autocomplete="off">
           <button class="btn btn-outline btn-sm" id="btnAlternarTodosProdutos" type="button">▾ Abrir todos</button>
           <button class="btn btn-primary btn-sm" id="btnNovoProduto">+ Novo produto</button>
+        </div>
+        <div class="mkt-filtro" id="mktFiltroProdutos">
+          <span>Mostrar:</span>
+          <button type="button" class="mkt-filtro-btn active" data-mkt="">Todos</button>
+          <button type="button" class="mkt-filtro-btn" data-mkt="shopee">Shopee</button>
+          <button type="button" class="mkt-filtro-btn" data-mkt="ml">Mercado Livre</button>
+          <button type="button" class="mkt-filtro-btn" data-mkt="shein">Shein</button>
+          <button type="button" class="mkt-filtro-btn" data-mkt="tiktok">TikTok Shop</button>
         </div>
         <div class="list" id="produtosList"></div>
         <p class="forn-hist-vazio" id="buscaProdutosVazio" hidden>Nenhum produto com esse nome.</p>
@@ -3239,7 +3264,7 @@ const rotuloCurtoMkt = { shopee: 'Shopee', ml: 'ML', shein: 'Shein', tiktok: 'Ti
 function htmlResumoMarketplaces(p){
   return `<div class="prod-resumo">${calcularComparativo(p).map(r => {
     const tem = r.preco > 0 && r.valido;
-    return `<div class="prod-resumo-cel${r.melhor ? ' melhor' : ''}">
+    return `<div class="prod-resumo-cel${r.melhor ? ' melhor' : ''}" data-mkt="${r.chave}">
       <span class="badge ${r.chave !== 'custom' ? marketplaceBadgeClass(r.chave) : ''}">${rotuloCurtoMkt[r.chave] || r.label}</span>
       ${tem ? `<span class="prod-resumo-preco">${fmt(r.preco)}</span>
         <strong class="${r.lucro < 0 ? 'neg' : 'pos'}">${fmt(r.lucro)}</strong><small>${r.margem.toFixed(1)}%</small>` : '<small class="sem">sem preço</small>'}
@@ -3264,7 +3289,7 @@ function renderProdutos(){
           : `<div class="prod-vitrine-foto placeholder">${escapeHtml((p.nome || '?').trim().charAt(0).toUpperCase() || '?')}</div>`}
         <div class="prod-compacto-info">
           <div class="produto-nome" title="${escapeHtml(p.nome)}">${escapeHtml(p.nome)}</div>
-          <div class="produto-meta">Custo ${fmt(+p.custoProduto || 0)}${p.sku ? ` · SKU ${escapeHtml(p.sku)}` : ''}</div>
+          <div class="produto-meta"><span class="prod-custo">Custo ${fmt(+p.custoProduto || 0)}</span>${p.sku ? ` <span class="forn-prod-sku">SKU ${escapeHtml(p.sku)}</span>` : ''}</div>
         </div>
         ${htmlResumoMarketplaces(p)}
         <div class="prod-compacto-acoes">
@@ -3354,6 +3379,21 @@ function aplicarBuscaProdutos(){
   document.getElementById('buscaProdutosVazio').hidden = !q || vis > 0;
 }
 document.getElementById('buscaProdutos').addEventListener('input', aplicarBuscaProdutos);
+// "Mostrar: Shein" etc. — mostra uma plataforma só em "Meus produtos" (pra
+// tirar print pra cliente). É só visual: o atributo data-mkt na lista faz o
+// CSS esconder as outras colunas; nada é recalculado nem salvo na nuvem.
+const CHAVE_FILTRO_MKT = 'nexus.produtosMkt';
+function aplicarFiltroMktProdutos(mkt){
+  const lista = document.getElementById('produtosList');
+  if(mkt) lista.dataset.mkt = mkt; else delete lista.dataset.mkt;
+  document.querySelectorAll('#mktFiltroProdutos .mkt-filtro-btn').forEach(b => b.classList.toggle('active', b.dataset.mkt === mkt));
+  try{ localStorage.setItem(CHAVE_FILTRO_MKT, mkt); } catch(e){}
+}
+document.getElementById('mktFiltroProdutos').addEventListener('click', e => {
+  const b = e.target.closest('.mkt-filtro-btn');
+  if(b) aplicarFiltroMktProdutos(b.dataset.mkt);
+});
+try{ aplicarFiltroMktProdutos(localStorage.getItem(CHAVE_FILTRO_MKT) || ''); } catch(e){ aplicarFiltroMktProdutos(''); }
 document.getElementById('btnAlternarTodosProdutos').addEventListener('click', () => {
   const algumAberto = produtos.some(p => produtosAbertos.has(p.id));
   produtosAbertos = algumAberto ? new Set() : new Set(produtos.map(p => p.id));
