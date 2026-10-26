@@ -347,6 +347,8 @@
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     padding:16px 18px;box-shadow:var(--shadow);margin-bottom:10px;
   }
+  .busca-produtos{flex:1;min-width:160px;max-width:420px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font:inherit;background:var(--surface);}
+  .produto-item[hidden]{display:none;}
   .produto-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px;}
   .produto-top-left{display:flex;align-items:center;gap:14px;min-width:0;}
   .produto-thumb{width:88px;height:88px;border-radius:12px;object-fit:cover;flex-shrink:0;background:var(--bg);border:1px solid var(--border);}
@@ -1331,9 +1333,11 @@
 
         <div class="toolbar prec-toolbar">
           <h3 style="margin:0;">🏷️ Meus produtos</h3>
+          <input type="search" id="buscaProdutos" class="busca-produtos" placeholder="🔎 Buscar produto..." autocomplete="off">
           <button class="btn btn-primary btn-sm" id="btnNovoProduto">+ Novo produto</button>
         </div>
         <div class="list" id="produtosList"></div>
+        <p class="forn-hist-vazio" id="buscaProdutosVazio" hidden>Nenhum produto com esse nome.</p>
       </section>
     </main>
 
@@ -3062,7 +3066,7 @@ function renderProdutos(){
     const pt = 'pt' + p.id;
     const mktSelecionado = (p.marketplace || '').startsWith('tiktok') ? 'tiktok' : (p.marketplace || '');
     return `
-      <div class="produto-item">
+      <div class="produto-item" data-busca="${escapeHtml((p.nome || '').toLowerCase())}">
         <div class="produto-top">
           <div class="produto-top-left">
             ${p.foto
@@ -3126,7 +3130,21 @@ function renderProdutos(){
     const produto = produtos.find(p => p.id === grade.dataset.produtoId);
     if(produto) atualizarComparativoNoDom(grade, produto);
   });
+  aplicarBuscaProdutos();
 }
+
+// Busca em "Meus produtos": só esconde os cartões (sem re-render, não perde o foco).
+function aplicarBuscaProdutos(){
+  const q = document.getElementById('buscaProdutos').value.trim().toLowerCase();
+  let vis = 0;
+  document.querySelectorAll('#produtosList .produto-item').forEach(c => {
+    const ok = !q || c.dataset.busca.includes(q);
+    c.hidden = !ok;
+    if(ok) vis++;
+  });
+  document.getElementById('buscaProdutosVazio').hidden = !q || vis > 0;
+}
+document.getElementById('buscaProdutos').addEventListener('input', aplicarBuscaProdutos);
 
 // Preço de venda por plataforma direto no card: recalcula enquanto digita e
 // só salva no "change" (sair do campo/Enter), pra não fazer um upsert por tecla.
