@@ -4931,8 +4931,14 @@ function linhasDoItem(produto, item, nomeItem){
              detalhe: (t ? `Tam. ${t}  ·  ` : '') + `${fmt(item.preco)}/un` };
   };
   if(!cores.length) return [montar('', grupos[''], item.qtd)];
-  return cores.sort(ordenarPor(nomesCores(produto))).map(cor =>
-    montar(cor, grupos[cor], Object.values(grupos[cor]).reduce((s, q) => s + q, 0)));
+  const somaGrupo = g => Object.values(g || {}).reduce((s, q) => s + q, 0);
+  const linhas = cores.sort(ordenarPor(nomesCores(produto))).map(cor => montar(cor, grupos[cor], somaGrupo(grupos[cor])));
+  // Pares lançados antes de o produto ter cores (chave só com o tamanho, ou
+  // qtd sem variação) não têm cor — entram numa linha sem cor, senão o print
+  // e o texto do pedido somavam menos que o fechamento do mês.
+  const semCor = item.qtd - cores.reduce((s, c) => s + somaGrupo(grupos[c]), 0);
+  if(semCor > 0) linhas.push(montar('', grupos[''], semCor));
+  return linhas;
 }
 
 function avisoColunaFornecedores(){
