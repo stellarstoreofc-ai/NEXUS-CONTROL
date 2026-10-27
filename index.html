@@ -372,31 +372,6 @@
   .prod-resumo-preco{color:var(--muted);font-weight:700;}
   @media (max-width:520px){ #produtosList{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;} }
   .prod-custo{display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:999px;padding:2px 9px;font-size:13px;font-weight:800;margin-top:3px;}
-  .ag-tag{margin:0 10px;font-size:12px;font-weight:800;border-radius:8px;padding:4px 8px;background:var(--bg);color:var(--muted);border:1px dashed var(--border);}
-  .ag-tag.ok{background:var(--green-bg);color:var(--green);border:1px solid #6ee7b7;}
-  .agenda-box{border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:8px 12px;margin:0 0 12px;}
-  .agenda-box[hidden]{display:none;}
-  .agenda-box summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--navy);}
-  .ag-cont{font-size:11.5px;font-weight:800;border-radius:999px;padding:2px 8px;background:var(--bg);color:var(--muted);margin-left:4px;}
-  .ag-cont.ok{background:var(--green-bg);color:var(--green);}
-  .ag-linha{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--border);font-size:13.5px;}
-  .ag-linha:first-child{margin-top:8px;}
-  .ag-linha .sub{font-size:12px;color:var(--muted);margin-top:2px;}
-  .ag-linha-status{display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap;}
-  .ag-linha-status small{font-size:11.5px;color:var(--muted);}
-  .ag-linha.ok .ag-linha-status strong{color:var(--green);}
-  .ag-linha-acoes{display:flex;gap:6px;}
-  @media (max-width:640px){ .ag-linha{grid-template-columns:1fr auto;} .ag-linha-acoes{grid-column:1 / -1;} }
-  .ag-grupo{border:1px solid var(--border);border-radius:10px;padding:8px 10px 0;margin-bottom:12px;}
-  .ag-grupo-tit{font-size:12.5px;font-weight:800;color:var(--navy);margin-bottom:6px;}
-  .ag-libera{padding:10px 0;font-size:14px;}
-  .ag-hist{margin:4px 0 0;font-size:12.5px;}
-  .ag-hist summary{cursor:pointer;font-weight:800;color:var(--muted);}
-  .ag-hist-linha{display:flex;flex-direction:column;padding:5px 0;border-bottom:1px solid var(--border);color:var(--muted);}
-  .ag-hist-linha span:first-child{font-weight:800;color:var(--text);}
-  .rel-agenda{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-top:14px;font-size:14px;}
-  .rel-agenda.ok{background:var(--green-bg);border-color:#6ee7b7;}
-  .rel-agenda small{display:block;font-size:12px;color:var(--muted);margin-top:2px;}
   .mkt-filtro{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;}
   .mkt-filtro > span{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-right:2px;}
   .mkt-filtro-btn{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;}
@@ -1281,7 +1256,6 @@
             </div>
           </div>
 
-          <div id="relAgendaBox"></div>
           <div id="relVendasBox"></div>
           <div class="chart-card">
             <h3>Faturamento por mês (últimos 12 meses)</h3>
@@ -1454,10 +1428,6 @@
           <button type="button" class="mkt-filtro-btn" data-mkt="shein">Shein</button>
           <button type="button" class="mkt-filtro-btn" data-mkt="tiktok">TikTok Shop</button>
         </div>
-        <details class="agenda-box" id="agendaPrecosBox" hidden>
-          <summary id="agendaPrecosResumo"></summary>
-          <div id="agendaPrecosLista"></div>
-        </details>
         <div class="list" id="produtosList"></div>
         <p class="forn-hist-vazio" id="buscaProdutosVazio" hidden>Nenhum produto com esse nome.</p>
       </section>
@@ -1665,66 +1635,6 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-danger-text" id="btnExcluirVendProduto">Excluir</button>
         <button type="button" class="btn btn-outline" data-fechar="overlayVendProduto">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Salvar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="overlay" id="overlayAgenda">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="agTitulo">⏳ Mudança de preço</h2>
-      <button type="button" class="modal-close-x" data-fechar="overlayAgenda" aria-label="Fechar">✕</button>
-    </div>
-    <form id="formAgenda">
-      <p class="field-hint" style="margin:0 0 12px;">Anote quando subiu o preço da <strong>promoção</strong>. O app conta os dias e avisa quando pode subir a <strong>oferta relâmpago</strong>.</p>
-      <div class="form-row">
-        <div class="field">
-          <label>Marketplace</label>
-          <select id="agMkt">
-            <option value="shopee">Shopee</option>
-            <option value="shein">Shein</option>
-            <option value="tiktok">TikTok Shop</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Dia que mudou a promoção</label>
-          <input type="date" id="agData" required>
-        </div>
-      </div>
-      <div class="ag-grupo">
-        <div class="ag-grupo-tit">🏷️ Preço da promoção</div>
-        <div class="form-row">
-          <div class="field"><label>Estava (R$)</label><input type="number" id="agPromoAntes" step="0.01" min="0" placeholder="Ex: 69,90"></div>
-          <div class="field"><label>Foi pra (R$)</label><input type="number" id="agPromoNova" step="0.01" min="0" placeholder="Ex: 74,90"></div>
-        </div>
-      </div>
-      <div class="ag-grupo">
-        <div class="ag-grupo-tit">⚡ Oferta relâmpago</div>
-        <div class="form-row">
-          <div class="field"><label>Está hoje (R$)</label><input type="number" id="agRelAtual" step="0.01" min="0" placeholder="Ex: 64,90"></div>
-          <div class="field"><label>Vou subir pra (R$)</label><input type="number" id="agRelNova" step="0.01" min="0" placeholder="Ex: 69,90"></div>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Esperar quantos dias</label>
-          <input type="number" id="agDias" min="0" step="1" value="7">
-        </div>
-        <div class="field">
-          <label>Libera em</label>
-          <div class="ag-libera" id="agLibera">—</div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Observação (opcional)</label>
-        <input type="text" id="agObs" placeholder="Ex: subiu por causa do custo novo">
-      </div>
-      <div id="agHistorico"></div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-danger-text" id="btnAgExcluir" style="margin-right:auto;display:none;">Excluir</button>
-        <button type="button" class="btn btn-outline" data-fechar="overlayAgenda">Cancelar</button>
         <button type="submit" class="btn btn-primary">Salvar</button>
       </div>
     </form>
@@ -2714,7 +2624,6 @@ function renderRelatorio(){
 
   renderFaturamentoChart(ym);
   renderQuadroVendasMensal(ym);
-  renderAvisoAgendaRel();
 }
 
 function renderFaturamentoChart(mesSelecionado){
@@ -3382,11 +3291,9 @@ function renderProdutos(){
           <div class="produto-nome" title="${escapeHtml(p.nome)}">${escapeHtml(p.nome)}</div>
           <div class="produto-meta"><span class="prod-custo">Custo ${fmt(+p.custoProduto || 0)}</span>${p.sku ? ` <span class="forn-prod-sku">SKU ${escapeHtml(p.sku)}</span>` : ''}</div>
         </div>
-        ${htmlTagAgenda(p)}
         ${htmlResumoMarketplaces(p)}
         <div class="prod-compacto-acoes">
           <button class="btn btn-outline btn-sm" data-action="editar-produto" data-id="${p.id}" title="Editar">✏️</button>
-          <button class="btn btn-outline btn-sm" data-action="agenda-preco" data-id="${p.id}" title="Anotar mudança de preço (promoção → oferta relâmpago)">⏳</button>
           <button class="btn btn-outline btn-sm prod-abrir" data-action="alternar-produto" data-id="${p.id}" title="Ver a precificação completa">▾ Abrir</button>
         </div>
       </div>`;
@@ -3404,7 +3311,6 @@ function renderProdutos(){
           </div>
           <div class="item-actions">
             <button class="btn btn-outline btn-sm" data-action="alternar-produto" data-id="${p.id}" title="Recolher">▴ Recolher</button>
-            <button class="btn btn-outline btn-sm" data-action="agenda-preco" data-id="${p.id}" title="Anotar mudança de preço">⏳ ${htmlTagAgenda(p, true) || 'Preço'}</button>
             <button class="btn btn-outline btn-sm" data-action="ajustar-taxas" data-id="${p.id}">Ajustar taxas</button>
             <button class="btn btn-outline btn-sm" data-action="editar-produto" data-id="${p.id}">Editar</button>
             <button class="btn btn-danger-text btn-sm" data-action="excluir-produto" data-id="${p.id}">Excluir</button>
@@ -3458,7 +3364,6 @@ function renderProdutos(){
     if(produto) atualizarComparativoNoDom(grade, produto);
   });
   aplicarBuscaProdutos();
-  renderAgendaPrecos();
   document.getElementById('btnAlternarTodosProdutos').textContent = produtos.some(p => produtosAbertos.has(p.id)) ? '▴ Recolher todos' : '▾ Abrir todos';
 }
 
@@ -3570,7 +3475,6 @@ document.getElementById('produtosList').addEventListener('click', e => {
   if(!btn) return;
   const id = btn.dataset.id;
   const produto = produtos.find(p => p.id === id);
-  if(btn.dataset.action === 'agenda-preco') return abrirModalAgenda(produto);
   if(btn.dataset.action === 'alternar-produto'){
     if(produtosAbertos.has(id) || produtoTaxasAbertoId === id){ produtosAbertos.delete(id); if(produtoTaxasAbertoId === id) produtoTaxasAbertoId = null; }
     else produtosAbertos.add(id);
@@ -7640,163 +7544,6 @@ function renderQuadroVendasAnual(ano){
 document.getElementById('page-relatorio').addEventListener('click', e => {
   if(e.target.closest('[data-ir-vendas]')){ vendAba = 'mes'; vendLoja = (vendas.lojas || []).length > 1 ? 'todas' : LOJA_PRINCIPAL; vendMes = relatorioView === 'anual' ? vendMes : (relatorioMesInput.value || currentYm()); showPage('vendas'); }
 });
-
-// ================= AGENDA DE PREÇOS (promoção → oferta relâmpago) =================
-// Só anotação com contagem de dias — nenhum cálculo de preço/lucro usa isto.
-// Fica no próprio produto (coluna produtos): p.agendasPreco = [{ id, mkt,
-// data (dia que mudou a promoção), promoAntes, promoNova, relAtual, relNova,
-// dias (espera, padrão 7), obs, feito, feitoEm }]. Uma em aberto por produto;
-// as feitas viram o histórico de mudanças de preço dele.
-let agendaProdutoId = null, agendaEditId = null;
-const MKTS_AGENDA = { shopee: 'Shopee', shein: 'Shein', tiktok: 'TikTok Shop' };
-function dataLocal(str){ const [y, m, d] = str.split('-').map(Number); return new Date(y, m - 1, d); }
-function diasEntre(de, ate){ return Math.round((dataLocal(ate) - dataLocal(de)) / 86400000); }
-function liberaEmAgenda(a){ return somarDias(a.data, +a.dias || 0); }
-function agendaAberta(p){ return (p.agendasPreco || []).find(a => !a.feito) || null; }
-function statusAgenda(a){
-  const libera = liberaEmAgenda(a);
-  const faltam = diasEntre(hojeLocal(), libera);
-  return { libera, faltam, liberado: faltam <= 0 };
-}
-// Etiqueta do cartão: "⏳ relâmpago em 4 dias" / "⚡ pode subir a relâmpago!"
-function htmlTagAgenda(p, curto = false){
-  const a = agendaAberta(p);
-  if(!a) return '';
-  const st = statusAgenda(a);
-  const txt = st.liberado ? '⚡ pode subir a relâmpago!' : `⏳ relâmpago em ${st.faltam} ${st.faltam === 1 ? 'dia' : 'dias'}`;
-  if(curto) return st.liberado ? '⚡ liberado' : `${st.faltam}d`;
-  return `<div class="ag-tag${st.liberado ? ' ok' : ''}" title="${MKTS_AGENDA[a.mkt] || ''} · libera em ${formatDate(st.libera)}">${txt}</div>`;
-}
-function agendasAbertas(){
-  return produtos.map(p => ({ p, a: agendaAberta(p) })).filter(x => x.a).map(x => ({ ...x, st: statusAgenda(x.a) }))
-    .sort((x, y) => x.st.libera.localeCompare(y.st.libera));
-}
-function renderAgendaPrecos(){
-  const box = document.getElementById('agendaPrecosBox');
-  const lista = agendasAbertas();
-  box.hidden = !lista.length;
-  if(!lista.length) return;
-  const liberadas = lista.filter(x => x.st.liberado).length;
-  document.getElementById('agendaPrecosResumo').innerHTML = `⏳ Mudanças de preço <span class="ag-cont">${lista.length - liberadas} aguardando</span>${liberadas ? ` <span class="ag-cont ok">${liberadas} ${liberadas === 1 ? 'liberada' : 'liberadas'} ⚡</span>` : ''}`;
-  const rs = v => v > 0 ? fmt(v) : '—';
-  document.getElementById('agendaPrecosLista').innerHTML = lista.map(({ p, a, st }) => `
-    <div class="ag-linha${st.liberado ? ' ok' : ''}">
-      <div class="ag-linha-info">
-        <strong>${escapeHtml(p.nome || 'Sem nome')}</strong> <span class="badge ${marketplaceBadgeClass(a.mkt)}">${MKTS_AGENDA[a.mkt] || a.mkt}</span>
-        <div class="sub">Promoção ${rs(a.promoAntes)} → <b>${rs(a.promoNova)}</b> em ${formatDate(a.data)} · Relâmpago ${rs(a.relAtual)} → <b>${rs(a.relNova)}</b>${a.obs ? ` · ${escapeHtml(a.obs)}` : ''}</div>
-      </div>
-      <div class="ag-linha-status">${st.liberado ? `<strong>⚡ Pode subir</strong><small>desde ${formatDate(st.libera)}</small>` : `<strong>${st.faltam} ${st.faltam === 1 ? 'dia' : 'dias'}</strong><small>libera ${formatDate(st.libera)}</small>`}</div>
-      <div class="ag-linha-acoes">
-        <button type="button" class="btn btn-outline btn-sm" data-ag-acao="editar" data-prod="${p.id}" title="Editar">✏️</button>
-        <button type="button" class="btn btn-primary btn-sm" data-ag-acao="feito" data-prod="${p.id}" title="Já subi a oferta relâmpago">✅ Feito</button>
-      </div>
-    </div>`).join('');
-}
-document.getElementById('agendaPrecosLista').addEventListener('click', e => {
-  const b = e.target.closest('[data-ag-acao]');
-  if(!b) return;
-  const p = produtos.find(x => x.id === b.dataset.prod);
-  if(!p) return;
-  if(b.dataset.agAcao === 'editar') return abrirModalAgenda(p);
-  const a = agendaAberta(p);
-  if(!a) return;
-  const st = statusAgenda(a);
-  if(!st.liberado && !confirm(`Ainda faltam ${st.faltam} dias pra liberar a relâmpago de "${p.nome}". Marcar como feito mesmo assim?`)) return;
-  a.feito = true;
-  a.feitoEm = hojeLocal();
-  saveProdutos();
-  renderProdutos();
-  mostrarToastForn(`✅ "${p.nome}": mudança de preço concluída e guardada no histórico.`);
-});
-
-function atualizarLiberaAgenda(){
-  const d = document.getElementById('agData').value;
-  const dias = +document.getElementById('agDias').value || 0;
-  if(!d){ document.getElementById('agLibera').textContent = '—'; return; }
-  const st = statusAgenda({ data: d, dias });
-  document.getElementById('agLibera').innerHTML = st.liberado ? `<strong class="pos">${formatDate(st.libera)} · já pode ⚡</strong>` : `<strong>${formatDate(st.libera)}</strong> <small>(faltam ${st.faltam})</small>`;
-}
-['agData', 'agDias'].forEach(id => document.getElementById(id).addEventListener('input', atualizarLiberaAgenda));
-function abrirModalAgenda(p){
-  if(!p) return;
-  agendaProdutoId = p.id;
-  const a = agendaAberta(p);
-  agendaEditId = a ? a.id : null;
-  const val = (campo, padrao = '') => a && a[campo] ? a[campo] : padrao;
-  document.getElementById('agTitulo').textContent = `⏳ ${p.nome || 'Produto'}`;
-  document.getElementById('agMkt').value = val('mkt', 'shopee');
-  document.getElementById('agData').value = val('data', hojeLocal());
-  document.getElementById('agPromoAntes').value = val('promoAntes');
-  document.getElementById('agPromoNova').value = val('promoNova');
-  document.getElementById('agRelAtual').value = val('relAtual');
-  document.getElementById('agRelNova').value = val('relNova');
-  document.getElementById('agDias').value = a ? (+a.dias || 0) : 7;
-  document.getElementById('agObs').value = val('obs');
-  document.getElementById('btnAgExcluir').style.display = a ? '' : 'none';
-  const feitas = (p.agendasPreco || []).filter(x => x.feito).sort((x, y) => (y.feitoEm || y.data).localeCompare(x.feitoEm || x.data));
-  const rs = v => v > 0 ? fmt(v) : '—';
-  document.getElementById('agHistorico').innerHTML = feitas.length ? `<details class="ag-hist"><summary>📜 Histórico de mudanças de preço (${feitas.length})</summary>
-    ${feitas.map(x => `<div class="ag-hist-linha"><span>${formatDate(x.data)} · ${MKTS_AGENDA[x.mkt] || x.mkt}</span><span>Promo ${rs(x.promoAntes)} → ${rs(x.promoNova)} · Relâmpago ${rs(x.relAtual)} → ${rs(x.relNova)}${x.feitoEm ? ` (subiu ${formatDate(x.feitoEm)})` : ''}</span></div>`).join('')}
-  </details>` : '';
-  atualizarLiberaAgenda();
-  abrirOverlay('overlayAgenda');
-}
-['agPromoAntes', 'agPromoNova', 'agRelAtual', 'agRelNova', 'agObs', 'agDias'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if(e.key === 'Enter') e.preventDefault(); }));
-document.getElementById('formAgenda').addEventListener('submit', e => {
-  e.preventDefault();
-  const p = produtos.find(x => x.id === agendaProdutoId);
-  if(!p) return;
-  const num = id => r2f(parseFloat(document.getElementById(id).value) || 0);
-  const dados = {
-    mkt: document.getElementById('agMkt').value,
-    data: document.getElementById('agData').value || hojeLocal(),
-    promoAntes: num('agPromoAntes'), promoNova: num('agPromoNova'),
-    relAtual: num('agRelAtual'), relNova: num('agRelNova'),
-    dias: Math.max(0, Math.round(+document.getElementById('agDias').value || 0)),
-    obs: document.getElementById('agObs').value.trim()
-  };
-  p.agendasPreco = p.agendasPreco || [];
-  const a = p.agendasPreco.find(x => x.id === agendaEditId);
-  if(a) Object.assign(a, dados);
-  else p.agendasPreco.push({ id: uid(), ...dados, feito: false });
-  saveProdutos();
-  fecharOverlay('overlayAgenda');
-  renderProdutos();
-  const st = statusAgenda(dados);
-  mostrarToastForn(st.liberado ? '⏳ Anotado — já pode subir a oferta relâmpago.' : `⏳ Anotado — a relâmpago libera em ${formatDate(st.libera)}.`);
-});
-document.getElementById('btnAgExcluir').addEventListener('click', () => {
-  const p = produtos.find(x => x.id === agendaProdutoId);
-  if(!p || !confirm('Apagar esta anotação de mudança de preço?')) return;
-  p.agendasPreco = (p.agendasPreco || []).filter(x => x.id !== agendaEditId);
-  saveProdutos();
-  fecharOverlay('overlayAgenda');
-  renderProdutos();
-});
-
-// Aviso no Relatório mensal (só quando há algo em andamento).
-function renderAvisoAgendaRel(){
-  const box = document.getElementById('relAgendaBox');
-  if(!box) return;
-  if(!currentUserId){ box.innerHTML = ''; return; }   // o relatório também desenha antes do login
-  const lista = agendasAbertas();
-  if(!lista.length){ box.innerHTML = ''; return; }
-  const lib = lista.filter(x => x.st.liberado);
-  const prox = lista.find(x => !x.st.liberado);
-  box.innerHTML = `<div class="rel-agenda${lib.length ? ' ok' : ''}">
-    <div>${lib.length
-      ? `⚡ <strong>${lib.length} ${lib.length === 1 ? 'produto liberado' : 'produtos liberados'}</strong> pra subir a oferta relâmpago: ${lib.slice(0, 4).map(x => escapeHtml(x.p.nome)).join(', ')}${lib.length > 4 ? '…' : ''}`
-      : '⏳ Nenhuma oferta relâmpago liberada ainda.'}
-      ${prox ? `<small>Próxima: ${escapeHtml(prox.p.nome)} em ${formatDate(prox.st.libera)} (faltam ${prox.st.faltam})</small>` : ''}</div>
-    <button type="button" class="btn btn-outline btn-sm" id="btnRelAgendaVer">Ver</button>
-  </div>`;
-  document.getElementById('btnRelAgendaVer').onclick = () => {
-    showPage('precificacao');
-    const det = document.getElementById('agendaPrecosBox');
-    det.open = true;
-    setTimeout(() => det.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
-  };
-}
 
 // ================= CATÁLOGO DE PRODUTOS =================
 // O catálogo É a lista `produtos` da Calculadora (mesmos objetos, mesma
