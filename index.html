@@ -932,6 +932,8 @@
   .print-preview{background:var(--bg);border:1px solid var(--border);border-radius:12px;min-height:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:13px;}
   .print-preview img{display:block;width:100%;height:auto;}
   .print-acoes{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 8px;}
+  .print-formato{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px;}
+  .print-formato > span{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;}
   @media (max-width:480px){
     .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));}
     .forn-vars.compacta .forn-var-ctrl button{width:22px;height:22px;}
@@ -1928,6 +1930,11 @@
     <div class="modal-header">
       <h2 id="printTitulo">Print do pedido</h2>
       <button type="button" class="modal-close-x" data-fechar="overlayPrint" aria-label="Fechar">✕</button>
+    </div>
+    <div class="print-formato" id="printFormato">
+      <span>Formato:</span>
+      <button type="button" class="mkt-filtro-btn" data-formato="compacto">Compacto (imagem menor)</button>
+      <button type="button" class="mkt-filtro-btn" data-formato="detalhado">Detalhado (com a grade de números)</button>
     </div>
     <div class="print-preview" id="printPreview">Gerando imagem...</div>
     <div class="print-acoes">
@@ -5539,7 +5546,7 @@ function quebrarTexto(ctx, texto, larguraMax){
   if(atual) linhas.push(atual);
   return linhas;
 }
-async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos = {} }){
+async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos = {}, compacto = false, acerto = null }){
   // rotulos: textos do print de Vendas e lucro (o padrão é o do pedido).
   const rot = { total: 'TOTAL DO PEDIDO', calendario: 'Pedidos por dia', prefixoCor: 'COR: ', preco: null, ...rotulos };
   // Layout pensado pra quem recebe: um bloco por modelo/cor, com a cor numa
@@ -5556,7 +5563,18 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   const medidor = document.createElement('canvas').getContext('2d');
   const larguraNome = W - PAD * 2 - FOTO - 28 - 250;
   const fotos = await Promise.all(linhas.map(l => carregarImagem(l.foto)));
+  // Compacto: uma linha por modelo/cor com foto pequena e a numeração em texto
+  // ("19/20: 3 · 21/22: 2"), em vez da grade de caixas — imagem bem mais curta.
+  const FOTO_C = 88, largCompacto = W - PAD * 2 - FOTO_C - 24 - 230;
   const layout = linhas.map(l => {
+    if(compacto){
+      medidor.font = fonte(800, 30);
+      const nome = quebrarTexto(medidor, l.nome, largCompacto).slice(0, 1);
+      medidor.font = fonte(700, 24);
+      const tam = (l.tamanhos || []).length ? quebrarTexto(medidor, l.tamanhos.map(t => `${t.tam}:\u00a0${t.qtd}`).join('   ·   '), largCompacto) : [];
+      const topo = Math.max(FOTO_C, 36 + 50 + tam.length * 32);
+      return { nome, tam, topo, h: 20 + topo + 20 };
+    }
     medidor.font = fonte(800, 38);
     const nome = quebrarTexto(medidor, l.nome, larguraNome).slice(0, 2);
     // nome + etiqueta da cor + linha de preço/SKU embaixo dela
@@ -5572,7 +5590,8 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   const calInfo = calendario ? diasDoMesCalendario(calendario.ym) : null;
   const calSemanas = calInfo ? Math.ceil((calInfo.primeiroSemana + calInfo.total) / 7) : 0;
   const CALENDARIO = calInfo ? 40 + 56 + 34 + calSemanas * (CAL_H + CAL_GAP) : 0;
-  const H = HEADER + layout.reduce((s, l) => s + l.h, 0) + CALENDARIO + FOOTER;
+  const ACERTO = acerto ? 10 + 70 + acerto.linhas.length * 58 + 20 + 150 + 50 : 0;
+  const H = HEADER + layout.reduce((s, l) => s + l.h, 0) + CALENDARIO + FOOTER + ACERTO;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -5602,6 +5621,60 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   linhas.forEach((l, i) => {
     const lay = layout[i];
     const img = fotos[i];
+    if(compacto){
+      const y0 = y + 20;
+      ctx.save();
+      retArred(PAD, y0, FOTO_C, FOTO_C, 14);
+      ctx.clip();
+      if(img){
+        const lado = Math.min(img.width, img.height);
+        ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, PAD, y0, FOTO_C, FOTO_C);
+      } else {
+        ctx.fillStyle = '#f0f4ff';
+        ctx.fillRect(PAD, y0, FOTO_C, FOTO_C);
+        ctx.fillStyle = '#6b7794';
+        ctx.font = fonte(800, 40);
+        ctx.textAlign = 'center';
+        ctx.fillText((l.nome || '?').trim().charAt(0).toUpperCase(), PAD + FOTO_C / 2, y0 + FOTO_C / 2 + 14);
+        ctx.textAlign = 'left';
+      }
+      ctx.restore();
+      const tx = PAD + FOTO_C + 24;
+      ctx.fillStyle = '#0f1b3d';
+      ctx.font = fonte(800, 30);
+      ctx.fillText(lay.nome[0] || '', tx, y0 + 30);
+      let px = tx;
+      if(l.cor){
+        ctx.font = fonte(800, 22);
+        const txt = `${rot.prefixoCor}${String(l.cor).toUpperCase()}`;
+        const w = ctx.measureText(txt).width + 28;
+        ctx.fillStyle = '#0f2254';
+        retArred(px, y0 + 44, w, 38, 19);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(txt, px + 14, y0 + 71);
+        px += w + 14;
+      }
+      ctx.fillStyle = '#6b7794';
+      ctx.font = fonte(700, 22);
+      const linhaPreco = (rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : '');
+      ctx.fillText(quebrarTexto(ctx, linhaPreco, W - PAD - 230 - px)[0] || '', px, y0 + 71);
+      ctx.fillStyle = '#0f2254';
+      ctx.font = fonte(700, 24);
+      lay.tam.forEach((t, k) => ctx.fillText(t, tx, y0 + 36 + 50 + 24 + k * 32));
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#0f1b3d';
+      ctx.font = fonte(800, 30);
+      ctx.fillText(`${l.qtd} ${unidade(l, l.qtd)}`, W - PAD, y0 + 30);
+      ctx.fillStyle = '#059669';
+      ctx.font = fonte(800, 28);
+      ctx.fillText(fmt(l.valor), W - PAD, y0 + 70);
+      ctx.textAlign = 'left';
+      y += lay.h;
+      ctx.fillStyle = '#e2e8f5';
+      ctx.fillRect(PAD, y - 2, W - PAD * 2, 2);
+      return;
+    }
     const y0 = y + 30;
     // Foto
     ctx.save();
@@ -5753,6 +5826,45 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     ctx.font = fonte(700, 24);
     ctx.fillText(rodape, PAD, y + 176);
   }
+  // Resumo do acerto (print do fechamento): o que vinha dos meses anteriores,
+  // o comprado no mês, cada pagamento/abatimento/devolução e o total em aberto.
+  if(acerto){
+    let ay = y + FOOTER + 10;
+    ctx.fillStyle = '#6b7794';
+    ctx.font = fonte(800, 26);
+    ctx.fillText('RESUMO DO ACERTO', PAD, ay + 46);
+    ay += 70;
+    acerto.linhas.forEach(l => {
+      ctx.fillStyle = '#0f1b3d';
+      ctx.font = fonte(700, 26);
+      ctx.fillText(quebrarTexto(ctx, l.rotulo, W - PAD * 2 - 300)[0] || '', PAD, ay + 36);
+      ctx.textAlign = 'right';
+      ctx.font = fonte(800, 30);
+      ctx.fillStyle = l.menos ? '#059669' : '#0f1b3d';
+      ctx.fillText(`${l.menos ? '− ' : ''}${fmt(l.valor)}`, W - PAD, ay + 37);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#e2e8f5';
+      ctx.fillRect(PAD, ay + 56, W - PAD * 2, 2);
+      ay += 58;
+    });
+    ay += 20;
+    const g2 = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
+    g2.addColorStop(0, acerto.aberto > 0.004 ? '#b91c1c' : '#047857');
+    g2.addColorStop(1, acerto.aberto > 0.004 ? '#dc2626' : '#059669');
+    ctx.fillStyle = g2;
+    retArred(PAD, ay, W - PAD * 2, 150, 24);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.font = fonte(800, 26);
+    ctx.fillText(acerto.rotuloAberto, PAD + 34, ay + 62);
+    ctx.font = fonte(700, 22);
+    ctx.fillText(acerto.subAberto, PAD + 34, ay + 102);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = fonte(800, 64);
+    ctx.fillText(fmt(Math.abs(acerto.aberto)), W - PAD - 34, ay + 98);
+    ctx.textAlign = 'left';
+  }
   return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
 }
 
@@ -5798,7 +5910,12 @@ function linkWhatsForn(f, texto){
 }
 
 let printAtual = null;   // { blob, url, nomeArquivo }
-async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nomeArquivo, f, calendario, rotulos }){
+let ultimoPrint = null;   // argumentos do print aberto (pra trocar Detalhado/Compacto)
+async function abrirPrint(args){
+  ultimoPrint = args;
+  const { tituloModal, titulo, subtitulo, linhas, rodape, nomeArquivo, f, calendario, rotulos, acerto } = args;
+  const compacto = !!args.compacto;
+  document.querySelectorAll('#printFormato [data-formato]').forEach(b => b.classList.toggle('active', (b.dataset.formato === 'compacto') === compacto));
   const totalPecas = linhas.reduce((s, l) => s + l.qtd, 0);
   const totalValor = r2f(linhas.reduce((s, l) => s + l.valor, 0));
   document.getElementById('printTitulo').textContent = tituloModal;
@@ -5810,7 +5927,7 @@ async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nome
   btnW.style.display = whats ? '' : 'none';
   if(whats) btnW.href = whats;
   if(printAtual) URL.revokeObjectURL(printAtual.url);
-  const blob = await gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos });
+  const blob = await gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos, compacto, acerto });
   if(!blob){ prev.textContent = 'Não foi possível gerar a imagem neste navegador.'; return; }
   printAtual = { blob, url: URL.createObjectURL(blob), nomeArquivo };
   prev.innerHTML = `<img src="${printAtual.url}" alt="${escapeHtml(titulo)}">`;
@@ -5818,6 +5935,14 @@ async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nome
   document.getElementById('btnPrintCompartilhar').style.display = podeCompartilhar ? '' : 'none';
   document.getElementById('btnPrintCopiar').style.display = (navigator.clipboard && window.ClipboardItem) ? '' : 'none';
 }
+document.getElementById('printFormato').addEventListener('click', e => {
+  const b = e.target.closest('[data-formato]');
+  if(!b || !ultimoPrint) return;
+  const compacto = b.dataset.formato === 'compacto';
+  if(compacto === !!ultimoPrint.compacto) return;
+  if(ultimoPrint.lembrarFormato) try{ localStorage.setItem('nexus.printMesCompacto', compacto ? '1' : '0'); } catch(err){}
+  abrirPrint({ ...ultimoPrint, compacto });
+});
 document.getElementById('btnPrintCompartilhar').addEventListener('click', async () => {
   if(!printAtual) return;
   try{
@@ -5852,20 +5977,48 @@ function abrirPrintDia(f){
 function abrirPrintMes(f, ym){
   const linhas = resumoProdutosMes(f, ym).flatMap(r => linhasDoItem(produtoDoForn(f, r.produtoId), r, r.nome));
   if(!linhas.length) return;
-  const pago = totalPagoForn(f, ym);
-  const falta = faltaMesForn(f, ym);
+  const ac = resumoAcertoMes(f, ym);
+  const mesNome = NOMES_MES[+ym.slice(5, 7) - 1];
+  const mesAnt = NOMES_MES[+somarMeses(ym, -1).slice(5, 7) - 1];
+  const manual = totalManualMes(f, ym) !== null;
+  const linhasAcerto = [
+    ...(Math.abs(ac.anterior) > 0.004 ? [ac.anterior > 0
+      ? { rotulo: `Faltava até ${mesAnt}`, valor: ac.anterior }
+      : { rotulo: `Crédito que sobrou até ${mesAnt}`, valor: -ac.anterior, menos: true }] : []),
+    { rotulo: `Comprado em ${mesNome}${manual ? ' (valor informado)' : ''}`, valor: ac.comprado },
+    ...ac.movs.map(p => ({ rotulo: `${formatDate(p.data)} · ${infoMovimento(p).nome}${p.obs ? ' — ' + p.obs : ''}`, valor: p.valor || 0, menos: true }))
+  ];
+  let compacto = true;
+  try{ compacto = localStorage.getItem('nexus.printMesCompacto') !== '0'; } catch(e){}
   abrirPrint({
+    compacto, lembrarFormato: true,
+    rotulos: { total: `COMPRADO EM ${mesNome.toUpperCase()}` },
+    acerto: {
+      linhas: linhasAcerto,
+      aberto: ac.aberto,
+      rotuloAberto: ac.aberto > 0.004 ? 'TOTAL EM ABERTO' : (ac.aberto < -0.004 ? 'CRÉDITO A FAVOR' : 'TUDO PAGO'),
+      subAberto: `no fim de ${mesNome}${ehCorrido(f) ? ' (saldo corrido)' : ''}`
+    },
     f, tituloModal: 'Print do fechamento do mês',
     titulo: `Fechamento — ${f.nome}`,
     subtitulo: nomeMes(ym).replace(/^./, c => c.toUpperCase()) + ` · ${diasComCompraNoMes(f, ym)} dias de pedido`,
     linhas, nomeArquivo: `fechamento-${ym}.png`,
     calendario: { ym, dias: Object.fromEntries(Object.keys(f.compras || {}).filter(d => d.startsWith(ym) && pecasDiaForn(f, d) > 0).map(d => [d, { pecas: pecasDiaForn(f, d), valor: totalDiaForn(f, d) }])) },
-    // Mês com valor informado à mão: o print lista os pedidos, mas o rodapé
-    // mostra o total que vale pro mês.
-    rodape: ehCorrido(f)
-      ? [totalManualMes(f, ym) !== null ? `Total informado do mês: ${fmt(totalManualMes(f, ym))}` : '', `Pago no mês: ${fmt(pagoNaDataMes(f, ym))}  ·  Em aberto no fim do mês: ${fmt(Math.max(0, saldoAteMes(f, ym)))}`].filter(Boolean).join('  ·  ')
-      : [totalManualMes(f, ym) !== null ? `Total informado do mês: ${fmt(totalManualMes(f, ym))}` : '', pago > 0 ? `Já pago: ${fmt(pago)}  ·  Falta: ${fmt(Math.max(0, falta))}` : ''].filter(Boolean).join('  ·  ')
   });
+}
+// Acerto do mês pro print: saldo que vinha de antes, comprado no mês, os
+// lançamentos do mês e o que fica em aberto. Saldo corrido conta pagamentos
+// pela data; mensal, pelo "referente ao mês" (mesmo critério da tela).
+function resumoAcertoMes(f, ym){
+  const meses = new Set([...Object.keys(f.compras || {}).map(d => d.slice(0, 7)), ...Object.keys(f.totaisMes || {})]);
+  const anterior = ehCorrido(f)
+    ? saldoAteMes(f, somarMeses(ym, -1))
+    : r2f([...meses].filter(m => m < ym).reduce((s, m) => s + compradoMesForn(f, m), 0)
+        - (f.pagamentos || []).filter(p => refPagamento(p) < ym).reduce((s, p) => s + (p.valor || 0), 0));
+  const comprado = compradoMesForn(f, ym);
+  const movs = movimentosDoMesForn(f, ym).slice().sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+  const pago = r2f(movs.reduce((s, p) => s + (p.valor || 0), 0));
+  return { anterior, comprado, movs, pago, aberto: r2f(anterior + comprado - pago) };
 }
 
 // ---- Soma rápida: passar pro sistema, dia por dia, pedidos anotados no papel ----
