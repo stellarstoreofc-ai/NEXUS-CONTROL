@@ -932,8 +932,6 @@
   .print-preview{background:var(--bg);border:1px solid var(--border);border-radius:12px;min-height:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:13px;}
   .print-preview img{display:block;width:100%;height:auto;}
   .print-acoes{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 8px;}
-  .print-formato{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px;}
-  .print-formato > span{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;}
   @media (max-width:480px){
     .forn-vars.compacta{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));}
     .forn-vars.compacta .forn-var-ctrl button{width:22px;height:22px;}
@@ -1930,11 +1928,6 @@
     <div class="modal-header">
       <h2 id="printTitulo">Print do pedido</h2>
       <button type="button" class="modal-close-x" data-fechar="overlayPrint" aria-label="Fechar">✕</button>
-    </div>
-    <div class="print-formato" id="printFormato">
-      <span>Formato:</span>
-      <button type="button" class="mkt-filtro-btn" data-formato="compacto">Compacto (imagem menor)</button>
-      <button type="button" class="mkt-filtro-btn" data-formato="detalhado">Detalhado (com a grade de números)</button>
     </div>
     <div class="print-preview" id="printPreview">Gerando imagem...</div>
     <div class="print-acoes">
@@ -5546,35 +5539,31 @@ function quebrarTexto(ctx, texto, larguraMax){
   if(atual) linhas.push(atual);
   return linhas;
 }
-async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos = {}, compacto = false, acerto = null }){
+async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos = {}, acerto = null, colunas = 1 }){
   // rotulos: textos do print de Vendas e lucro (o padrão é o do pedido).
   const rot = { total: 'TOTAL DO PEDIDO', calendario: 'Pedidos por dia', prefixoCor: 'COR: ', preco: null, ...rotulos };
   // Layout pensado pra quem recebe: um bloco por modelo/cor, com a cor numa
   // etiqueta e a numeração numa grade (Nº em cima, quantidade grande embaixo).
+  // colunas: 'auto' (print do mês) espalha os blocos lado a lado pra imagem
+  // crescer pras laterais e não só pra baixo; o calendário e o resumo do
+  // acerto ficam um ao lado do outro no final.
   try{ await document.fonts.ready; } catch(e){}
-  const W = 1080, PAD = 56, FOTO = 124;
+  const PAD = 56, FOTO = 124, GUT = 48, COL_W = 968;
+  const COLS = colunas === 'auto'
+    ? Math.max(1, Math.min(4, Math.round(Math.sqrt(linhas.length * 0.4))))
+    : Math.max(1, Math.min(colunas, linhas.length || 1));
+  const W = PAD * 2 + COLS * COL_W + (COLS - 1) * GUT;
   // Caixa de numeração: Nº grande em cima, quantidade numa faixa embaixo.
   const BOX_W = 150, BOX_H = 136, GAP = 14;
-  const porLinhaGrade = Math.floor((W - PAD * 2 + GAP) / (BOX_W + GAP));
+  const porLinhaGrade = Math.floor((COL_W + GAP) / (BOX_W + GAP));
   const fonte = (peso, tam) => `${peso} ${tam}px 'Plus Jakarta Sans', 'Nunito Sans', Arial, sans-serif`;
   const unidade = (l, n) => (l.tamanhos && l.tamanhos.length) ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
   const tudoPar = linhas.every(l => l.tamanhos && l.tamanhos.length);
   const unTotal = n => tudoPar ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
   const medidor = document.createElement('canvas').getContext('2d');
-  const larguraNome = W - PAD * 2 - FOTO - 28 - 250;
+  const larguraNome = COL_W - FOTO - 28 - 250;
   const fotos = await Promise.all(linhas.map(l => carregarImagem(l.foto)));
-  // Compacto: uma linha por modelo/cor com foto pequena e a numeração em texto
-  // ("19/20: 3 · 21/22: 2"), em vez da grade de caixas — imagem bem mais curta.
-  const FOTO_C = 88, largCompacto = W - PAD * 2 - FOTO_C - 24 - 230;
   const layout = linhas.map(l => {
-    if(compacto){
-      medidor.font = fonte(800, 30);
-      const nome = quebrarTexto(medidor, l.nome, largCompacto).slice(0, 1);
-      medidor.font = fonte(700, 24);
-      const tam = (l.tamanhos || []).length ? quebrarTexto(medidor, l.tamanhos.map(t => `${t.tam}:\u00a0${t.qtd}`).join('   ·   '), largCompacto) : [];
-      const topo = Math.max(FOTO_C, 36 + 50 + tam.length * 32);
-      return { nome, tam, topo, h: 20 + topo + 20 };
-    }
     medidor.font = fonte(800, 38);
     const nome = quebrarTexto(medidor, l.nome, larguraNome).slice(0, 2);
     // nome + etiqueta da cor + linha de preço/SKU embaixo dela
@@ -5583,15 +5572,20 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     const grade = linhasGrade ? 26 + linhasGrade * (BOX_H + GAP) - GAP : 0;
     return { nome, topo, h: 30 + topo + grade + 34 };
   });
+  // Altura de cada "linha" de blocos = o bloco mais alto dela.
+  const fileiras = [];
+  for(let i = 0; i < linhas.length; i += COLS) fileiras.push(Math.max(...layout.slice(i, i + COLS).map(l => l.h)));
   const HEADER = 260, FOOTER = rodape ? 230 : 190;
   // Calendário do mês (opcional, só no print do fechamento): 7 colunas, uma
   // linha por semana, cada dia com peças e valor bem pequenos.
-  const CAL_GAP = 8, CAL_W = (W - PAD * 2 - CAL_GAP * 6) / 7, CAL_H = 92;
+  const CAL_GAP = 8, CAL_W = (COL_W - CAL_GAP * 6) / 7, CAL_H = 92;
   const calInfo = calendario ? diasDoMesCalendario(calendario.ym) : null;
   const calSemanas = calInfo ? Math.ceil((calInfo.primeiroSemana + calInfo.total) / 7) : 0;
   const CALENDARIO = calInfo ? 40 + 56 + 34 + calSemanas * (CAL_H + CAL_GAP) : 0;
   const ACERTO = acerto ? 10 + 70 + acerto.linhas.length * 58 + 20 + 150 + 50 : 0;
-  const H = HEADER + layout.reduce((s, l) => s + l.h, 0) + CALENDARIO + FOOTER + ACERTO;
+  const ladoALado = COLS >= 2 && !!calInfo;
+  const FINAL = ladoALado ? Math.max(CALENDARIO + 40, 18 + FOOTER + ACERTO) : CALENDARIO + FOOTER + ACERTO;
+  const H = HEADER + fileiras.reduce((s, h) => s + h, 0) + FINAL;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -5617,124 +5611,66 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   ctx.font = fonte(700, 28);
   ctx.fillText(`${modelos} ${modelos === 1 ? 'modelo' : 'modelos'}  ·  ${totalPecas} ${unTotal(totalPecas)}`, PAD, 194);
 
-  let y = HEADER;
-  linhas.forEach((l, i) => {
-    const lay = layout[i];
-    const img = fotos[i];
-    if(compacto){
-      const y0 = y + 20;
-      ctx.save();
-      retArred(PAD, y0, FOTO_C, FOTO_C, 14);
-      ctx.clip();
-      if(img){
-        const lado = Math.min(img.width, img.height);
-        ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, PAD, y0, FOTO_C, FOTO_C);
-      } else {
-        ctx.fillStyle = '#f0f4ff';
-        ctx.fillRect(PAD, y0, FOTO_C, FOTO_C);
-        ctx.fillStyle = '#6b7794';
-        ctx.font = fonte(800, 40);
-        ctx.textAlign = 'center';
-        ctx.fillText((l.nome || '?').trim().charAt(0).toUpperCase(), PAD + FOTO_C / 2, y0 + FOTO_C / 2 + 14);
-        ctx.textAlign = 'left';
-      }
-      ctx.restore();
-      const tx = PAD + FOTO_C + 24;
-      ctx.fillStyle = '#0f1b3d';
-      ctx.font = fonte(800, 30);
-      ctx.fillText(lay.nome[0] || '', tx, y0 + 30);
-      let px = tx;
-      if(l.cor){
-        ctx.font = fonte(800, 22);
-        const txt = `${rot.prefixoCor}${String(l.cor).toUpperCase()}`;
-        const w = ctx.measureText(txt).width + 28;
-        ctx.fillStyle = '#0f2254';
-        retArred(px, y0 + 44, w, 38, 19);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(txt, px + 14, y0 + 71);
-        px += w + 14;
-      }
-      ctx.fillStyle = '#6b7794';
-      ctx.font = fonte(700, 22);
-      const linhaPreco = (rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : '');
-      ctx.fillText(quebrarTexto(ctx, linhaPreco, W - PAD - 230 - px)[0] || '', px, y0 + 71);
-      ctx.fillStyle = '#0f2254';
-      ctx.font = fonte(700, 24);
-      lay.tam.forEach((t, k) => ctx.fillText(t, tx, y0 + 36 + 50 + 24 + k * 32));
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#0f1b3d';
-      ctx.font = fonte(800, 30);
-      ctx.fillText(`${l.qtd} ${unidade(l, l.qtd)}`, W - PAD, y0 + 30);
-      ctx.fillStyle = '#059669';
-      ctx.font = fonte(800, 28);
-      ctx.fillText(fmt(l.valor), W - PAD, y0 + 70);
-      ctx.textAlign = 'left';
-      y += lay.h;
-      ctx.fillStyle = '#e2e8f5';
-      ctx.fillRect(PAD, y - 2, W - PAD * 2, 2);
-      return;
-    }
+  // Um bloco (modelo/cor) com o canto esquerdo em x e largura COL_W.
+  function desenharBloco(l, lay, img, x, y, hFileira){
     const y0 = y + 30;
+    const xd = x + COL_W;   // borda direita do bloco
     // Foto
     ctx.save();
-    retArred(PAD, y0, FOTO, FOTO, 18);
+    retArred(x, y0, FOTO, FOTO, 18);
     ctx.clip();
     if(img){
       const lado = Math.min(img.width, img.height);
-      ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, PAD, y0, FOTO, FOTO);
+      ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, x, y0, FOTO, FOTO);
     } else {
       ctx.fillStyle = '#f0f4ff';
-      ctx.fillRect(PAD, y0, FOTO, FOTO);
+      ctx.fillRect(x, y0, FOTO, FOTO);
       ctx.fillStyle = '#6b7794';
       ctx.font = fonte(800, 54);
       ctx.textAlign = 'center';
-      ctx.fillText((l.nome || '?').trim().charAt(0).toUpperCase(), PAD + FOTO / 2, y0 + FOTO / 2 + 19);
+      ctx.fillText((l.nome || '?').trim().charAt(0).toUpperCase(), x + FOTO / 2, y0 + FOTO / 2 + 19);
       ctx.textAlign = 'left';
     }
     ctx.restore();
     // Nome do modelo
-    const tx = PAD + FOTO + 28;
+    const tx = x + FOTO + 28;
     let ty = y0 + 40;
     ctx.fillStyle = '#0f1b3d';
     ctx.font = fonte(800, 38);
     lay.nome.forEach((t, k) => { ctx.fillText(t, tx, ty + k * 44); });
     ty += (lay.nome.length - 1) * 44 + 22;
     // Etiqueta da cor + preço por par
-    let px = tx;
     if(l.cor){
       // Cor bem visível: etiqueta escura com letra branca grande.
       ctx.font = fonte(800, 30);
       const txt = `${rot.prefixoCor}${String(l.cor).toUpperCase()}`;
       const w = ctx.measureText(txt).width + 40;
       ctx.fillStyle = '#0f2254';
-      retArred(px, ty, w, 56, 28);
+      retArred(tx, ty, w, 56, 28);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(txt, px + 20, ty + 39);
+      ctx.fillText(txt, tx + 20, ty + 39);
     }
     // Preço e SKU numa linha própria (embaixo da cor), sem invadir a coluna do valor.
     ctx.fillStyle = '#6b7794';
     ctx.font = fonte(700, 24);
     const linhaPreco = (rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : '');
-    ctx.fillText(quebrarTexto(ctx, linhaPreco, W - PAD - 250 - px)[0], px, l.cor ? ty + 56 + 32 : ty + 37);
+    ctx.fillText(quebrarTexto(ctx, linhaPreco, xd - 250 - tx)[0], tx, l.cor ? ty + 56 + 32 : ty + 37);
     // Total do bloco (direita)
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f1b3d';
     ctx.font = fonte(800, 38);
-    ctx.fillText(`${l.qtd} ${unidade(l, l.qtd)}`, W - PAD, y0 + 40);
+    ctx.fillText(`${l.qtd} ${unidade(l, l.qtd)}`, xd, y0 + 40);
     ctx.fillStyle = '#059669';
     ctx.font = fonte(800, 32);
-    ctx.fillText(fmt(l.valor), W - PAD, y0 + 86);
+    ctx.fillText(fmt(l.valor), xd, y0 + 86);
     ctx.textAlign = 'left';
     // Grade de numeração
     if(l.tamanhos && l.tamanhos.length){
       const gy = y0 + lay.topo + 26;
-      ctx.fillStyle = '#6b7794';
-      ctx.font = fonte(800, 20);
       l.tamanhos.forEach((t, k) => {
         const col = k % porLinhaGrade, lin = Math.floor(k / porLinhaGrade);
-        const bx = PAD + col * (BOX_W + GAP), by = gy + lin * (BOX_H + GAP);
+        const bx = x + col * (BOX_W + GAP), by = gy + lin * (BOX_H + GAP);
         ctx.fillStyle = '#f5f8ff';
         retArred(bx, by, BOX_W, BOX_H, 16);
         ctx.fill();
@@ -5763,25 +5699,34 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
         ctx.textAlign = 'left';
       });
     }
-    y += lay.h;
     ctx.fillStyle = '#e2e8f5';
-    ctx.fillRect(PAD, y - 2, W - PAD * 2, 2);
+    ctx.fillRect(x, y + hFileira - 2, COL_W, 2);
+  }
+
+  let y = HEADER;
+  fileiras.forEach((hFileira, f) => {
+    for(let c = 0; c < COLS; c++){
+      const i = f * COLS + c;
+      if(i >= linhas.length) break;
+      desenharBloco(linhas[i], layout[i], fotos[i], PAD + c * (COL_W + GUT), y, hFileira);
+    }
+    y += hFileira;
   });
 
-  if(calInfo){
-    let cy = y + 40;
+  function desenharCalendario(x, y0){
+    let cy = y0 + 40;
     ctx.fillStyle = '#0f1b3d';
     ctx.font = fonte(800, 30);
-    ctx.fillText(rot.calendario, PAD, cy + 30);
+    ctx.fillText(rot.calendario, x, cy + 30);
     cy += 56;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#6b7794';
     ctx.font = fonte(800, 20);
-    DIAS_SEMANA_CURTOS.forEach((sem, i) => ctx.fillText(sem.toUpperCase(), PAD + i * (CAL_W + CAL_GAP) + CAL_W / 2, cy + 20));
+    DIAS_SEMANA_CURTOS.forEach((sem, i) => ctx.fillText(sem.toUpperCase(), x + i * (CAL_W + CAL_GAP) + CAL_W / 2, cy + 20));
     cy += 34;
     for(let n = 1; n <= calInfo.total; n++){
       const pos = calInfo.primeiroSemana + n - 1;
-      const cx = PAD + (pos % 7) * (CAL_W + CAL_GAP);
+      const cx = x + (pos % 7) * (CAL_W + CAL_GAP);
       const by = cy + Math.floor(pos / 7) * (CAL_H + CAL_GAP);
       const info = calendario.dias[calInfo.dia(n)];
       ctx.fillStyle = info ? '#ecfdf5' : '#f5f7fc';
@@ -5804,66 +5749,82 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
       }
     }
     ctx.textAlign = 'left';
-    y += CALENDARIO;
   }
 
-  // Rodapé: total do pedido
-  ctx.fillStyle = '#f0f4ff';
-  ctx.fillRect(0, y + 18, W, FOOTER - 18);
-  ctx.fillStyle = '#6b7794';
-  ctx.font = fonte(800, 26);
-  ctx.fillText(rot.total, PAD, y + 76);
-  ctx.fillStyle = '#0f1b3d';
-  ctx.font = fonte(800, 34);
-  ctx.fillText(`${totalPecas} ${unTotal(totalPecas)}`, PAD, y + 122);
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#0f2254';
-  ctx.font = fonte(800, 60);
-  ctx.fillText(fmt(totalValor), W - PAD, y + 118);
-  ctx.textAlign = 'left';
-  if(rodape){
-    ctx.fillStyle = '#6b7794';
-    ctx.font = fonte(700, 24);
-    ctx.fillText(rodape, PAD, y + 176);
-  }
-  // Resumo do acerto (print do fechamento): o que vinha dos meses anteriores,
-  // o comprado no mês, cada pagamento/abatimento/devolução e o total em aberto.
-  if(acerto){
-    let ay = y + FOOTER + 10;
+  // Total do pedido: faixa de ponta a ponta (uma coluna) ou caixa (lado a lado).
+  function desenharTotal(x, y0, w, faixa){
+    ctx.fillStyle = '#f0f4ff';
+    if(faixa) ctx.fillRect(0, y0 + 18, W, FOOTER - 18);
+    else { retArred(x, y0 + 18, w, FOOTER - 18, 24); ctx.fill(); }
+    const px = faixa ? x : x + 32, pd = faixa ? x + w : x + w - 32;
     ctx.fillStyle = '#6b7794';
     ctx.font = fonte(800, 26);
-    ctx.fillText('RESUMO DO ACERTO', PAD, ay + 46);
+    ctx.fillText(rot.total, px, y0 + 76);
+    ctx.fillStyle = '#0f1b3d';
+    ctx.font = fonte(800, 34);
+    ctx.fillText(`${totalPecas} ${unTotal(totalPecas)}`, px, y0 + 122);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#0f2254';
+    ctx.font = fonte(800, 60);
+    ctx.fillText(fmt(totalValor), pd, y0 + 118);
+    ctx.textAlign = 'left';
+    if(rodape){
+      ctx.fillStyle = '#6b7794';
+      ctx.font = fonte(700, 24);
+      ctx.fillText(rodape, px, y0 + 176);
+    }
+  }
+
+  // Resumo do acerto (print do fechamento): o que vinha dos meses anteriores,
+  // o comprado no mês, cada pagamento/abatimento/devolução e o total em aberto.
+  function desenharAcerto(x, y0, w){
+    let ay = y0 + 10;
+    ctx.fillStyle = '#6b7794';
+    ctx.font = fonte(800, 26);
+    ctx.fillText('RESUMO DO ACERTO', x, ay + 46);
     ay += 70;
     acerto.linhas.forEach(l => {
       ctx.fillStyle = '#0f1b3d';
       ctx.font = fonte(700, 26);
-      ctx.fillText(quebrarTexto(ctx, l.rotulo, W - PAD * 2 - 300)[0] || '', PAD, ay + 36);
+      ctx.fillText(quebrarTexto(ctx, l.rotulo, w - 300)[0] || '', x, ay + 36);
       ctx.textAlign = 'right';
       ctx.font = fonte(800, 30);
       ctx.fillStyle = l.menos ? '#059669' : '#0f1b3d';
-      ctx.fillText(`${l.menos ? '− ' : ''}${fmt(l.valor)}`, W - PAD, ay + 37);
+      ctx.fillText(`${l.menos ? '− ' : ''}${fmt(l.valor)}`, x + w, ay + 37);
       ctx.textAlign = 'left';
       ctx.fillStyle = '#e2e8f5';
-      ctx.fillRect(PAD, ay + 56, W - PAD * 2, 2);
+      ctx.fillRect(x, ay + 56, w, 2);
       ay += 58;
     });
     ay += 20;
-    const g2 = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
+    const g2 = ctx.createLinearGradient(x, 0, x + w, 0);
     g2.addColorStop(0, acerto.aberto > 0.004 ? '#b91c1c' : '#047857');
     g2.addColorStop(1, acerto.aberto > 0.004 ? '#dc2626' : '#059669');
     ctx.fillStyle = g2;
-    retArred(PAD, ay, W - PAD * 2, 150, 24);
+    retArred(x, ay, w, 150, 24);
     ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,.85)';
     ctx.font = fonte(800, 26);
-    ctx.fillText(acerto.rotuloAberto, PAD + 34, ay + 62);
+    ctx.fillText(acerto.rotuloAberto, x + 34, ay + 62);
     ctx.font = fonte(700, 22);
-    ctx.fillText(acerto.subAberto, PAD + 34, ay + 102);
+    ctx.fillText(acerto.subAberto, x + 34, ay + 102);
     ctx.textAlign = 'right';
     ctx.fillStyle = '#ffffff';
     ctx.font = fonte(800, 64);
-    ctx.fillText(fmt(Math.abs(acerto.aberto)), W - PAD - 34, ay + 98);
+    ctx.fillText(fmt(Math.abs(acerto.aberto)), x + w - 34, ay + 98);
     ctx.textAlign = 'left';
+  }
+
+  if(ladoALado){
+    // Calendário à esquerda; total do mês + acerto à direita.
+    desenharCalendario(PAD, y);
+    const xr = PAD + COL_W + GUT, wr = W - PAD - xr;
+    desenharTotal(xr, y, wr, false);
+    if(acerto) desenharAcerto(xr, y + FOOTER, wr);
+  } else {
+    if(calInfo){ desenharCalendario(PAD, y); y += CALENDARIO; }
+    desenharTotal(PAD, y, W - PAD * 2, true);
+    if(acerto) desenharAcerto(PAD, y + FOOTER, W - PAD * 2);
   }
   return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
 }
@@ -5910,12 +5871,7 @@ function linkWhatsForn(f, texto){
 }
 
 let printAtual = null;   // { blob, url, nomeArquivo }
-let ultimoPrint = null;   // argumentos do print aberto (pra trocar Detalhado/Compacto)
-async function abrirPrint(args){
-  ultimoPrint = args;
-  const { tituloModal, titulo, subtitulo, linhas, rodape, nomeArquivo, f, calendario, rotulos, acerto } = args;
-  const compacto = !!args.compacto;
-  document.querySelectorAll('#printFormato [data-formato]').forEach(b => b.classList.toggle('active', (b.dataset.formato === 'compacto') === compacto));
+async function abrirPrint({ tituloModal, titulo, subtitulo, linhas, rodape, nomeArquivo, f, calendario, rotulos, acerto, colunas }){
   const totalPecas = linhas.reduce((s, l) => s + l.qtd, 0);
   const totalValor = r2f(linhas.reduce((s, l) => s + l.valor, 0));
   document.getElementById('printTitulo').textContent = tituloModal;
@@ -5927,7 +5883,7 @@ async function abrirPrint(args){
   btnW.style.display = whats ? '' : 'none';
   if(whats) btnW.href = whats;
   if(printAtual) URL.revokeObjectURL(printAtual.url);
-  const blob = await gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos, compacto, acerto });
+  const blob = await gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalValor, rodape, calendario, rotulos, acerto, colunas });
   if(!blob){ prev.textContent = 'Não foi possível gerar a imagem neste navegador.'; return; }
   printAtual = { blob, url: URL.createObjectURL(blob), nomeArquivo };
   prev.innerHTML = `<img src="${printAtual.url}" alt="${escapeHtml(titulo)}">`;
@@ -5935,14 +5891,6 @@ async function abrirPrint(args){
   document.getElementById('btnPrintCompartilhar').style.display = podeCompartilhar ? '' : 'none';
   document.getElementById('btnPrintCopiar').style.display = (navigator.clipboard && window.ClipboardItem) ? '' : 'none';
 }
-document.getElementById('printFormato').addEventListener('click', e => {
-  const b = e.target.closest('[data-formato]');
-  if(!b || !ultimoPrint) return;
-  const compacto = b.dataset.formato === 'compacto';
-  if(compacto === !!ultimoPrint.compacto) return;
-  if(ultimoPrint.lembrarFormato) try{ localStorage.setItem('nexus.printMesCompacto', compacto ? '1' : '0'); } catch(err){}
-  abrirPrint({ ...ultimoPrint, compacto });
-});
 document.getElementById('btnPrintCompartilhar').addEventListener('click', async () => {
   if(!printAtual) return;
   try{
@@ -5988,10 +5936,8 @@ function abrirPrintMes(f, ym){
     { rotulo: `Comprado em ${mesNome}${manual ? ' (valor informado)' : ''}`, valor: ac.comprado },
     ...ac.movs.map(p => ({ rotulo: `${formatDate(p.data)} · ${infoMovimento(p).nome}${p.obs ? ' — ' + p.obs : ''}`, valor: p.valor || 0, menos: true }))
   ];
-  let compacto = true;
-  try{ compacto = localStorage.getItem('nexus.printMesCompacto') !== '0'; } catch(e){}
   abrirPrint({
-    compacto, lembrarFormato: true,
+    colunas: 'auto',
     rotulos: { total: `COMPRADO EM ${mesNome.toUpperCase()}` },
     acerto: {
       linhas: linhasAcerto,
