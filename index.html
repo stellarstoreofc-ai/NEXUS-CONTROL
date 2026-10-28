@@ -372,6 +372,8 @@
   .prod-resumo-preco{color:var(--muted);font-weight:700;}
   @media (max-width:520px){ #produtosList{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;} }
   .prod-custo{display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:999px;padding:2px 9px;font-size:13px;font-weight:800;margin-top:3px;}
+  .forn-mov-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .forn-mov-topo h3{margin:0;}
   .mkt-filtro{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;}
   .mkt-filtro > span{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-right:2px;}
   .mkt-filtro-btn{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;}
@@ -5224,7 +5226,10 @@ function renderFornecedores(){
         ${diasDoMes.length ? '' : `<p class="forn-hist-vazio" style="margin-top:8px;">Nada lançado neste mês ainda.</p>`}
       </div>
       <div class="chart-card">
-        <h3>Pagamentos, abatimentos e devoluções — ${NOMES_MES[+ym.slice(5, 7) - 1]}${corrido ? ' (pela data)' : ''}</h3>
+        <div class="forn-mov-topo">
+          <h3>Pagamentos, abatimentos e devoluções — ${NOMES_MES[+ym.slice(5, 7) - 1]}${corrido ? ' (pela data)' : ''}</h3>
+          <button type="button" class="btn btn-outline btn-sm" data-acao="pagar-aqui">＋ Adicionar pagamento</button>
+        </div>
         ${pagamentosDoMes.length ? pagamentosDoMes.map(p => `
           <div class="forn-hist-linha">
             <div><div>${formatDate(p.data)} <span class="${infoMovimento(p).classe}">${infoMovimento(p).icone} ${infoMovimento(p).nome.toLowerCase()}</span></div>${p.tipo === 'devolucao' && p.itens ? `<div class="sub">${escapeHtml(textoItensDevolucao(p))}</div>` : ''}${p.obs ? `<div class="sub">${escapeHtml(p.obs)}</div>` : ''}</div>
@@ -6617,6 +6622,16 @@ function cliqueTelaForn(e){
   }
   if(acao === 'devolucao') return abrirModalDevolucao(f, fornMes);
   if(acao === 'pagar-mes') return abrirModalPagamentoForn(fornMes);
+  // "＋ Adicionar pagamento" na lista do mês: já vem referente ao mês na tela e,
+  // se ele não for o mês atual, com a data dentro dele (saldo corrido vale pela data).
+  if(acao === 'pagar-aqui'){
+    abrirModalPagamentoForn(fornMes);
+    if(hojeLocal().slice(0, 7) !== fornMes){
+      const [a, m] = fornMes.split('-').map(Number);
+      document.getElementById('fornPagData').value = fornMes + '-' + String(new Date(a, m, 0).getDate()).padStart(2, '0');
+    }
+    return;
+  }
   if(acao === 'soma-rapida') return abrirSomaRapida(f);
   if(acao === 'ir-pedidos'){ fornDia = hojeLocal(); return abrirAbaForn('pedidos'); }
   if(acao === 'ir-fornecedores'){ fornMes = fornDia.slice(0, 7); return abrirAbaForn('fechamento'); }
