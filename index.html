@@ -5549,6 +5549,10 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   // acerto ficam um ao lado do outro. Uma coluna = layout do print do dia.
   try{ await document.fonts.ready; } catch(e){}
   const n = linhas.length;
+  // 'lista' (print do mês): produtos numa lista compacta à esquerda (numeração
+  // em texto), calendário e resumo do fechamento na coluna da direita.
+  const LISTA = colunas === 'lista';
+  if(LISTA) colunas = 1;
   const COLS = colunas === 'auto'
     ? (n <= 2 ? 1 : n <= 6 ? 3 : n <= 12 ? 4 : 5)
     : Math.max(1, Math.min(colunas, n || 1));
@@ -5556,7 +5560,9 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   const PAD = 56;
   const COL_W = CARTAO ? 660 : 968, GUT = CARTAO ? 24 : 48, IN = CARTAO ? 22 : 0;
   const FOTO = CARTAO ? 100 : 124;
-  const W = PAD * 2 + COLS * COL_W + (COLS - 1) * GUT;
+  const GUT_LISTA = 64;
+  const W = LISTA ? PAD * 2 + COL_W * 2 + GUT_LISTA : PAD * 2 + COLS * COL_W + (COLS - 1) * GUT;
+  const FOTO_C = 88, largCompacto = COL_W - FOTO_C - 24 - 230;
   // Caixa de numeração: Nº grande em cima, quantidade numa faixa embaixo.
   const BOX_W = CARTAO ? 130 : 150, BOX_H = CARTAO ? 124 : 136, GAP = CARTAO ? 12 : 14, FAIXA = CARTAO ? 40 : 44;
   const porLinhaGrade = Math.floor((COL_W - IN * 2 + GAP) / (BOX_W + GAP));
@@ -5571,6 +5577,14 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   const larguraNome = COL_W - IN * 2 - FOTO - 24 - T.colDir;
   const fotos = await Promise.all(linhas.map(l => carregarImagem(l.foto)));
   const layout = linhas.map(l => {
+    if(LISTA){
+      medidor.font = fonte(800, 30);
+      const nome = quebrarTexto(medidor, l.nome, largCompacto).slice(0, 1);
+      medidor.font = fonte(700, 24);
+      const tam = (l.tamanhos || []).length ? quebrarTexto(medidor, l.tamanhos.map(t => `${t.tam}: ${t.qtd}`).join('   ·   '), largCompacto) : [];
+      const topo = Math.max(FOTO_C, 36 + 50 + tam.length * 32);
+      return { nome, tam, topo, h: 20 + topo + 20 };
+    }
     medidor.font = fonte(800, T.nome);
     const nome = quebrarTexto(medidor, l.nome, larguraNome).slice(0, 2);
     // nome + etiqueta da cor + linha de preço/SKU embaixo dela
@@ -5603,7 +5617,9 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     : (tresPartes
       ? Math.max(CALENDARIO, 40 + TOTAL_EMP, ACERTO) + 30
       : Math.max(CALENDARIO + 40, 18 + FOOTER + ACERTO));
-  const H = HEADER + fileiras.reduce((s, h) => s + h + ESP_FILEIRA, 0) + FINAL;
+  const CORPO = fileiras.reduce((s, h) => s + h + ESP_FILEIRA, 0);
+  const DIREITA = CALENDARIO + FOOTER + ACERTO;
+  const H = LISTA ? HEADER + Math.max(CORPO + 30, DIREITA) : HEADER + CORPO + FINAL;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -5680,7 +5696,46 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   }
 
   // Um bloco (modelo/cor). x,y = canto do bloco; hFileira = altura da fileira.
+  function desenharLinhaLista(l, lay, img, x, y){
+    const y0 = y + 20;
+    desenharFoto(l, img, x, y0, FOTO_C);
+    const tx = x + FOTO_C + 24, xd = x + COL_W;
+    ctx.fillStyle = '#0f1b3d';
+    ctx.font = fonte(800, 30);
+    ctx.fillText(lay.nome[0] || '', tx, y0 + 30);
+    let px = tx;
+    if(l.cor){
+      ctx.font = fonte(800, 22);
+      const txt = `${rot.prefixoCor}${String(l.cor).toUpperCase()}`;
+      const w = ctx.measureText(txt).width + 28;
+      ctx.fillStyle = '#0f2254';
+      retArred(px, y0 + 44, w, 38, 19);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(txt, px + 14, y0 + 71);
+      px += w + 14;
+    }
+    ctx.fillStyle = '#6b7794';
+    ctx.font = fonte(700, 22);
+    const linhaPreco = (rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : '');
+    ctx.fillText(quebrarTexto(ctx, linhaPreco, xd - 230 - px)[0] || '', px, y0 + 71);
+    ctx.fillStyle = '#0f2254';
+    ctx.font = fonte(700, 24);
+    lay.tam.forEach((t, k) => ctx.fillText(t, tx, y0 + 110 + k * 32));
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#0f1b3d';
+    ctx.font = fonte(800, 30);
+    ctx.fillText(`${l.qtd} ${unidade(l, l.qtd)}`, xd, y0 + 30);
+    ctx.fillStyle = '#059669';
+    ctx.font = fonte(800, 28);
+    ctx.fillText(fmt(l.valor), xd, y0 + 70);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#e2e8f5';
+    ctx.fillRect(x, y + lay.h - 2, COL_W, 2);
+  }
+
   function desenharBloco(l, lay, img, x, y, hFileira){
+    if(LISTA) return desenharLinhaLista(l, lay, img, x, y);
     if(CARTAO){
       ctx.fillStyle = '#f7f9ff';
       retArred(x, y, COL_W, hFileira, 22);
@@ -5872,7 +5927,16 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     ctx.textAlign = 'left';
   }
 
-  if(tresPartes){
+  if(LISTA){
+    // Coluna da direita: calendário em cima, resumo do fechamento embaixo.
+    const xr = PAD + COL_W + GUT_LISTA;
+    ctx.fillStyle = '#e2e8f5';
+    ctx.fillRect(xr - GUT_LISTA / 2 - 1, HEADER + 10, 2, H - HEADER - 40);
+    let yr = HEADER - 30;
+    if(calInfo){ desenharCalendario(xr, yr); yr += CALENDARIO; }
+    desenharTotal(xr, yr, COL_W, 'caixa');
+    if(acerto) desenharAcerto(xr, yr + FOOTER, COL_W);
+  } else if(tresPartes){
     // Calendário · comprado no mês · resumo do acerto, lado a lado.
     desenharCalendario(PAD, y - 20);
     const xt = PAD + CAL_LARG + GUT * 2, wt = 600;
@@ -6001,7 +6065,7 @@ function abrirPrintMes(f, ym){
     ...ac.movs.map(p => ({ rotulo: `${formatDate(p.data)} · ${infoMovimento(p).nome}${p.obs ? ' — ' + p.obs : ''}`, valor: p.valor || 0, menos: true }))
   ];
   abrirPrint({
-    colunas: 'auto',
+    colunas: 'lista',
     rotulos: { total: `COMPRADO EM ${mesNome.toUpperCase()}` },
     acerto: {
       linhas: linhasAcerto,
