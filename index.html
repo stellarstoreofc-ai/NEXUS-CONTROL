@@ -5544,48 +5544,66 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   const rot = { total: 'TOTAL DO PEDIDO', calendario: 'Pedidos por dia', prefixoCor: 'COR: ', preco: null, ...rotulos };
   // Layout pensado pra quem recebe: um bloco por modelo/cor, com a cor numa
   // etiqueta e a numeração numa grade (Nº em cima, quantidade grande embaixo).
-  // colunas: 'auto' (print do mês) espalha os blocos lado a lado pra imagem
-  // crescer pras laterais e não só pra baixo; o calendário e o resumo do
-  // acerto ficam um ao lado do outro no final.
+  // colunas: 'auto' (print do mês) vira cartões estreitos lado a lado (3 a 5
+  // colunas) pra imagem sair deitada; no final, calendário · comprado ·
+  // acerto ficam um ao lado do outro. Uma coluna = layout do print do dia.
   try{ await document.fonts.ready; } catch(e){}
-  const PAD = 56, FOTO = 124, GUT = 48, COL_W = 968;
+  const n = linhas.length;
   const COLS = colunas === 'auto'
-    ? Math.max(1, Math.min(4, Math.round(Math.sqrt(linhas.length * 0.4))))
-    : Math.max(1, Math.min(colunas, linhas.length || 1));
+    ? (n <= 2 ? 1 : n <= 6 ? 3 : n <= 12 ? 4 : 5)
+    : Math.max(1, Math.min(colunas, n || 1));
+  const CARTAO = COLS >= 2;
+  const PAD = 56;
+  const COL_W = CARTAO ? 660 : 968, GUT = CARTAO ? 24 : 48, IN = CARTAO ? 22 : 0;
+  const FOTO = CARTAO ? 100 : 124;
   const W = PAD * 2 + COLS * COL_W + (COLS - 1) * GUT;
   // Caixa de numeração: Nº grande em cima, quantidade numa faixa embaixo.
-  const BOX_W = 150, BOX_H = 136, GAP = 14;
-  const porLinhaGrade = Math.floor((COL_W + GAP) / (BOX_W + GAP));
+  const BOX_W = CARTAO ? 130 : 150, BOX_H = CARTAO ? 124 : 136, GAP = CARTAO ? 12 : 14, FAIXA = CARTAO ? 40 : 44;
+  const porLinhaGrade = Math.floor((COL_W - IN * 2 + GAP) / (BOX_W + GAP));
+  const T = CARTAO
+    ? { nome: 32, nomeLh: 38, cor: 24, corH: 44, preco: 21, qtd: 32, valor: 28, colDir: 200 }
+    : { nome: 38, nomeLh: 44, cor: 30, corH: 56, preco: 24, qtd: 38, valor: 32, colDir: 250 };
   const fonte = (peso, tam) => `${peso} ${tam}px 'Plus Jakarta Sans', 'Nunito Sans', Arial, sans-serif`;
-  const unidade = (l, n) => (l.tamanhos && l.tamanhos.length) ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
+  const unidade = (l, q) => (l.tamanhos && l.tamanhos.length) ? (q === 1 ? 'par' : 'pares') : (q === 1 ? 'peça' : 'peças');
   const tudoPar = linhas.every(l => l.tamanhos && l.tamanhos.length);
-  const unTotal = n => tudoPar ? (n === 1 ? 'par' : 'pares') : (n === 1 ? 'peça' : 'peças');
+  const unTotal = q => tudoPar ? (q === 1 ? 'par' : 'pares') : (q === 1 ? 'peça' : 'peças');
   const medidor = document.createElement('canvas').getContext('2d');
-  const larguraNome = COL_W - FOTO - 28 - 250;
+  const larguraNome = COL_W - IN * 2 - FOTO - 24 - T.colDir;
   const fotos = await Promise.all(linhas.map(l => carregarImagem(l.foto)));
   const layout = linhas.map(l => {
-    medidor.font = fonte(800, 38);
+    medidor.font = fonte(800, T.nome);
     const nome = quebrarTexto(medidor, l.nome, larguraNome).slice(0, 2);
     // nome + etiqueta da cor + linha de preço/SKU embaixo dela
-    const topo = Math.max(FOTO, 58 + (nome.length - 1) * 44 + 84 + (l.cor ? 40 : 0));
+    const topo = CARTAO
+      ? Math.max(FOTO, 34 + (nome.length - 1) * T.nomeLh + 14 + (l.cor ? T.corH + 10 : 0) + 26)
+      : Math.max(FOTO, 58 + (nome.length - 1) * 44 + 84 + (l.cor ? 40 : 0));
     const linhasGrade = l.tamanhos && l.tamanhos.length ? Math.ceil(l.tamanhos.length / porLinhaGrade) : 0;
-    const grade = linhasGrade ? 26 + linhasGrade * (BOX_H + GAP) - GAP : 0;
-    return { nome, topo, h: 30 + topo + grade + 34 };
+    const grade = linhasGrade ? (CARTAO ? 18 : 26) + linhasGrade * (BOX_H + GAP) - GAP : 0;
+    return { nome, topo, h: CARTAO ? IN + topo + grade + IN : 30 + topo + grade + 34 };
   });
-  // Altura de cada "linha" de blocos = o bloco mais alto dela.
+  // Altura de cada fileira = o cartão mais alto dela (cartões da fileira ficam iguais).
   const fileiras = [];
-  for(let i = 0; i < linhas.length; i += COLS) fileiras.push(Math.max(...layout.slice(i, i + COLS).map(l => l.h)));
-  const HEADER = 260, FOOTER = rodape ? 230 : 190;
+  for(let i = 0; i < n; i += COLS) fileiras.push(Math.max(...layout.slice(i, i + COLS).map(l => l.h)));
+  const ESP_FILEIRA = CARTAO ? GUT : 0;
+  const HEADER = CARTAO ? 250 : 260, FOOTER = rodape ? 230 : 190;
   // Calendário do mês (opcional, só no print do fechamento): 7 colunas, uma
   // linha por semana, cada dia com peças e valor bem pequenos.
-  const CAL_GAP = 8, CAL_W = (COL_W - CAL_GAP * 6) / 7, CAL_H = 92;
+  const CAL_LARG = 968, CAL_GAP = 8, CAL_W = (CAL_LARG - CAL_GAP * 6) / 7, CAL_H = 92;
   const calInfo = calendario ? diasDoMesCalendario(calendario.ym) : null;
   const calSemanas = calInfo ? Math.ceil((calInfo.primeiroSemana + calInfo.total) / 7) : 0;
   const CALENDARIO = calInfo ? 40 + 56 + 34 + calSemanas * (CAL_H + CAL_GAP) : 0;
   const ACERTO = acerto ? 10 + 70 + acerto.linhas.length * 58 + 20 + 150 + 50 : 0;
-  const ladoALado = COLS >= 2 && !!calInfo;
-  const FINAL = ladoALado ? Math.max(CALENDARIO + 40, 18 + FOOTER + ACERTO) : CALENDARIO + FOOTER + ACERTO;
-  const H = HEADER + fileiras.reduce((s, h) => s + h, 0) + FINAL;
+  // Final: com cartões, calendário · comprado · acerto em 3 partes (se couber),
+  // senão calendário · (comprado em cima do acerto).
+  const larguraUtil = W - PAD * 2;
+  const tresPartes = CARTAO && !!calInfo && !!acerto && larguraUtil - CAL_LARG - GUT * 2 >= 1300;
+  const TOTAL_EMP = 300;   // caixa do comprado empilhada (estreita)
+  const FINAL = !CARTAO
+    ? CALENDARIO + FOOTER + ACERTO
+    : (tresPartes
+      ? Math.max(CALENDARIO, 40 + TOTAL_EMP, ACERTO) + 30
+      : Math.max(CALENDARIO + 40, 18 + FOOTER + ACERTO));
+  const H = HEADER + fileiras.reduce((s, h) => s + h + ESP_FILEIRA, 0) + FINAL;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -5611,106 +5629,125 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   ctx.font = fonte(700, 28);
   ctx.fillText(`${modelos} ${modelos === 1 ? 'modelo' : 'modelos'}  ·  ${totalPecas} ${unTotal(totalPecas)}`, PAD, 194);
 
-  // Um bloco (modelo/cor) com o canto esquerdo em x e largura COL_W.
-  function desenharBloco(l, lay, img, x, y, hFileira){
-    const y0 = y + 30;
-    const xd = x + COL_W;   // borda direita do bloco
-    // Foto
+  function desenharFoto(l, img, x, y, lado){
     ctx.save();
-    retArred(x, y0, FOTO, FOTO, 18);
+    retArred(x, y, lado, lado, 16);
     ctx.clip();
     if(img){
-      const lado = Math.min(img.width, img.height);
-      ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, x, y0, FOTO, FOTO);
+      const m = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, x, y, lado, lado);
     } else {
-      ctx.fillStyle = '#f0f4ff';
-      ctx.fillRect(x, y0, FOTO, FOTO);
+      ctx.fillStyle = '#e8eefc';
+      ctx.fillRect(x, y, lado, lado);
       ctx.fillStyle = '#6b7794';
-      ctx.font = fonte(800, 54);
+      ctx.font = fonte(800, Math.round(lado * 0.44));
       ctx.textAlign = 'center';
-      ctx.fillText((l.nome || '?').trim().charAt(0).toUpperCase(), x + FOTO / 2, y0 + FOTO / 2 + 19);
+      ctx.fillText((l.nome || '?').trim().charAt(0).toUpperCase(), x + lado / 2, y + lado / 2 + lado * 0.15);
       ctx.textAlign = 'left';
     }
     ctx.restore();
+  }
+  function desenharCaixaNumero(t, bx, by){
+    ctx.fillStyle = '#ffffff';
+    retArred(bx, by, BOX_W, BOX_H, 16);
+    ctx.fill();
+    ctx.strokeStyle = '#c7d2fe';
+    ctx.lineWidth = 2;
+    retArred(bx, by, BOX_W, BOX_H, 16);
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#6b7794';
+    ctx.font = fonte(800, CARTAO ? 16 : 18);
+    ctx.fillText('NÚMERO', bx + BOX_W / 2, by + (CARTAO ? 24 : 26));
+    ctx.fillStyle = '#0f2254';
+    const num = String(t.tam);
+    let tam = CARTAO ? 46 : 52;
+    ctx.font = fonte(800, tam);
+    while(ctx.measureText(num).width > BOX_W - 14 && tam > 24){ tam -= 2; ctx.font = fonte(800, tam); }
+    const fy = by + BOX_H - FAIXA;
+    ctx.fillText(num, bx + BOX_W / 2, fy - (CARTAO ? 14 : 14));
+    // Faixa de baixo: quantidade daquele número
+    ctx.save();
+    retArred(bx, by, BOX_W, BOX_H, 16);
+    ctx.clip();
+    ctx.fillStyle = '#059669';
+    ctx.fillRect(bx, fy, BOX_W, FAIXA);
+    ctx.restore();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = fonte(800, CARTAO ? 24 : 28);
+    ctx.fillText(`${t.qtd} ${t.qtd === 1 ? 'par' : 'pares'}`, bx + BOX_W / 2, fy + FAIXA / 2 + (CARTAO ? 9 : 10));
+    ctx.textAlign = 'left';
+  }
+
+  // Um bloco (modelo/cor). x,y = canto do bloco; hFileira = altura da fileira.
+  function desenharBloco(l, lay, img, x, y, hFileira){
+    if(CARTAO){
+      ctx.fillStyle = '#f7f9ff';
+      retArred(x, y, COL_W, hFileira, 22);
+      ctx.fill();
+      ctx.strokeStyle = '#dfe6f5';
+      ctx.lineWidth = 2;
+      retArred(x, y, COL_W, hFileira, 22);
+      ctx.stroke();
+    }
+    const x0 = x + IN, y0 = y + (CARTAO ? IN : 30);
+    const xd = x + COL_W - IN;   // borda direita do conteúdo
+    desenharFoto(l, img, x0, y0, FOTO);
     // Nome do modelo
-    const tx = x + FOTO + 28;
-    let ty = y0 + 40;
+    const tx = x0 + FOTO + (CARTAO ? 20 : 28);
+    let ty = y0 + (CARTAO ? 32 : 40);
     ctx.fillStyle = '#0f1b3d';
-    ctx.font = fonte(800, 38);
-    lay.nome.forEach((t, k) => { ctx.fillText(t, tx, ty + k * 44); });
-    ty += (lay.nome.length - 1) * 44 + 22;
-    // Etiqueta da cor + preço por par
+    ctx.font = fonte(800, T.nome);
+    lay.nome.forEach((t, k) => { ctx.fillText(t, tx, ty + k * T.nomeLh); });
+    ty += (lay.nome.length - 1) * T.nomeLh + (CARTAO ? 14 : 22);
+    // Etiqueta da cor (bem visível: escura com letra branca)
     if(l.cor){
-      // Cor bem visível: etiqueta escura com letra branca grande.
-      ctx.font = fonte(800, 30);
+      ctx.font = fonte(800, T.cor);
       const txt = `${rot.prefixoCor}${String(l.cor).toUpperCase()}`;
-      const w = ctx.measureText(txt).width + 40;
+      const w = Math.min(ctx.measureText(txt).width + 32, xd - T.colDir + 60 - tx);
       ctx.fillStyle = '#0f2254';
-      retArred(tx, ty, w, 56, 28);
+      retArred(tx, ty, w, T.corH, T.corH / 2);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(txt, tx + 20, ty + 39);
+      ctx.fillText(quebrarTexto(ctx, txt, w - 32)[0] || txt, tx + 16, ty + T.corH / 2 + T.cor * 0.36);
     }
     // Preço e SKU numa linha própria (embaixo da cor), sem invadir a coluna do valor.
     ctx.fillStyle = '#6b7794';
-    ctx.font = fonte(700, 24);
+    ctx.font = fonte(700, T.preco);
     const linhaPreco = (rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : '');
-    ctx.fillText(quebrarTexto(ctx, linhaPreco, xd - 250 - tx)[0], tx, l.cor ? ty + 56 + 32 : ty + 37);
+    const yPreco = l.cor ? ty + T.corH + (CARTAO ? 28 : 32) : ty + (CARTAO ? 24 : 37);
+    ctx.fillText(quebrarTexto(ctx, linhaPreco, xd - T.colDir - tx + (CARTAO ? 40 : 0))[0], tx, yPreco);
     // Total do bloco (direita)
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f1b3d';
-    ctx.font = fonte(800, 38);
-    ctx.fillText(`${l.qtd} ${unidade(l, l.qtd)}`, xd, y0 + 40);
+    ctx.font = fonte(800, T.qtd);
+    ctx.fillText(`${l.qtd} ${unidade(l, l.qtd)}`, xd, y0 + (CARTAO ? 32 : 40));
     ctx.fillStyle = '#059669';
-    ctx.font = fonte(800, 32);
-    ctx.fillText(fmt(l.valor), xd, y0 + 86);
+    ctx.font = fonte(800, T.valor);
+    ctx.fillText(fmt(l.valor), xd, y0 + (CARTAO ? 72 : 86));
     ctx.textAlign = 'left';
     // Grade de numeração
     if(l.tamanhos && l.tamanhos.length){
-      const gy = y0 + lay.topo + 26;
+      const gy = y0 + lay.topo + (CARTAO ? 18 : 26);
       l.tamanhos.forEach((t, k) => {
         const col = k % porLinhaGrade, lin = Math.floor(k / porLinhaGrade);
-        const bx = x + col * (BOX_W + GAP), by = gy + lin * (BOX_H + GAP);
-        ctx.fillStyle = '#f5f8ff';
-        retArred(bx, by, BOX_W, BOX_H, 16);
-        ctx.fill();
-        ctx.strokeStyle = '#c7d2fe';
-        ctx.lineWidth = 2;
-        retArred(bx, by, BOX_W, BOX_H, 16);
-        ctx.stroke();
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#6b7794';
-        ctx.font = fonte(800, 18);
-        ctx.fillText('NÚMERO', bx + BOX_W / 2, by + 26);
-        ctx.fillStyle = '#0f2254';
-        ctx.font = fonte(800, 52);
-        ctx.fillText(String(t.tam), bx + BOX_W / 2, by + 78);
-        // Faixa de baixo: quantidade daquele número
-        const fy = by + 92;
-        ctx.save();
-        retArred(bx, by, BOX_W, BOX_H, 16);
-        ctx.clip();
-        ctx.fillStyle = '#059669';
-        ctx.fillRect(bx, fy, BOX_W, BOX_H - 92);
-        ctx.restore();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = fonte(800, 28);
-        ctx.fillText(`${t.qtd} ${t.qtd === 1 ? 'par' : 'pares'}`, bx + BOX_W / 2, fy + 32);
-        ctx.textAlign = 'left';
+        desenharCaixaNumero(t, x0 + col * (BOX_W + GAP), gy + lin * (BOX_H + GAP));
       });
     }
-    ctx.fillStyle = '#e2e8f5';
-    ctx.fillRect(x, y + hFileira - 2, COL_W, 2);
+    if(!CARTAO){
+      ctx.fillStyle = '#e2e8f5';
+      ctx.fillRect(x, y + hFileira - 2, COL_W, 2);
+    }
   }
 
   let y = HEADER;
   fileiras.forEach((hFileira, f) => {
     for(let c = 0; c < COLS; c++){
       const i = f * COLS + c;
-      if(i >= linhas.length) break;
+      if(i >= n) break;
       desenharBloco(linhas[i], layout[i], fotos[i], PAD + c * (COL_W + GUT), y, hFileira);
     }
-    y += hFileira;
+    y += hFileira + ESP_FILEIRA;
   });
 
   function desenharCalendario(x, y0){
@@ -5724,11 +5761,11 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     ctx.font = fonte(800, 20);
     DIAS_SEMANA_CURTOS.forEach((sem, i) => ctx.fillText(sem.toUpperCase(), x + i * (CAL_W + CAL_GAP) + CAL_W / 2, cy + 20));
     cy += 34;
-    for(let n = 1; n <= calInfo.total; n++){
-      const pos = calInfo.primeiroSemana + n - 1;
+    for(let d = 1; d <= calInfo.total; d++){
+      const pos = calInfo.primeiroSemana + d - 1;
       const cx = x + (pos % 7) * (CAL_W + CAL_GAP);
       const by = cy + Math.floor(pos / 7) * (CAL_H + CAL_GAP);
-      const info = calendario.dias[calInfo.dia(n)];
+      const info = calendario.dias[calInfo.dia(d)];
       ctx.fillStyle = info ? '#ecfdf5' : '#f5f7fc';
       retArred(cx, by, CAL_W, CAL_H, 12);
       ctx.fill();
@@ -5738,7 +5775,7 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
       ctx.stroke();
       ctx.fillStyle = info ? '#0f1b3d' : '#9aa3b8';
       ctx.font = fonte(800, 20);
-      ctx.fillText(String(n), cx + CAL_W / 2, by + 26);
+      ctx.fillText(String(d), cx + CAL_W / 2, by + 26);
       if(info){
         ctx.fillStyle = '#0f1b3d';
         ctx.font = fonte(800, 20);
@@ -5751,12 +5788,32 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     ctx.textAlign = 'left';
   }
 
-  // Total do pedido: faixa de ponta a ponta (uma coluna) ou caixa (lado a lado).
-  function desenharTotal(x, y0, w, faixa){
+  // Total do pedido: faixa de ponta a ponta (uma coluna), caixa larga
+  // (lado a lado) ou caixa empilhada (estreita, nas 3 partes do final).
+  function desenharTotal(x, y0, w, modo){
     ctx.fillStyle = '#f0f4ff';
-    if(faixa) ctx.fillRect(0, y0 + 18, W, FOOTER - 18);
-    else { retArred(x, y0 + 18, w, FOOTER - 18, 24); ctx.fill(); }
-    const px = faixa ? x : x + 32, pd = faixa ? x + w : x + w - 32;
+    if(modo === 'faixa'){ ctx.fillRect(0, y0 + 18, W, FOOTER - 18); }
+    else { retArred(x, y0 + 18, w, (modo === 'empilhado' ? TOTAL_EMP : FOOTER) - 18, 24); ctx.fill(); }
+    const px = modo === 'faixa' ? x : x + 32, pd = modo === 'faixa' ? x + w : x + w - 32;
+    if(modo === 'empilhado'){
+      ctx.fillStyle = '#6b7794';
+      ctx.font = fonte(800, 26);
+      ctx.fillText(rot.total, px, y0 + 80);
+      ctx.fillStyle = '#0f2254';
+      let tam = 64;
+      ctx.font = fonte(800, tam);
+      while(ctx.measureText(fmt(totalValor)).width > w - 64 && tam > 36){ tam -= 2; ctx.font = fonte(800, tam); }
+      ctx.fillText(fmt(totalValor), px, y0 + 170);
+      ctx.fillStyle = '#0f1b3d';
+      ctx.font = fonte(800, 32);
+      ctx.fillText(`${totalPecas} ${unTotal(totalPecas)}`, px, y0 + 230);
+      if(rodape){
+        ctx.fillStyle = '#6b7794';
+        ctx.font = fonte(700, 20);
+        ctx.fillText(quebrarTexto(ctx, rodape, w - 64)[0] || '', px, y0 + 272);
+      }
+      return;
+    }
     ctx.fillStyle = '#6b7794';
     ctx.font = fonte(800, 26);
     ctx.fillText(rot.total, px, y0 + 76);
@@ -5815,15 +5872,22 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     ctx.textAlign = 'left';
   }
 
-  if(ladoALado){
+  if(tresPartes){
+    // Calendário · comprado no mês · resumo do acerto, lado a lado.
+    desenharCalendario(PAD, y - 20);
+    const xt = PAD + CAL_LARG + GUT * 2, wt = 600;
+    desenharTotal(xt, y + 22, wt, 'empilhado');
+    const xa = xt + wt + GUT * 2;
+    desenharAcerto(xa, y, W - PAD - xa);
+  } else if(CARTAO && calInfo){
     // Calendário à esquerda; total do mês + acerto à direita.
     desenharCalendario(PAD, y);
-    const xr = PAD + COL_W + GUT, wr = W - PAD - xr;
-    desenharTotal(xr, y, wr, false);
+    const xr = PAD + CAL_LARG + GUT * 2, wr = W - PAD - xr;
+    desenharTotal(xr, y, wr, 'caixa');
     if(acerto) desenharAcerto(xr, y + FOOTER, wr);
   } else {
     if(calInfo){ desenharCalendario(PAD, y); y += CALENDARIO; }
-    desenharTotal(PAD, y, W - PAD * 2, true);
+    desenharTotal(PAD, y, W - PAD * 2, 'faixa');
     if(acerto) desenharAcerto(PAD, y + FOOTER, W - PAD * 2);
   }
   return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
