@@ -5563,6 +5563,8 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
   const GUT_LISTA = 64;
   const W = LISTA ? PAD * 2 + COL_W * 2 + GUT_LISTA : PAD * 2 + COLS * COL_W + (COLS - 1) * GUT;
   const FOTO_C = 88, largCompacto = COL_W - FOTO_C - 24 - 230;
+  const MINI_W = 98, MINI_H = 86, MINI_GAP = 10, MINI_FAIXA = 32;
+  const MINI_POR_LINHA = Math.floor((COL_W - FOTO_C - 24 + MINI_GAP) / (MINI_W + MINI_GAP));
   // Caixa de numeração: Nº grande em cima, quantidade numa faixa embaixo.
   const BOX_W = CARTAO ? 130 : 150, BOX_H = CARTAO ? 124 : 136, GAP = CARTAO ? 12 : 14, FAIXA = CARTAO ? 40 : 44;
   const porLinhaGrade = Math.floor((COL_W - IN * 2 + GAP) / (BOX_W + GAP));
@@ -5580,10 +5582,11 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     if(LISTA){
       medidor.font = fonte(800, 30);
       const nome = quebrarTexto(medidor, l.nome, largCompacto).slice(0, 1);
-      medidor.font = fonte(700, 24);
-      const tam = (l.tamanhos || []).length ? quebrarTexto(medidor, l.tamanhos.map(t => `${t.tam}: ${t.qtd}`).join('   ·   '), largCompacto) : [];
-      const topo = Math.max(FOTO_C, 36 + 50 + tam.length * 32);
-      return { nome, tam, topo, h: 20 + topo + 20 };
+      // Numeração em quadradinhos pequenos (Nº em cima, pares na faixa verde).
+      const nTam = (l.tamanhos || []).length;
+      const linhasMini = nTam ? Math.ceil(nTam / MINI_POR_LINHA) : 0;
+      const topo = Math.max(FOTO_C, 36 + 50 + (linhasMini ? 18 + linhasMini * (MINI_H + MINI_GAP) - MINI_GAP : 0));
+      return { nome, topo, h: 20 + topo + 22 };
     }
     medidor.font = fonte(800, T.nome);
     const nome = quebrarTexto(medidor, l.nome, larguraNome).slice(0, 2);
@@ -5719,9 +5722,35 @@ async function gerarImagemPedido({ titulo, subtitulo, linhas, totalPecas, totalV
     ctx.font = fonte(700, 22);
     const linhaPreco = (rot.preco ? `${fmt(l.preco)} ${rot.preco}` : `${fmt(l.preco)} ${l.tamanhos && l.tamanhos.length ? 'o par' : 'a peça'}`) + (l.sku ? `  ·  SKU ${l.sku}` : '');
     ctx.fillText(quebrarTexto(ctx, linhaPreco, xd - 230 - px)[0] || '', px, y0 + 71);
-    ctx.fillStyle = '#0f2254';
-    ctx.font = fonte(700, 24);
-    lay.tam.forEach((t, k) => ctx.fillText(t, tx, y0 + 110 + k * 32));
+    (l.tamanhos || []).forEach((t, k) => {
+      const bx = tx + (k % MINI_POR_LINHA) * (MINI_W + MINI_GAP);
+      const by = y0 + 36 + 50 + 18 + Math.floor(k / MINI_POR_LINHA) * (MINI_H + MINI_GAP);
+      ctx.fillStyle = '#f5f8ff';
+      retArred(bx, by, MINI_W, MINI_H, 12);
+      ctx.fill();
+      ctx.strokeStyle = '#c7d2fe';
+      ctx.lineWidth = 2;
+      retArred(bx, by, MINI_W, MINI_H, 12);
+      ctx.stroke();
+      const fy = by + MINI_H - MINI_FAIXA;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#0f2254';
+      const num = String(t.tam);
+      let tam = 34;
+      ctx.font = fonte(800, tam);
+      while(ctx.measureText(num).width > MINI_W - 12 && tam > 18){ tam -= 2; ctx.font = fonte(800, tam); }
+      ctx.fillText(num, bx + MINI_W / 2, fy - 12);
+      ctx.save();
+      retArred(bx, by, MINI_W, MINI_H, 12);
+      ctx.clip();
+      ctx.fillStyle = '#059669';
+      ctx.fillRect(bx, fy, MINI_W, MINI_FAIXA);
+      ctx.restore();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = fonte(800, 19);
+      ctx.fillText(`${t.qtd} ${t.qtd === 1 ? 'par' : 'pares'}`, bx + MINI_W / 2, fy + 23);
+      ctx.textAlign = 'left';
+    });
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f1b3d';
     ctx.font = fonte(800, 30);
