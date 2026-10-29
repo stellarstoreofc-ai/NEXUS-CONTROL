@@ -6468,6 +6468,9 @@ function montarCampoTags(id, { expandir = false, placeholder = '' } = {}){
     const novos = expandir ? parseVariacoes(txt) : txt.split(/[,;]/).map(t => t.trim()).filter(Boolean);
     const lista = lerLista();
     novos.forEach(n => { if(!lista.includes(n)) lista.push(n); });
+    // Numeração: se todas começam com número (24, 19/20…), fica em ordem
+    // crescente mesmo digitando fora de ordem. Letras (P, M, G) ficam como digitadas.
+    if(expandir && lista.every(t => /^\d/.test(t))) lista.sort((a, b) => parseFloat(a) - parseFloat(b) || a.localeCompare(b, 'pt-BR', { numeric: true }));
     gravar(lista);
   };
   entrada.addEventListener('keydown', e => {
