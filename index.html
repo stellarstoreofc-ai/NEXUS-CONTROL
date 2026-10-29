@@ -191,6 +191,17 @@
   @keyframes qcPisca{0%{box-shadow:0 0 0 0 rgba(37,99,235,.5)}100%{box-shadow:0 0 0 10px rgba(37,99,235,0)}}
   .qc-pisca{animation:qcPisca .8s ease;border-color:var(--accent)!important;}
   .prec-config-gerenc{border-top:1px dashed var(--border);padding-top:12px;margin-bottom:18px;max-width:50%;}
+  /* 3 colunas: os passos ficam em 2 fileiras (②④⑥ / ③⑤⑦), então ⑤ e ⑦ começam
+     na mesma altura — dá pra tirar um print só do preço de venda + pra onde vai. */
+  @media (min-width:1280px){
+    .qc-grid{grid-template-rows:auto auto;row-gap:10px;}
+    .qc-col{display:contents;}
+    .qc-col > .qc-passo:nth-child(1){grid-row:1;}
+    .qc-col > .qc-passo:nth-child(2){grid-row:2;}
+    .qc-col:nth-child(1) > .qc-passo{grid-column:1;}
+    .qc-col:nth-child(2) > .qc-passo{grid-column:2;}
+    .qc-col:nth-child(3) > .qc-passo{grid-column:3;}
+  }
   @media (max-width:1279px){
     .qc-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   }
