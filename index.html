@@ -1899,7 +1899,7 @@
       </div>
       <div class="field">
         <label>Quanto era pra pagar nesse mês (R$)</label>
-        <input type="number" id="valorMesValor" step="0.01" min="0" placeholder="Ex: 2881,00" required>
+        <input type="number" id="valorMesValor" step="0.01" min="0" placeholder="Vazio = usar a soma dos pedidos">
         <div class="field-hint" id="valorMesInfo"></div>
       </div>
       <div class="field">
@@ -4741,7 +4741,8 @@ function totalPedidosMes(f, ym){
 // pra quem já tinha a soma anotada e não quer lançar pedido por pedido.
 function totalManualMes(f, ym){
   const t = (f.totaisMes || {})[ym];
-  return t && typeof t.valor === 'number' ? t.valor : null;
+  // 0 não conta: um "valor do mês" zerado (salvo sem querer) esconderia os pedidos lançados.
+  return t && typeof t.valor === 'number' && t.valor > 0 ? t.valor : null;
 }
 // Quanto era pra pagar no mês: o total informado à mão (se houver) ou a soma
 // dos pedidos — nunca os dois somados, pra não contar em dobro.
@@ -5444,9 +5445,12 @@ document.getElementById('formValorMes').addEventListener('submit', e => {
   e.preventDefault();
   const f = fornecedorAtivo();
   const ym = document.getElementById('valorMesMes').value;
-  const valor = r2f(parseFloat(document.getElementById('valorMesValor').value));
-  if(!f || !ym || !(valor >= 0)) return;
-  f.totaisMes = { ...(f.totaisMes || {}), [ym]: { valor, em: hojeLocal() } };
+  const valor = r2f(parseFloat(document.getElementById('valorMesValor').value) || 0);
+  if(!f || !ym) return;
+  // Vazio ou zero = não informa valor (o mês usa a soma dos pedidos).
+  const totais = { ...(f.totaisMes || {}) };
+  if(valor > 0) totais[ym] = { valor, em: hojeLocal() }; else delete totais[ym];
+  f.totaisMes = totais;
   const pagoAgora = r2f(parseFloat(document.getElementById('valorMesPago').value) || 0);
   if(pagoAgora > 0){
     const dataPag = document.getElementById('valorMesData').value || hojeLocal();
@@ -5458,7 +5462,7 @@ document.getElementById('formValorMes').addEventListener('submit', e => {
   fecharOverlay('overlayValorMes');
   renderFornAba();
   const falta = faltaMesForn(f, ym);
-  mostrarToastForn(`✍️ ${nomeMes(ym)}: era pra pagar ${fmt(valor)} · falta ${fmt(Math.max(0, falta))}.`, falta <= 0.004);
+  mostrarToastForn(`✍️ ${nomeMes(ym)}: era pra pagar ${fmt(compradoMesForn(f, ym))} · falta ${fmt(Math.max(0, falta))}.`, falta <= 0.004);
 });
 document.getElementById('btnValorMesRemover').addEventListener('click', () => {
   const f = fornecedorAtivo();
