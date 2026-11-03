@@ -922,6 +922,27 @@
   .forn-mes-nav{display:flex;align-items:center;gap:8px;margin:4px 0 12px;flex-wrap:wrap;}
   .forn-mes-nav h3{font-size:16px;min-width:170px;text-align:center;}
   .forn-mes-nav .btn-icon{border:1px solid var(--border);background:var(--surface);border-radius:8px;width:34px;height:34px;cursor:pointer;font-weight:800;}
+  .forn-semanas{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:14px;}
+  .forn-semanas h3{font-size:15px;margin:14px 0 8px;}
+  .forn-semanas-topo{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+  .forn-sem-box{border:1px solid var(--border);border-radius:12px;padding:10px 14px;background:var(--bg);}
+  .forn-sem-box .label{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .forn-sem-box .valor{font-size:24px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);}
+  .forn-sem-box .sub{font-size:12px;color:var(--muted);}
+  .forn-sem-box.vencido{border-color:#fca5a5;background:var(--red-bg, #fef2f2);}
+  .forn-sem-box.vencido .valor{color:var(--red);}
+  .forn-sem-box.proxima{border:2px solid var(--accent);background:#eef4ff;}
+  .forn-sem-box.ok .valor{color:var(--green);font-size:18px;}
+  .forn-sem-linha{display:grid;grid-template-columns:minmax(120px,1.3fr) repeat(3,minmax(80px,1fr)) auto;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;font-size:13.5px;}
+  .forn-sem-linha .sub{font-size:12px;color:var(--muted);}
+  .forn-sem-linha .num span{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  .forn-sem-tag{font-size:12px;font-weight:800;border-radius:999px;padding:4px 10px;background:var(--bg);white-space:nowrap;}
+  .forn-sem-linha.paga{opacity:.75;}
+  .forn-sem-linha.paga .forn-sem-tag{background:var(--green-bg);color:var(--green);}
+  .forn-sem-linha.vencida{border-color:#fca5a5;}
+  .forn-sem-linha.vencida .forn-sem-tag{background:#fee2e2;color:var(--red);}
+  .forn-sem-linha.hoje .forn-sem-tag{background:#fef3c7;color:#b45309;}
+  @media (max-width:640px){ .forn-sem-linha{grid-template-columns:1fr 1fr;} }
   .forn-fech{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:14px;}
   .forn-fech.fechado{border-color:var(--green);}
   .forn-fech-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;}
@@ -1552,6 +1573,8 @@
             <span><strong>📅 Fechamento por mês</strong><br><small>Cada mês tem o seu "falta pagar"; o pagamento é referente a um mês.</small></span></label>
           <label class="forn-modo"><input type="radio" name="fornModo" value="corrido">
             <span><strong>💳 Saldo corrido</strong><br><small>Vai pagando quando der; tudo abate do total (sem falta/crédito por mês).</small></span></label>
+          <label class="forn-modo"><input type="radio" name="fornModo" value="semanal">
+            <span><strong>🗓️ Fechamento semanal</strong><br><small>O que comprou de segunda a domingo vence na sexta seguinte. Cada pagamento abate as semanas mais antigas primeiro.</small></span></label>
         </div>
       </div>
       <div class="modal-actions">
@@ -4735,7 +4758,70 @@ function totalCompradoForn(f, prefixo = ''){
 // Há abatimento (desconto/devolução) entre os lançamentos de um mês?
 // Fornecedor em "saldo corrido": não há falta/crédito por mês — tudo abate do
 // total. Pagamentos contam pelo mês da DATA (não pelo "referente ao mês").
-function ehCorrido(f){ return !!f && f.modoAcerto === 'corrido'; }
+// Semanal funciona como saldo corrido (pagamentos pela data, sem falta por
+// mês) + vencimento por semana: ver semanasForn.
+function ehCorrido(f){ return !!f && (f.modoAcerto === 'corrido' || f.modoAcerto === 'semanal'); }
+function ehSemanal(f){ return !!f && f.modoAcerto === 'semanal'; }
+// Segunda-feira da semana de um dia (semana = segunda a domingo).
+function segundaDaSemana(dia){
+  const [y, m, d] = dia.split('-').map(Number);
+  return somarDias(dia, -((new Date(y, m - 1, d).getDay() + 6) % 7));
+}
+// Fechamento semanal: compras agrupadas por semana (seg–dom), cada semana
+// vence na sexta seguinte (segunda + 11 dias). O total pago (pagamentos,
+// abatimentos e devoluções) quita as semanas da mais antiga pra mais nova.
+// Sobra = crédito.
+function semanasForn(f){
+  const porSemana = {};
+  Object.keys(f.compras || {}).forEach(d => {
+    const v = totalDiaForn(f, d);
+    if(v > 0){ const seg = segundaDaSemana(d); porSemana[seg] = r2f((porSemana[seg] || 0) + v); }
+  });
+  let resto = r2f((f.pagamentos || []).reduce((s, p) => s + (p.valor || 0), 0));
+  const hoje = hojeLocal();
+  const semanas = Object.keys(porSemana).sort().map(seg => {
+    const comprado = porSemana[seg];
+    const pago = r2f(Math.min(comprado, Math.max(0, resto)));
+    resto = r2f(resto - pago);
+    const falta = r2f(comprado - pago);
+    const vence = somarDias(seg, 11);
+    const status = falta <= 0.004 ? 'paga' : (vence < hoje ? 'vencida' : (vence === hoje ? 'hoje' : 'aberta'));
+    return { seg, fim: somarDias(seg, 6), vence, comprado, pago, falta, status };
+  });
+  return { semanas, credito: Math.max(0, resto) };
+}
+// Resumo pro topo: o que já venceu e o que vence na próxima sexta.
+function resumoSemanalForn(f){
+  const { semanas, credito } = semanasForn(f);
+  const hoje = hojeLocal();
+  const vencido = r2f(semanas.filter(w => w.status === 'vencida').reduce((s, w) => s + w.falta, 0));
+  const proxima = semanas.filter(w => w.falta > 0.004 && w.vence >= hoje).sort((a, b) => a.vence.localeCompare(b.vence))[0] || null;
+  const proximaValor = proxima ? r2f(semanas.filter(w => w.vence === proxima.vence).reduce((s, w) => s + w.falta, 0)) : 0;
+  return { semanas, credito, vencido, proxima, proximaValor };
+}
+function htmlSemanasForn(f, ym){
+  const { semanas, credito, vencido, proxima, proximaValor } = resumoSemanalForn(f);
+  const ddmm = d => formatDate(d).slice(0, 5);
+  // Semanas que tocam o mês na tela (pode começar no mês anterior).
+  const doMes = semanas.filter(w => w.seg.slice(0, 7) === ym || w.fim.slice(0, 7) === ym).reverse();
+  const rotulo = { paga: '✅ Paga', vencida: '⚠️ Vencida', hoje: '⏰ Vence hoje', aberta: '🕒 Em aberto' };
+  return `<div class="forn-semanas">
+    <div class="forn-semanas-topo">
+      <div class="forn-sem-box${vencido > 0.004 ? ' vencido' : ' ok'}"><div class="label">Vencido (semanas passadas)</div><div class="valor">${vencido > 0.004 ? fmt(vencido) : '✅ Nada vencido'}</div></div>
+      <div class="forn-sem-box proxima"><div class="label">${proxima ? `Pagar na sexta ${ddmm(proxima.vence)}${proxima.vence === hojeLocal() ? ' (hoje)' : ''}` : 'Próxima sexta'}</div><div class="valor">${proxima ? fmt(proximaValor) : fmt(0)}</div>${proxima ? `<div class="sub">compras de ${ddmm(proxima.seg)} a ${ddmm(proxima.fim)}</div>` : ''}</div>
+      ${credito > 0.004 ? `<div class="forn-sem-box ok"><div class="label">Crédito</div><div class="valor">${fmt(credito)}</div></div>` : ''}
+    </div>
+    <h3>🗓️ Semanas de ${NOMES_MES[+ym.slice(5, 7) - 1]}</h3>
+    ${doMes.length ? doMes.map(w => `
+      <div class="forn-sem-linha ${w.status}">
+        <div><strong>${ddmm(w.seg)} a ${ddmm(w.fim)}</strong><div class="sub">vence sexta ${ddmm(w.vence)}</div></div>
+        <div class="num"><span>Comprado</span><strong>${fmt(w.comprado)}</strong></div>
+        <div class="num"><span>Pago</span><strong style="color:var(--green);">${fmt(w.pago)}</strong></div>
+        <div class="num"><span>Falta</span><strong>${w.falta > 0.004 ? fmt(w.falta) : '—'}</strong></div>
+        <span class="forn-sem-tag">${rotulo[w.status]}</span>
+      </div>`).join('') : `<p class="forn-hist-vazio">Nenhuma compra nas semanas deste mês.</p>`}
+  </div>`;
+}
 function pagoNaDataMes(f, ym){
   return r2f((f.pagamentos || []).filter(p => (p.data || '').startsWith(ym)).reduce((s, p) => s + (p.valor || 0), 0));
 }
@@ -5187,6 +5273,7 @@ function renderFornecedores(){
         </div>
       </div>
     </div>
+    ${ehSemanal(f) ? htmlSemanasForn(f, ym) : ''}
     ${htmlRelatorioMeses(f)}
 
     <div class="forn-mes-nav">
@@ -5197,7 +5284,7 @@ function renderFornecedores(){
     </div>
 
     <div class="forn-fech${fech && !corrido ? ' fechado' : ''}">
-      <div class="forn-fech-status">${corrido ? '💳 Saldo corrido — pagamentos abatem do total' : (fech ? `🔒 Mês fechado em ${formatDate(fech.em)}` : '🟡 Mês aberto')}</div>
+      <div class="forn-fech-status">${ehSemanal(f) ? '🗓️ Fechamento semanal — o que comprou na semana vence na sexta seguinte' : corrido ? '💳 Saldo corrido — pagamentos abatem do total' : (fech ? `🔒 Mês fechado em ${formatDate(fech.em)}` : '🟡 Mês aberto')}</div>
       ${Object.keys(f.rascunhos || {}).some(d => d.startsWith(ym)) ? `<div class="forn-fech-alerta">📝 Tem pedido não confirmado em ${Object.keys(f.rascunhos).filter(d => d.startsWith(ym)).sort().map(d => `<button type="button" class="link" style="background:none;border:none;color:var(--accent);font:inherit;font-weight:800;cursor:pointer;padding:0;" data-acao="abrir-dia" data-dia="${d}">${formatDate(d)}</button>`).join(', ')} — ele só entra no total depois de confirmado.</div>` : ''}
       ${alteradoDepois && !corrido ? `<div class="forn-fech-alerta">⚠️ As compras mudaram depois do fechamento (era ${fmt(fech.total)}, agora ${fmt(comprado)}). Feche de novo pra atualizar.</div>` : ''}
       <div class="forn-fech-nums">
@@ -6365,7 +6452,7 @@ function abrirModalFornecedor(f = null){
   document.getElementById('modalFornecedorTitle').textContent = f ? 'Editar fornecedor' : 'Novo fornecedor';
   document.getElementById('fornNome').value = f ? f.nome : '';
   document.getElementById('fornWhats').value = f ? (f.whatsapp || '') : '';
-  const modo = f && f.modoAcerto === 'corrido' ? 'corrido' : 'mensal';
+  const modo = f && (f.modoAcerto === 'corrido' || f.modoAcerto === 'semanal') ? f.modoAcerto : 'mensal';
   document.querySelectorAll('input[name="fornModo"]').forEach(i => { i.checked = i.value === modo; });
   document.getElementById('btnExcluirFornecedor').style.display = f ? '' : 'none';
   abrirOverlay('overlayFornecedor');
@@ -6376,7 +6463,8 @@ document.getElementById('formFornecedor').addEventListener('submit', e => {
   const nome = document.getElementById('fornNome').value.trim();
   if(!nome) return;
   const whatsapp = document.getElementById('fornWhats').value.trim();
-  const modoAcerto = (document.querySelector('input[name="fornModo"]:checked') || {}).value === 'corrido' ? 'corrido' : 'mensal';
+  const modoEscolhido = (document.querySelector('input[name="fornModo"]:checked') || {}).value;
+  const modoAcerto = modoEscolhido === 'corrido' || modoEscolhido === 'semanal' ? modoEscolhido : 'mensal';
   if(editingFornecedorId){
     const f = fornecedores.find(x => x.id === editingFornecedorId);
     f.nome = nome;
@@ -6741,6 +6829,26 @@ function preencherPagamentoPorMes(f){
   const corrido = ehCorrido(f);
   // Saldo corrido: o que importa é o total em aberto, não o mês.
   const alvo = corrido ? Math.max(0, saldoForn(f)) : falta;
+  if(ehSemanal(f)){
+    const sem = resumoSemanalForn(f);
+    const ddmm = d => formatDate(d).slice(0, 5);
+    const ateSexta = r2f(sem.vencido + sem.proximaValor);
+    document.getElementById('fornPagSaldo').innerHTML = [
+      sem.vencido > 0.004 ? `Vencido: <strong>${fmt(sem.vencido)}</strong>` : '',
+      sem.proxima ? `Vence sexta ${ddmm(sem.proxima.vence)}: <strong>${fmt(sem.proximaValor)}</strong>` : '',
+      alvo > 0.004 ? `Total em aberto: <strong>${fmt(alvo)}</strong>` : `Nada em aberto com ${escapeHtml(f.nome)}.`
+    ].filter(Boolean).join(' · ');
+    if(editingPagamentoId) return;
+    document.getElementById('fornPagValor').value = '';
+    const botoes = [];
+    if(modoPagamentoForn === 'pagamento'){
+      if(sem.vencido > 0.004) botoes.push([sem.vencido, `Pagar o vencido (${fmt(sem.vencido)})`]);
+      if(sem.proxima && ateSexta > 0.004 && Math.abs(ateSexta - sem.vencido) > 0.004) botoes.push([ateSexta, `Pagar até sexta ${ddmm(sem.proxima.vence)} (${fmt(ateSexta)})`]);
+      if(alvo > 0.004 && !botoes.some(b => Math.abs(b[0] - alvo) < 0.005)) botoes.push([alvo, `Pagar o total (${fmt(alvo)})`]);
+    }
+    document.getElementById('fornPagRapidos').innerHTML = botoes.map(([v, t]) => `<button type="button" class="btn btn-outline btn-sm" data-valor="${v.toFixed(2)}">${t}</button>`).join(' ');
+    return;
+  }
   document.getElementById('fornPagSaldo').innerHTML = corrido
     ? (alvo > 0.004 ? `Em aberto com ${escapeHtml(f.nome)}: <strong>${fmt(alvo)}</strong>` : `Nada em aberto com ${escapeHtml(f.nome)}.`)
     : (falta > 0.004 ? `Falta pagar de ${mes}: <strong>${fmt(falta)}</strong>` : `Nada a pagar de ${mes}.`);
