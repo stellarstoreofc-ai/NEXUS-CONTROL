@@ -6403,7 +6403,9 @@ document.getElementById('btnSomaLancar').addEventListener('click', () => {
   const f = fornecedorAtivo();
   const dia = document.getElementById('somaData').value;
   if(!f || !dia) return;
-  const linhas = linhasDaSoma().filter(l => l.qtd > 0 && (l.produtoId || l.nome));
+  // Item fora do cadastro sem nome também entra (antes era descartado em silêncio,
+  // mesmo aparecendo no total da tela).
+  const linhas = linhasDaSoma().filter(l => l.qtd > 0).map(l => (l.produtoId || l.nome) ? l : { ...l, nome: 'Item avulso' });
   if(!linhas.length) return;
   f.compras = f.compras || {};
   const doDia = f.compras[dia] || {};
