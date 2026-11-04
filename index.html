@@ -719,6 +719,8 @@
   .dia-fech-cab h3{margin:0;}
   .dia-fech-lista{display:flex;flex-direction:column;margin-top:10px;}
   .dia-fech-linha{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .dia-fech-linha > div:first-child{flex:1;min-width:0;}
+  .dia-fech-linha > [data-acao="apagar-item-dia"],.dia-fech-linha > span:last-child{flex:none;width:34px;}
   .dia-fech-linha .sub{font-size:12px;color:var(--muted);margin-top:2px;}
   .dia-fech-cor{font-size:10.5px;font-weight:800;text-transform:uppercase;background:#e0e7ff;color:var(--navy);border-radius:999px;padding:1px 8px;margin-left:4px;}
   .dia-fech-num{display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap;}
@@ -5492,7 +5494,7 @@ function diasDoMesCalendario(ym){
 let diaFechSel = null;
 // Itens confirmados de um dia (é o que conta no fechamento — rascunho não).
 function linhasConfirmadasDia(f, dia){
-  return Object.entries((f.compras || {})[dia] || {}).flatMap(([id, item]) => linhasDoItem(produtoDoForn(f, id), item, item.nome));
+  return Object.entries((f.compras || {})[dia] || {}).flatMap(([id, item]) => linhasDoItem(produtoDoForn(f, id), item, item.nome).map((l, k) => ({ ...l, chave: id, primeira: k === 0 })));
 }
 function htmlResumoDiaFech(f, dia){
   const linhas = linhasConfirmadasDia(f, dia);
@@ -5514,6 +5516,7 @@ function htmlResumoDiaFech(f, dia){
             <div class="sub">${l.tamanhos && l.tamanhos.length ? l.tamanhos.map(t => `Nº ${escapeHtml(t.tam)}: ${t.qtd}`).join(' · ') + ' · ' : ''}${fmt(l.preco)}/un</div>
           </div>
           <div class="dia-fech-num"><span>${l.qtd} ${l.qtd === 1 ? 'peça' : 'peças'}</span><strong>${fmt(l.valor)}</strong></div>
+          ${l.primeira ? `<button type="button" class="btn btn-danger-text btn-sm" data-acao="apagar-item-dia" data-dia="${dia}" data-chave="${escapeHtml(l.chave)}" title="Apagar este item do dia" aria-label="Apagar">✕</button>` : '<span></span>'}
         </div>`).join('')}
       </div>
       <div class="dia-fech-total"><span>Total do dia · ${pecas} ${pecas === 1 ? 'peça' : 'peças'}</span><strong>${fmt(total)}</strong></div>`
@@ -7028,6 +7031,22 @@ function cliqueTelaForn(e){
     return;
   }
   if(acao === 'fechar-dia-fech'){ diaFechSel = null; return renderFornecedores(); }
+  // ✕ no resumo do dia: apaga o item inteiro daquele dia (todas as cores/números dele).
+  if(acao === 'apagar-item-dia'){
+    const dia = btn.dataset.dia, chave = btn.dataset.chave;
+    const doDia = (f.compras || {})[dia];
+    const item = doDia && doDia[chave];
+    if(!item) return;
+    if(!confirm(`Apagar ${item.nome || 'este item'} (${item.qtd} × ${fmt(item.preco)} = ${fmt(r2f(item.qtd * item.preco))}) do dia ${formatDate(dia)}?`)) return;
+    delete doDia[chave];
+    const rasc = rascunhoDoDia(f, dia);
+    if(rasc) delete rasc[chave];
+    if(!Object.keys(doDia).length) delete f.compras[dia];
+    limparRascunhoSeIgual(f, dia);
+    saveFornecedores(true);
+    mostrarToastForn(`🗑️ Apagado do dia ${formatDate(dia)}.`);
+    return renderFornecedores();
+  }
   if(acao === 'print-dia-fech') return abrirPrintDiaFech(f, btn.dataset.dia);
   if(acao === 'dia-anterior'){ fornDia = somarDias(fornDia, -1); return renderPedidos(); }
   if(acao === 'dia-seguinte'){ fornDia = somarDias(fornDia, 1); return renderPedidos(); }
